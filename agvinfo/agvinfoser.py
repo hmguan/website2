@@ -7,6 +7,7 @@ from time import sleep
 from agvmt.mtproto import discover
 from agvinfo import agvinfodata
 from copy import deepcopy
+import pdb
 
 class agvinfo_runtime:
     aid = 0
@@ -86,7 +87,8 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
         rep = agvshreport.agvsh_local_report()
         rep.build(_data, 0)
 
-        if len(req.mac.value) < 4:
+        if len(rep.mac.value) < 4:
+            print('agv_shell mac is empty')
             return
         #print('online:{0},{1},{2}'.format(_from,_port,rep.sh_port))
         need_notify = False
