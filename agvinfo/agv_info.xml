@@ -1,0 +1,16 @@
+<agv_info>
+	<layouts>
+		<layout id = "1" path="/etc/layout.xml" dock="/etc/docks.xml" />
+	</layouts>
+	
+	<agvs>	
+	<agv id = "1" type="0" ip="192.168.1.12" port="10001" shell_port="4410" layout_id = "1" simulation="1" pos_x="58.6508" pos_y="26.0824" pos_angle="-1.57" mac_addr="aa.bb.cc.dd.ee"/>
+        <agv id = "2" type="0" ip="192.168.0.66" port="10002" shell_port="4410" layout_id = "1" simulation="1" pos_x="60.9368" pos_y="26.0824" pos_angle="-1.57" />
+        <agv id = "3" type="0" ip="10.10.102.30" port="10003" shell_port="4410" layout_id = "1" simulation="1" pos_x="63.2228" pos_y="26.0824" pos_angle="-1.57" />
+        <agv id = "4" type="0" ip="10.10.100.151" port="10004" shell_port="4410" layout_id = "1" simulation="1" pos_x="65.5088" pos_y="26.0824" pos_angle="-1.57" />
+        <agv id = "5" type="0" ip="10.10.100.184" port="10005" shell_port="4445" layout_id = "1" simulation="1" pos_x="67.7948" pos_y="26.0824" pos_angle="-1.57" />
+	<agv id = "6" type="0" ip="192.168.1.11" port="10001" shell_port="4410" layout_id = "1" simulation="1" pos_x="58.6508" pos_y="26.0824" pos_angle="-1.57" mac_addr="aa.bb.cc.dd.ee"/>
+	<agv id = "7" type="0" ip="192.168.1.10" port="10001" shell_port="4410" layout_id = "1" simulation="1" pos_x="58.6508" pos_y="26.0824" pos_angle="-1.57" mac_addr="aa.bb.cc.dd.ee"/>
+	<agv id = "8" type="0" ip="192.168.1.13" port="10001" shell_port="4410" layout_id = "1" simulation="1" pos_x="58.6508" pos_y="26.0824" pos_angle="-1.57" mac_addr="aa.bb.cc.dd.ee"/>
+	</agvs>
+</agv_info>
