@@ -10,13 +10,15 @@ from flask import Flask, request
 from db.db_users import user
 from db.db_package import package_manager
 from configuration import config
+from agvshell.shell_api import push_file_to_remote
+from agvshell.transfer_file_types import *
 import errtypes
 
 
 class package_view(base_event):
     def __init__(self):
         super(package_view,self).__init__()
-        self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages')
+        self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages','event_robot_upgrade')
         
     def flask_recvdata(self,requst_obj):
         data = requst_obj.get_data()
@@ -55,5 +57,25 @@ class package_view(base_event):
                 tmp['remarks'] = value.remarks
                 list_package.append(tmp)
             ret = {'code':0,'msg':'查询成功','data':{'users':list_package}}
+        elif 'event_robot_upgrade' == event:
+            package_id = json_data.get('package_id')
+            robot_list = json_data.get('robot_list')
+            user_id = json_data.get('user_id')
+            if type(package_id) != int or robot_list is None or type(user_id) != int:
+                return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament })
+            try:
+                retval = package_manager.query_packages(package_id)
+                if retval is None:
+                    return jsonify({'code': errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed })
 
+                user_name = retval.user.username
+                package_name = retval.package_name
+                file_path = config.ROOTDIR +user_name +config.PATCHFOLDER + package_name
+                err = True
+                err_robots = None
+                err,err_robots = push_file_to_remote(user_id,robot_list,file_path,FILE_TYPE_A_UPGRADE,package_id)
+
+                ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'error_robots':err_robots}
+            except Exception as e:
+                ret = {'code': errtypes.HttpResponseCode_ServerError,'msg':errtypes.HttpResponseMsg_Failed}
         return jsonify(ret)

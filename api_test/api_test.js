@@ -61,7 +61,11 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'load_varlist','args':['robot_id'],'param':[null],'function':'load_varlist','type':1},
     {'event':'load_vardata','args':['robot_id','var_id','type_id'],'param':[null,null,null],'function':'load_vardata','type':1},
     {'event':'clear_error','args':['robot_id'],'param':[null],'function':'ClearError','type':1},
-    {'event':'stop_emergency','args':['robot_id'],'param':[null],'function':'StopEmergency','type':1}
+    {'event':'stop_emergency','args':['robot_id'],'param':[null],'function':'StopEmergency','type':1},
+    {'event':'event_packages','args':['user_id'],'param':[null],'function':'QueryPackets','type':1},
+    {'event':'event_users','args':[],'param':[],'function':'QueryUser','type':1},
+    {'event':'RobotUpgrade','args':['userId','packetId','Robotid1','Robotid2'],'param':[null,null,null,null],'function':'RobotUpgrade','type':1},
+    {'event':'query_user_transfer_queue','args':['userId'],'param':[null],'function':'query_transfer_queue','type':1},
     ]
 
     $scope.submit = function( api_param ){
