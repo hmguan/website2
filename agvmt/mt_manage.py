@@ -159,10 +159,11 @@ class mt_manage():
                             print('mt---get robot ', key_item, 'error failed')
                         else:
                             if self.__agv_status[key_item] == ret:
-                                print('mt---status no change')
+                                pass
+                                # print('mt---status no change')
                             else:
                                 self.__agv_status[key_item] = ret
-                                print('status change:',self.__agv_status[key_item])
+                                # print('status change:',self.__agv_status[key_item])
                                 global mt_status_notify
                                 if mt_status_notify is not None:
                                     mt_status_notify(key_item,self.__agv_status[key_item])
@@ -188,16 +189,12 @@ class mt_manage():
         if wait_handler().wait_simulate(pkt_id, 5000) >=0:
             var_list=session_link.get_local_var_list()
             wait_handler().wait_destory(pkt_id)
-        print('list len:', len(var_list))
         valid_list = mt_var_info.get_valid_list(var_list)
         return valid_list
 
     def robots_status(self):
         status_list=dict()
         self.__mutex.acquire()
-        # for robot_id in robot_list:
-        #     if int(robot_id) in self.__robot_lnk.keys():
-        #         status_list[int(robot_id)]=self.__agv_status[int(robot_id)]
         for robot_id in self.__robot_lnk.keys():
             status_list[int(robot_id)] = self.__agv_status[int(robot_id)]
         self.__mutex.release()
@@ -206,7 +203,6 @@ class mt_manage():
 
     def var_data(self,id,var_id,type_id):
         if self.__robot_lnk.__contains__(id) == False:
-            print('var_wait_data')
             return {}
         self.__mutex.acquire()
         session_link=self.__robot_lnk[id]
@@ -220,7 +216,6 @@ class mt_manage():
             tmppp = session_link.get_local_var_data()
             wait_handler().wait_destory(pkt_id)
         var_data=mt_var_info.get_var_data(var_id,type_id,tmppp)
-        #print('elmo1:', var_data['candev_head_canbus'],var_data['candev_head_canport'])
         return var_data
 
     def callback_error_status(self,notify_call=None):

@@ -38,13 +38,12 @@ class mt_session(tcp.obtcp):
         return
 
     def on_accepted(self, rlink):
-        print("accept client session")
         client_link = mt_session(rlink)
 
     def on_recvdata(self, data, cb):
         phead = mthead.proto_head()
         phead.build(data, 0)
-        print('mt---recv packet,type=', hex(phead.type),phead.size,phead.err)
+        # print('mt---recv packet,type=', hex(phead.type),phead.size,phead.err)
 
         self.__mutex.acquire()
         self.__timestamp = int(round(time.time() * 1000))
@@ -57,21 +56,17 @@ class mt_session(tcp.obtcp):
 
 
         if login.PKTTYPE_PRE_LOGIN == phead.type:
-            print('mt---PKTTYPE_PRE_LOGIN')
             self.__connect = 0
             pre_login = login.proto_pre_login()
             pre_login.build(data, 0)
             self.try_login(pre_login.key.value)
 
         elif login.PKTTYPE_LOGIN_ROBOT_ACK == phead.type:
-            print('PKTTYPE_LOGIN_ROBOT_ACK')
             login_ack = login.proto_login_ack()
             login_ack.build(data, 0)
             if login_ack.err == 0:
                 self.__connect = 1
-                #self.__login_wait.sig()
                 print('mt---login mt successful.')
-                #mt_manage.robot_lik_manage(self,self.__robot_id)
             else:
                 print('mt---login failed.')
 
@@ -81,11 +76,11 @@ class mt_session(tcp.obtcp):
         elif cread.PKTTYPE_COMMON_READ_BYID_ACK == phead.type:
             common_ack=cread.proto_common_vct()
             common_ack.build(data,0)
-            print('data---',common_ack.items[0].var_data.value)
+            # print('data---',common_ack.items[0].var_data.value)
             if not self.__is_appoint:
                 self.recv_var_data(pkt_id,common_ack.items[0].var_data.value)
                 return
-            print('mt---on common read ack,type:', common_ack.items[0].var_id)
+            # print('mt---on common read ack,type:', common_ack.items[0].var_id)
             if common_ack.items[0].var_id == kVarFixedObject_Vehide:
                 if common_ack.length()== 48:
                     pkterror=error_status.proto_error()
@@ -143,7 +138,6 @@ class mt_session(tcp.obtcp):
         #else:return -1
 
     def try_login(self,key):
-        print('mt--login')
         login_ack = login.proto_login()
 
         req = bytearray(32)
@@ -197,23 +191,20 @@ class mt_session(tcp.obtcp):
         pkt = mthead.proto_keepalive()
         stream = pkt.serialize()
         self.send(stream, pkt.length())
-        print('post alive pkt to mt ',self.__target_host)
 
     def robot_error_status(self,state):
         print('mt---error:',state)
 
     def clear_error(self):
-        print('mt---session_clear')
         pkt_clear = mthead.proto_clearfault()
         stream=pkt_clear.serialize()
         self.send(stream,pkt_clear.length())
 
     def set_stop_emergency(self):
-        print('mt---stop')
         cwrite_stop=cwrite.proto_common_write_item()
         cwrite_stop.var_id(kVarFixedObject_Vehide)
         cwrite_stop.var_type(1)
-        cwrite_stop.var_offset(173)
+        cwrite_stop.var_offset(169)
         cwrite_stop.var_data(b'1')
 
         pkt_cwrite=cwrite.proto_common_write()
@@ -293,7 +284,6 @@ class mt_session(tcp.obtcp):
         pkt_cread.phead.id(pkt_id)
         pkt_cread.phead.size(pkt_cread.length())
         stream = pkt_cread.serialize()
-        print('send---optpar')
         self.send(stream, pkt_cread.length())
         return pkt_id
 
@@ -312,7 +302,6 @@ class mt_session(tcp.obtcp):
         cread_item.var_id(var_id)
         cread_item.var_offset(0)
         length=mt_var_info.get_var_read_length(type_id)
-        print('length--',length,type_id)
         if length is None:
             return -1
         cread_item.var_length(length)
@@ -345,7 +334,6 @@ class mt_session(tcp.obtcp):
     def recv_var_list_data(self,pkt_id,data):
         self.__var_list=data
         wait_handler().wait_singal(pkt_id.value)
-        print('wait_singal_var')
 
     def recv_var_data(self,pkt_id,data):
         self.__data_mutex.acquire()
