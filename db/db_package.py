@@ -32,7 +32,7 @@ class package_manager():
 
     @staticmethod
     def packages(user_id):
-        return session_obj.query(package_info).filter(or_(user_id==user_id,user_id==1)).all()
+        return session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).all()
     
     @staticmethod
     def remove(package_id):
