@@ -10,9 +10,9 @@ class config:
     MAX_CONTENT_LENGTH=1024*1024*1024
 
     ROOTDIR='/website/'
-    PATCHFOLDER = '/Patch/'
-    BLACKBOXFOLDER = '/Blackbox/'
-    BINFOLDER = '/Bin/'
+    PATCHFOLDER = '/patch/'
+    BLACKBOXFOLDER = '/blackbox/'
+    BINFOLDER = '/bin/'
 
     @staticmethod
     def init_app(app):

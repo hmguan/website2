@@ -7,7 +7,7 @@ import traceback
 import sys
 import ptvsd
 
-ptvsd.settrace(None, ('0.0.0.0', 12345))
+#ptvsd.settrace(None, ('0.0.0.0', 12345))
 
 app=create_app('default')
 local_socketio = create_socketio(app)

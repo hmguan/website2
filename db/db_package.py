@@ -41,5 +41,9 @@ class package_manager():
         session_obj.delete(tmp)
         session_obj.commit()
         return 0
+
+    @staticmethod
+    def query_packages(package_id):
+        return session_obj.query(package_info).filter_by(id=package_id).all()
     
     
