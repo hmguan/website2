@@ -44,6 +44,8 @@ class package_manager():
 
     @staticmethod
     def query_packages(package_id):
-        return session_obj.query(package_info).filter_by(id=package_id).all()
+        return session_obj.query(package_info).filter_by(id=package_id).first()
+
+    
     
     

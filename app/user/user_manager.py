@@ -243,4 +243,13 @@ class user_manager():
         if ret<0:
             return {'code':errtypes.HttpResponseCode_InvaildGroup_Name,'msg':'更新失败'}
         return {'code':ret,'msg':'更新组名成功'}
+
+    #查询用户uuid
+    def user_uuid(self,user_id):
+        self.login_mutex_.acquire()
+        u_uuid=''
+        if user_id in self.login_user_.keys():
+            u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
+        self.login_mutex_.release()
+        return u_uuid
     
