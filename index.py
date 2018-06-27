@@ -6,7 +6,7 @@ from pynsp.logger import *
 import traceback
 import sys
 #import ptvsd
-
+ 
 ptvsd.settrace(None, ('0.0.0.0', 12345))
 
 app=create_app('default')
