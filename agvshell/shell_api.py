@@ -230,17 +230,22 @@ def cancle_file_transform(session_uid, robot_id, file_path):
     file_manager().cancle_file_transform(session_uid, robot_id, file_path)
 
 
-def push_file_to_remote(session_uid, robot_list, file_path, file_type):
-    file_manager().push_file_task(session_uid, robot_list, file_path, file_type)
+def push_file_to_remote(user_id, robot_list, file_path, file_type,package_id):
+    return file_manager().push_file_task(user_id, robot_list, file_path, file_type,package_id)
 
 def pull_file_from_remote(session_uid, robot_list, file_path, file_type):
     file_manager().pull_file_task(session_uid, robot_list, file_path)
 
-current_step = 0
-def file_tansfer_notify(session_uid, robot_id, file_path, file_type, step, error_code, status, file_size=0):
+def query_user_transmit_queue(user_id):
+    return file_manager().query_transfer_queue(user_id)
+
+def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_code, status, file_size=0):
+    from app.user.userview import users_center
+    from app.soketio import socketio_agent_center
+
     notify_dic = dict()
     notify_dic['type'] = errtypes.TypeShell_UpdateSoftware
-    notify_dic['session_uid'] = str(session_uid).encode('utf-8')
+    notify_dic['user_id'] = user_id
     notify_dic['robot_id'] = robot_id
     notify_dic['file_path'] = file_path
     notify_dic['step'] = step
@@ -248,22 +253,19 @@ def file_tansfer_notify(session_uid, robot_id, file_path, file_type, step, error
     notify_dic['status'] = status
 
     # if step == 100:
-    global current_step
-    value = int(float(step))
-    if status != 0 or current_step != value:
-        current_step = value
-        global notify_client_function
-        if notify_client_function is not None:
-            notify_client_function(notify_dic)
+    u_uuid = users_center.user_uuid(user_id)
+    if u_uuid is not None:
+        value = int(float(step))
+        if FILE_TYPE_A_UPGRADE == file_type and 100 == step:
+            print("a begin upgrade")
+            f_name = file_path[file_path.rfind('/') + 1:]
+            shell_info = shell_manager().get_session_by_id(robot_id)
+            if shell_info is not None:
+                shell_info.post_a_begin_upgrade(f_name, file_size)
+            socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
+        elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
+            pass
+        else:
+            pass
 
-    if FILE_TYPE_A_UPGRADE == file_type and 100 == step:
-        print("a begin upgrade")
-        f_name = file_path[file_path.rfind('/') + 1:]
-        shell_info = shell_manager().get_session_by_id(robot_id)
-        if shell_info is not None:
-            shell_info.post_a_begin_upgrade(f_name, file_size)
-        pass
-    elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
-        pass
-    else:
-        pass
+
