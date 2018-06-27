@@ -36,6 +36,9 @@ class shell_session(tcp.obtcp):
         #存放agvshell管理的进程的cpu，memory等信息
         self.__shell_process_info= []
         self.__upgrading = 0
+        self.__current_netio_r = 0.0
+        self.__current_netio_t = 0.0
+        self.__previous_timestamp = int(round(time.time() * 1000))
         return
 
     def __del__(self):
@@ -191,8 +194,15 @@ class shell_session(tcp.obtcp):
             self.__shell_serviceinfo['uptime']=info.uptime.value
             self.__shell_serviceinfo['disk_used_size']=info.disk_used_size.value
             self.__shell_serviceinfo['host_time'] = info.host_time.value
-            self.__shell_serviceinfo['net_io_rec'] = info.net_io_rec.value
-            self.__shell_serviceinfo['net_io_tra'] = info.net_io_tra.value
+            print('netio:',info.net_io_rec.value - self.__current_netio_r)
+            print('time_stamp:',self.__timestamp-self.__connected_timestamp)
+            self.__shell_serviceinfo['net_io_rec'] = int((info.net_io_rec.value - self.__current_netio_r)/float((self.__timestamp-self.__connected_timestamp)/1000))
+            self.__shell_serviceinfo['net_io_tra'] = int((info.net_io_tra.value - self.__current_netio_t)/float((self.__timestamp-self.__connected_timestamp)/1000))
+            print('net_io_rec',self.__shell_serviceinfo['net_io_rec'])
+            print('net_io_tra',self.__shell_serviceinfo['net_io_tra'])
+            self.__current_netio_r=info.net_io_rec.value
+            self.__current_netio_t=info.net_io_tra.value
+            self.__connected_timestamp=self.__timestamp
             shell_process_name = self.get_shell_process_list()
             self.__shell_process_info.clear()
             for item in info.process_list:
