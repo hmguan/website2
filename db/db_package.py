@@ -1,6 +1,9 @@
 
 from db import session_obj,user_info,package_info
 from sqlalchemy import or_
+from configuration import config
+import os
+
 
 class package_manager():
     def __init__(self):
@@ -38,6 +41,12 @@ class package_manager():
             return -1
 
         tmp  = session_obj.query(package_info).get(ret.id)
+        folder_path = config.ROOTDIR +tmp.user.username +config.PATCHFOLDER
+                    
+        file_path = os.path.join(folder_path,tmp.package_name)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
         session_obj.delete(tmp)
         session_obj.commit()
         return 0
