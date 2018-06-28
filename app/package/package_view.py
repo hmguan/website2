@@ -77,5 +77,5 @@ class package_view(base_event):
 
                 ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'error_robots':err_robots}
             except Exception as e:
-                ret = {'code': errtypes.HttpResponseCode_ServerError,'msg':errtypes.HttpResponseMsg_Failed}
+                ret = {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
         return jsonify(ret)
