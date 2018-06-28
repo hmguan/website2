@@ -16,8 +16,8 @@ class package_manager():
         if(tmp ==None):
             return -1
 
-        tmp = session_obj.query(user_info).filter_by(package_name= package_name).first()
-        if(tmp ==None):
+        tmp = session_obj.query(package_info).filter_by(package_name= package_name).first()
+        if tmp is not None:
             return -2
         
         package_obj = package_info(user_id = user_id,package_name= package_name,version=version,time=time,remarks=remark)
