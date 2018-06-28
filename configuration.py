@@ -9,7 +9,7 @@ class config:
     SECRET_KEY='webserver!'
     MAX_CONTENT_LENGTH=1024*1024*1024
 
-    ROOTDIR='/website/'
+    ROOTDIR='./website/'
     PATCHFOLDER = '/patch/'
     BLACKBOXFOLDER = '/blackbox/'
     BINFOLDER = '/bin/'

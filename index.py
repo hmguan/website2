@@ -5,9 +5,10 @@ from agvmt import start_mt_manager,register_mt_notify_function
 from pynsp.logger import *
 import traceback
 import sys
-#import ptvsd
-
-#ptvsd.settrace(None, ('0.0.0.0', 12345))
+import ptvsd
+ 
+ptvsd.settrace(None, ('0.0.0.0', 12345))
+#ptvsd.wait_for_attach()
 
 app=create_app('default')
 local_socketio = create_socketio(app)

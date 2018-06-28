@@ -12,7 +12,11 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		'load_varlist': LoadVarlist,
 		'load_vardata': LoadVardata,
 		'ClearError': ClearError,
-		'StopEmergency': StopEmergency
+		'StopEmergency': StopEmergency,
+		'QueryPackets':QueryPackets,
+		'QueryUser':QueryUser,
+		'RobotUpgrade':RobotUpgrade,
+		'query_transfer_queue':query_transfer_queue
 	}
 
 	function RequestRobotDetailInfo (RobotId) {
@@ -69,6 +73,23 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		return RequestJsonData(JSON.stringify({'event': 'stop_emergency', 'robot_id': robot_id}))
 	}
 
+	function QueryPackets(user_id) {
+		return RequestJsonData(JSON.stringify({'event': 'event_packages', 'user_id': user_id}))
+	}
+
+	function QueryUser() {
+		return RequestJsonData(JSON.stringify({'event': 'event_users'}))
+	}
+
+	function RobotUpgrade(userId,packetId,Robotid1,Robotid2) {
+		robot_list = [];
+		robot_list.push(parseInt(Robotid1));
+		return RequestJsonData(JSON.stringify({'event': 'event_robot_upgrade','robot_list':robot_list,'package_id':parseInt(packetId),"user_id":parseInt(userId)}))
+	}
+
+	function query_transfer_queue(userId){
+		return RequestJsonData(JSON.stringify({'event': 'query_user_transfer_queue', 'user_id': parseInt(userId)}))
+	}
 
 	function 	RequestJsonData(data){
 		var defer = $q.defer();

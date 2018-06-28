@@ -52,7 +52,7 @@ def upload_file():
         if file.filename == '':
             return jsonify({'code': errtypes.HttpResponseCode_NOFILE, 'msg': '未选文件'})
         else:
-            filename = secure_filename(file.filename)
+            filename = file.filename
             try:
                 if file:
                     version = request.form['version']
