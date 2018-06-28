@@ -59,5 +59,5 @@ def start_agvinfo_service():
     :return:
     '''
     #regist_agvinfo_notify(notify = dhcp_online_change)
-    #agvinfoser_startup(_notify_changed=dhcp_notify_change)
+    agvinfoser_startup(_notify_changed=dhcp_notify_change)
     #agvinfotrs_startup()
