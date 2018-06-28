@@ -10,7 +10,7 @@ from db.db_package import package_manager
 
 #远程调试
 ptvsd.settrace(None, ('0.0.0.0', 2345))
-ptvsd.wait_for_attach()
+#ptvsd.wait_for_attach()
 
 def main():
 
