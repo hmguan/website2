@@ -35,6 +35,7 @@ HttpResponseCode_InvaildGroup_Name=30
 #升级包
 HttpResponseCode_UPLOADEXCEPTIONERROR=50
 HttpResponseCode_NOFILE=51
+HttpResponseCode_EXISTFILE=51
 
 HttpResponseCode_NotFound=404
 HttpResponseCode_ServerError=500

@@ -67,8 +67,10 @@ def upload_file():
                     file.save(file_path)
                     time = datetime.datetime.now()
                     ret = package_manager.upload(request.form['user_id'],filename,version,time,remark)
-                    if ret<0:
-                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': '上传失败，用户不存在。'})
+                    if ret==-1:
+                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': '上传失败，用户不存在'})
+                    if ret==-2:
+                        return jsonify({'code': errtypes.HttpResponseCode_EXISTFILE, 'msg': '上传失败，已存在同名升级包'})
                     return jsonify({'code': 0, 'msg': '上传成功'})
             except Exception as e:
                     return jsonify({'code': errtypes.HttpResponseCode_UPLOADEXCEPTIONERROR, 'msg': '上传失败'})

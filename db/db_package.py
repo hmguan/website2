@@ -15,6 +15,10 @@ class package_manager():
         tmp = session_obj.query(user_info).filter_by(id=user_id).first()
         if(tmp ==None):
             return -1
+
+        tmp = session_obj.query(user_info).filter_by(package_name= package_name).first()
+        if(tmp ==None):
+            return -2
         
         package_obj = package_info(user_id = user_id,package_name= package_name,version=version,time=time,remarks=remark)
         session_obj.add(package_obj)
