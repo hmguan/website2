@@ -1,6 +1,7 @@
 
 from db import session_obj,user_info,package_info
 from sqlalchemy import or_
+from sqlalchemy import asc
 from configuration import config
 import os
 
@@ -18,7 +19,15 @@ class package_manager():
 
         tmp = session_obj.query(package_info).filter_by(package_name= package_name).filter_by(user_id = user_id).first()
         if tmp is not None:
-            return -2
+            tmp  = session_obj.query(package_info).get(tmp.id)
+            folder_path = config.ROOTDIR +tmp.user.username +config.PATCHFOLDER
+                    
+            file_path = os.path.join(folder_path,tmp.package_name)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+            session_obj.delete(tmp)
+            session_obj.commit()
         
         package_obj = package_info(user_id = user_id,package_name= package_name,version=version,time=time,remarks=remark)
         session_obj.add(package_obj)
@@ -36,7 +45,7 @@ class package_manager():
 
     @staticmethod
     def packages(user_id):
-        return session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).all()
+        return session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(asc(package_info.user_id)).all()
     
     @staticmethod
     def remove(package_id):
