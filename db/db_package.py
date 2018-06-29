@@ -2,6 +2,7 @@
 from db import session_obj,user_info,package_info
 from sqlalchemy import or_
 from sqlalchemy import asc
+from sqlalchemy import desc
 from configuration import config
 import os
 
@@ -45,7 +46,7 @@ class package_manager():
 
     @staticmethod
     def packages(user_id):
-        return session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(asc(package_info.user_id)).all()
+        return session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(desc(package_info.user_id),desc(package_info.time)).all()
     
     @staticmethod
     def remove(package_id):
