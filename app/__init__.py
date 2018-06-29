@@ -37,5 +37,5 @@ def create_socketio(app):
     :return:the socketio object
     '''
     global local_socketio
-    local_socketio = SocketIO(app, async_mode='gevent', logger=False) #,ping_timeout=3,ping_interval=1
+    local_socketio = SocketIO(app, async_mode=None, logger=False) #,ping_timeout=3,ping_interval=1
     return local_socketio
