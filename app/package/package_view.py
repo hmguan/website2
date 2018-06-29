@@ -71,11 +71,10 @@ class package_view(base_event):
                 user_name = retval.user.username
                 package_name = retval.package_name
                 file_path = config.ROOTDIR +user_name +config.PATCHFOLDER + package_name
-                err = True
                 err_robots = None
-                err,err_robots = push_file_to_remote(user_id,robot_list,file_path,FILE_TYPE_A_UPGRADE,package_id)
+                task_list,err_robots = push_file_to_remote(user_id,robot_list,file_path,FILE_TYPE_A_UPGRADE,package_id)
 
-                ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'error_robots':err_robots}
+                ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'transfer_list':task_list,'error_robots':err_robots}
             except Exception as e:
                 ret = {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
         return jsonify(ret)

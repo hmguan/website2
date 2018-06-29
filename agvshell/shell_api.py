@@ -233,11 +233,13 @@ def cancle_file_transform(session_uid, robot_id, file_path):
 def push_file_to_remote(user_id, robot_list, file_path, file_type,package_id):
     return file_manager().push_file_task(user_id, robot_list, file_path, file_type,package_id)
 
-def pull_file_from_remote(session_uid, robot_list, file_path, file_type):
-    file_manager().pull_file_task(session_uid, robot_list, file_path)
+#route_path_list [{'robot_id':None ,'file_path':None}]
+#return 
+def pull_file_from_remote(user_id, local_folder,file_type,route_path_list=[]):
+    return file_manager().pull_file_task(user_id, local_folder,file_type,route_path_list)
 
-def query_user_transmit_queue(user_id):
-    return file_manager().query_transfer_queue(user_id)
+def query_user_transmit_queue(user_id,file_type):
+    return file_manager().query_transfer_queue(user_id,file_type)
 
 def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_code, status, task_id,file_size=0):
     from app.user.userview import users_center
@@ -263,7 +265,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
             shell_info = shell_manager().get_session_by_id(robot_id)
             if shell_info is not None:
                 shell_info.post_a_begin_upgrade(f_name, file_size)
-            socketio_agent_center.post_msg_to_room(json.dumps(notify_dic),room_identify=u_uuid)
+            socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
         elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
             pass
         else:

@@ -1,6 +1,7 @@
 from agvshell.shell_api import *
 from pynsp.logger import *
 from ..user.userview import users_center
+from agvshell.transfer_file_types import *
 import errtypes
 
 def get_online_robot_information(user_id):
@@ -90,10 +91,11 @@ def get_robot_process_detail_information(robot_id):
 
 def query_transmit_queue( userid ):
     from db.db_package import package_manager
+
     if type(userid) != int:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
     try:
-        transfer_queue = query_user_transmit_queue(userid)
+        transfer_queue = query_user_transmit_queue(userid,FILE_OPER_TYPE_PUSH)
         file_info = {}
         err_info = {}
         packet_info = None

@@ -58,7 +58,8 @@ class task_thread_pool():
     thread num is define by global MAX_THREAD_NUM
     '''
     def __init__(self):
-        self.__work_queue = queue.Queue(MAX_QUEUE_NUM)
+        self.__work_queue = list()
+        self.__working_queue = list()
         self.__queue_mutex=threading.RLock()
         self.__work_threads = []
         self.__thread_wait = waitable_handle(False)
@@ -70,7 +71,8 @@ class task_thread_pool():
         self.__exit_flag = 1
         self.thread_join()
         self.__queue_mutex.acquire()
-        self.m_work_queue.clear()
+        self.__work_queue.clear()
+        self.__working_queue.clear()
         self.__queue_mutex.release()
         
     def init_pool(self):
@@ -94,7 +96,7 @@ class task_thread_pool():
                 time.sleep(2)
                 continue
             self.__queue_mutex.acquire()
-            while self.__work_queue.empty():
+            while 0 == len(self.__work_queue):
                 self.__queue_mutex.release()
                 print("thread:%d waiting" % thread_id)
                 self.__thread_wait.wait()
@@ -104,50 +106,73 @@ class task_thread_pool():
                     return
                 self.__queue_mutex.acquire()
                 
-            
-            task = self.__work_queue.get_nowait()
-            print("thread:%d start task, queue size:%d" % (thread_id, self.__work_queue.qsize()))
+            task = self.__work_queue.pop(0)
+            self.__working_queue.append({'thread_id':thread_id,'task_info':task})
+
+            print("thread:%d start task, queue size:%d" % (thread_id, len(self.__work_queue)))
             self.__is_working[thread_id] = True
             self.__queue_mutex.release()
             ret = task.on_task(thread_id)
             print("thread:%d after on_task ret:%d" % (thread_id, ret))
-            if ret != 0:
-                self.__is_working[thread_id] = False
             
         print("thread id:%d exit" % thread_id)
         
     def add_task(self,task):
         self.__queue_mutex.acquire()
-        if self.__work_queue.full():
+        if len(self.__work_queue) >= MAX_QUEUE_NUM:
             print("task queue full!!!")
             return -1
-        self.__work_queue.put_nowait(task)
+        self.__work_queue.append(task)
         self.__queue_mutex.release()
         self.__thread_wait.sig()
         pass
         
-    def del_task(self,user_id,robot_id,file_path):
+    def del_task(self,count,callback):
         '''
         specile for file_task
         '''
+        del_task = []
         self.__queue_mutex.acquire()
-        for task in self.__work_queue:
-            if user_id == task.m_user_id and robot_id == task.m_robot_id and file_path == task.m_file_path:
-                task.m_oper_type = 0
-                return task.m_file_type
+        if callback is not None and task_list is not None:
+            index = 0
+            while index < len(self.__work_queue):
+                if callback(task):
+                    del_task.append(self.__work_queue[index])
+                    del self.__work_queue[index]
+                    index = index -1
+                    count = count -1
+                    if count == 0:
+                        break
         self.__queue_mutex.release()
-        return -1
+        return del_task
     
-    def task_finish(self,thread_id):
+    def task_finish(self,thread_id,task_id):
         self.__is_working[thread_id] = False
+        self.__queue_mutex.acquire()
+        for transfer_task in self.__working_queue:
+            if transfer_task['thread_id'] == thread_id:
+                self.__working_queue.remove(transfer_task)
+                break
+        self.__queue_mutex.release()
         print("thread[%d] working status change" % thread_id)
         pass
-    
+
     def thread_join(self):
         self.__thread_wait.sig()
         for th in self.__work_threads:
             th.join()
         pass
+
+    def Query_Transfer_queue(self):
+        self.__queue_mutex.acquire()
+        queue = deepcopy(self.__work_queue)
+        for index,task in enumerate(self.__working_queue):
+            queue.insert(index,task['task_info'])
+        self.__queue_mutex.release()
+        return queue
+
+    def get_queue_size(self):
+        return len(self.__work_queue) + len(self.__working_queue)
 
 
 class agvfile():
@@ -218,7 +243,7 @@ class agvfile():
 
 
 class file_task(base_task):
-    def __init__(self,s_user_id,r_id,f_path,f_type,oper_type,task_id):
+    def __init__(self,s_user_id,r_id,f_path,f_type,oper_type,task_id,local_folder = "",packageId = -1):
         self.m_session_uid = 0
         self.m_user_id= s_user_id
         self.m_robot_id = r_id
@@ -226,13 +251,15 @@ class file_task(base_task):
         self.m_file_type = f_type
         self.m_oper_type = oper_type
         self.m_task_id = task_id
+        self.m_local_folder = local_folder
+        self.m_package_id = packageId
     
     def on_task(self,thread_id):
         ret = -1
         if FILE_OPER_TYPE_PUSH == self.m_oper_type:
             ret = file_manager().push_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id)
         elif FILE_OPER_TYPE_PULL == self.m_oper_type:
-            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_task_id)
+            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_task_id,self.local_folder)
         else:
             print("for delete task")
         return ret
@@ -264,23 +291,12 @@ class file_info():
         if self.m_hd is not None and -1 != self.m_hd:
             self.m_hd.close()
 
-class file_transfer_info(object):
-    """docstring for file_transfer_info"""
-    def __init__(self,file_type,task_id,robot_id,packet_id = 0):
-        super(file_transfer_info, self).__init__()
-        self.packet_id = packet_id
-        self.file_type = file_type
-        self.robot_id = robot_id
-        self.task_id = task_id
-
 class user_transfer_queue(object):
     """docstring for user_transfer_queue"""
     def __init__(self):
         super(user_transfer_queue, self).__init__()
-        self.__task_thread_pool = task_thread_pool()
-        #__dict_robot_push_queue = {task_id:file_transfer_info}
-        self.__transfer_queue_push = list()
-        self.__thread_upgrade_mutex = threading.RLock()
+        self.__task_thread_pool_push = task_thread_pool()
+        self.__task_thread_pool_pull = task_thread_pool()
         self.__task_id = 0
         self.__task_id_mutex=threading.RLock()
 
@@ -291,47 +307,60 @@ class user_transfer_queue(object):
         return self.__task_id
 
     def __del__(self):
-        del self.__task_thread_pool
         pass
 
-    def task_finish(self,threadid,task_id = -1,transfer_type = -1):
+    def task_finish(self,threadid,task_id = -1,transfer_type = -1,):
         if transfer_type != -1 and task_id != -1:
             # self.__thread_upgrade_mutex.acquire()
             if transfer_type == FILE_OPER_TYPE_PUSH:
-                for index, queue_item in enumerate(self.__transfer_queue_push):
-                    if queue_item.task_id == task_id:
-                        del self.__transfer_queue_push[index]
-                        break
+                self.__task_thread_pool_push.task_finish(threadid,task_id)
+            elif transfer_type == FILE_OPER_TYPE_PULL:
+                self.__task_thread_pool_pull.task_finish(threadid,task_id)
             # self.__thread_upgrade_mutex.release()
-        self.__task_thread_pool.task_finish(threadid)
-        
+
     def push_file_task(self,user_id,robot_list,file_path,file_type,packet_id):
         '''
         push 'push file task to task pool'
         '''
         err_robot = []
+        task_list = []
         # self.__thread_upgrade_mutex.acquire()
         for item in robot_list:
             robot_id = int(item)
 
             task_id = self.assign_task_id()
             
-            task = file_task(user_id,robot_id,file_path,file_type,FILE_OPER_TYPE_PUSH,task_id)
-            if self.__task_thread_pool.add_task(task) != -1 :
-                self.__transfer_queue_push.append(file_transfer_info(file_type,task_id,robot_id,packet_id))
+            task = file_task(user_id,robot_id,file_path,file_type,FILE_OPER_TYPE_PUSH,task_id,"",packet_id)
+            if self.__task_thread_pool_push.add_task(task) != -1 :
+                task_list.append({'robot_id':robot_id,'task_id':task_id})
             else:
                 err_robot.append(robot_id)
         # self.__thread_upgrade_mutex.release()
 
-        if len(err_robot) > 0:
-            return False , err_robot
-        return True , None
+        return task_list , err_robot
 
-    def get_transfer_queue(self):
-        return deepcopy(self.__transfer_queue_push)
+    def pull_file_task(self,userid,local_folder,file_type,route_path_list):
+        err_robot = []
+        task_list = []
+        for item in route_path_list:
+            task_id = self.assign_task_id()
+            task = file_task(user_id,item.robot_id,item.file_path,file_type,FILE_OPER_TYPE_PULL,task_id,local_folder)
+            if self.__task_thread_pool_pull.add_task(task) != -1 :
+                task_list.append({'robot_id':robot_id,'task_id':task_id,'file_path':item.file_path})
+            else:
+                err_robot.append(robot_id)
+        return task_list , err_robot
+
+    def get_transfer_queue(self,file_oper_type):
+        if file_oper_type == FILE_OPER_TYPE_PUSH:
+            return self.__task_thread_pool_push.Query_Transfer_queue()
+        elif file_oper_type == FILE_OPER_TYPE_PULL:
+            return self.__task_thread_pool_pull.Query_Transfer_queue()
+        return 0
+        
 
     def get_transfer_num(self):
-        return len(self.__transfer_queue_push)
+        return self.__task_thread_pool_push.get_queue_size() + self.__task_thread_pool_pull.get_queue_size()
 
 @slt.singleton
 class file_manager():
@@ -392,13 +421,13 @@ class file_manager():
                 del self.__map_user_transfer_queue[user_id]
         self.__transfer_queue_mutex.release()
 
-    def query_transfer_queue(self,user_id):
+    def query_transfer_queue(self,user_id,oper_type):
         queue_data = []
         user_transfer_queue = self.__map_user_transfer_queue.get(user_id)
         if user_transfer_queue is not None:
-            transfer_queue = user_transfer_queue.get_transfer_queue()
+            transfer_queue = user_transfer_queue.get_transfer_queue(oper_type)
             for transfer_info in transfer_queue:
-                queue_data.append({'robot_id':transfer_info.robot_id,'packet_id':transfer_info.packet_id,'file_type':transfer_info.file_type,'task_id':transfer_info.task_id})
+                queue_data.append({'robot_id':transfer_info.m_robot_id,'packet_id':transfer_info.m_package_id,'file_type':transfer_info.m_file_type,'task_id':transfer_info.m_task_id})
         return queue_data
 
 
@@ -407,14 +436,14 @@ class file_manager():
     def push_file(self,threadID,m_userid,robot_id,file_path,file_type,task_id):
         if self.__shell_manager is None:
             print("shell manager regist failure, robot_id:%d" % robot_id)
-            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,task_id,-1)
+            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,-1,task_id)
             self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
             return ERRNO_ROBOT_CONNECT
         
         shell_info = self.__shell_manager.get_session_by_id(robot_id)
         if shell_info is None:
             print("session cannot find, robot_id:%d" % robot_id)
-            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,task_id,-1)
+            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,-1,task_id)
             self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
             return ERRNO_ROBOT_CONNECT
         
@@ -422,7 +451,7 @@ class file_manager():
         t_file_info.m_hd = self.__file_rw.open_file(file_path)
         if -1 == t_file_info.m_hd:
             print("open file[%s] failure" % file_path)
-            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_OPEN,task_id,-1)
+            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_OPEN,-1,task_id)
             self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
             return ERRNO_FILE_OPEN
         
@@ -432,7 +461,7 @@ class file_manager():
             self.__mutex_set.acquire()
             if FILE_TYPE_A_UPGRADE == shell_info.get_upgrade_flag():
                 print("upgrade exit, stop this time upgrade")
-                self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_UPGRADE,task_id,-1)
+                self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_UPGRADE,-1,task_id)
                 self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
                 self.__mutex_set.release()
                 return ERRNO_FILE_UPGRADE
@@ -463,51 +492,38 @@ class file_manager():
         Logger().get_logger().info('push file head secuss, name:{0} size:{1}, block_num: {2}'.format(t_file_info.m_path, t_file_info.m_size, t_file_info.m_block_num))
         return 0
     
-    
-    def pull_file(self,threadID,session_uid,robot_id,file_path):
+    def pull_file(self,threadID,userid,robot_id,file_path,taskId,localFolder):
         if file_path == "":
-            if self.__notify_callback is not None:
-                self.__notify_callback(session_uid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_FILE_OPEN,-1)
-            self.__task_thread_pool.task_finish(threadID)
+            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_FILE_OPEN,-1,taskId)
+            self.task_finish(userid,threadID,taskId,FILE_OPER_TYPE_PULL)
             return ERRNO_FILE_OPEN
         
         if self.__shell_manager is None:
             print("shell manager regist failure, robot_id:%d" % robot_id)
-            if self.__notify_callback is not None:
-                self.__notify_callback(session_uid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1)
-            self.__task_thread_pool.task_finish(threadID)
+            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1,taskId)
+            self.task_finish(userid,threadID,taskId,FILE_OPER_TYPE_PULL)
             return ERRNO_ROBOT_CONNECT
         
         shell_info = self.__shell_manager.get_session_by_id(robot_id)
         if shell_info is None:
             print("session cannot find, robot_id:%d" % robot_id)
-            if self.__notify_callback is not None:
-                self.__notify_callback(session_uid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1)
-            self.__task_thread_pool.task_finish(threadID)
+            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1,taskId)
+            self.task_finish(userid,threadID,taskId,FILE_OPER_TYPE_PULL)
             return ERRNO_ROBOT_CONNECT
         
         t_file_info = file_info()
-        t_file_info.m_name = self.__file_dir + file_path[file_path.rfind('/') + 1:]
+        t_file_info.m_name = self.__file_dir + localFolder + file_path[file_path.rfind('/') + 1:]
         t_file_info.m_path = file_path
         t_file_info.m_file_id = self.allocate_file_id()
-        
-        shell_info.pull_file_head(t_file_info.m_file_id,file_path)
-        
         t_file_info.m_oper_time = int(round(time.time() * 1000))
         t_file_info.m_oper_type = FILE_OPER_TYPE_PULL
-        t_file_info.m_session_uid = session_uid
+        t_file_info.m_user_id = userid
         t_file_info.m_thread_uid = threadID
-        
-        file_mutex.acquire()
-        map_file_info = dict_file_info.get(robot_id)
-        if map_file_info is None:
-            map_file_info = {}
-            map_file_info[t_file_info.m_file_id] = t_file_info
-            dict_file_info[robot_id] = map_file_info
-        else:
-            map_file_info[t_file_info.m_file_id] = t_file_info
-        #self.print_file_dic_list()
-        file_mutex.release()
+        t_file_info.m_task_id = taskId
+
+        self.add_file_info(t_file_info,robot_id)
+
+        shell_info.pull_file_head(t_file_info.m_file_id,file_path)
         
         Logger().get_logger().info('begin to pull file:{0}, file id:{1}'.format(t_file_info.m_name, t_file_info.m_file_id))
         return 0
@@ -530,12 +546,11 @@ class file_manager():
         
         t_file_info.m_hd = self.__file_rw.create_file(t_file_info.m_name)
         if -1 == t_file_info.m_hd:
-            file_mutex.release()
             print("wite file[%s] failure" % t_file_info.m_name)
             #notify agvshell
-            if self.__notify_callback is not None:
-                self.__notify_callback(t_file_info.m_session_uid,robot_id,t_file_info.m_path,FILE_TYPE_NORMAL,0,ERRNO_FILE_CREATE,-1)
-            self.__task_thread_pool.task_finish(t_file_info.m_thread_uid)
+            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_FILE_CREATE,-1,taskId)
+            self.task_finish(userid,threadID,taskId,t_file_info.m_oper_type)
+            file_mutex.release()
             return ERRNO_FILE_CREATE
         
         t_file_info.m_size = proto_pull_head.total_size.value
@@ -573,6 +588,16 @@ class file_manager():
             print("send_file_data file[%d] doesnot exist in list" % file_id)
             return -1
         
+        shell_info = self.__shell_manager.get_session_by_id(robot_id)
+        if shell_info is None:
+            #print("session cannot find, robot_id:%d" % robot_id)
+            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
+            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
+            file_mutex.release()
+            #在关闭/断链中处理移除正在传输的文件信息
+            # self.remove_file_info(robot_id,file_id)  
+            return ERRNO_ROBOT_CONNECT
+
         if block_num < t_file_info.m_block_num:
             #print("begin send file[%s][%d] data" % (t_file_info.m_name,t_file_info.m_file_id))
             #resize m_block_num
@@ -581,17 +606,7 @@ class file_manager():
                 t_file_info.m_block_num += 1
             # print("file bn:%d,last off:%d / bnum:%d" % (t_file_info.m_block_num,t_file_info.m_last_off,t_file_info.m_last_block_num))
             data = self.__file_rw.read_file(t_file_info.m_hd, t_file_info.m_last_off, self.__block_size)
-            
-            shell_info = self.__shell_manager.get_session_by_id(robot_id)
-            if shell_info is None:
-                #print("session cannot find, robot_id:%d" % robot_id)
-                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,t_file_info.m_task_id,-1)
-                self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
-                file_mutex.release()
-                #在关闭/断链中处理移除正在传输的文件信息
-                # self.remove_file_info(robot_id,file_id)  
-                return ERRNO_ROBOT_CONNECT
-            
+                        
             shell_info.push_file_data(t_file_info.m_file_id,block_num,t_file_info.m_last_off,data)
 
             t_file_info.m_last_block_num += 1
@@ -606,16 +621,6 @@ class file_manager():
         else:
             #finish transform
             Logger().get_logger().info('file[{0}][{1}] data send finish'.format(t_file_info.m_name,t_file_info.m_file_id))
-            
-            shell_info = self.__shell_manager.get_session_by_id(robot_id)
-            if shell_info is None:
-                print("session cannot find, robot_id:%d" % robot_id)
-                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,t_file_info.m_task_id,-1)
-                file_mutex.release()
-                self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
-                # self.remove_file_info(robot_id,file_id)
-                return ERRNO_ROBOT_CONNECT
-
             shell_info.file_complete(t_file_info.m_file_id,block_num,FILE_STATUS_NORMAL)
             if FILE_TYPE_A_UPGRADE == t_file_info.m_type:
                 shell_info.set_upgrade(FILE_TYPE_NORMAL)
@@ -646,6 +651,14 @@ class file_manager():
             ret = self.__file_rw.write_file(t_file_info.m_hd, off, data_len, data)
             print("write file[%s] ret[%d]" % (t_file_info.m_name, ret))
         
+        shell_info = self.__shell_manager.get_session_by_id(robot_id)
+        if shell_info is None:
+            print("session cannot find, robot_id:%d" % robot_id)
+            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
+            file_mutex.release()
+            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
+            return ERRNO_ROBOT_CONNECT
+        
         if block_num < t_file_info.m_block_num:
             #print("begin pull file[%s][%d] data" % (t_file_info.m_name,t_file_info.m_file_id))
             #resize block_num
@@ -657,14 +670,6 @@ class file_manager():
             if 1 == (t_file_info.m_block_num - block_num):
                 read_len = t_file_info.m_size - t_file_info.m_last_off #last block
             
-            shell_info = self.__shell_manager.get_session_by_id(robot_id)
-            if shell_info is None:
-                print("session cannot find, robot_id:%d" % robot_id)
-                if self.__notify_callback is not None:
-                    self.__notify_callback(t_file_info.m_session_uid,robot_id,t_file_info.m_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1)
-                file_mutex.release()
-                self.__task_thread_pool.task_finish(t_file_info.m_thread_uid)
-                return ERRNO_ROBOT_CONNECT
             shell_info.pull_file_data(t_file_info.m_file_id,block_num,t_file_info.m_last_off,read_len)
             
             t_file_info.m_last_block_num += 1
@@ -673,33 +678,23 @@ class file_manager():
             print("begin pull file[%s][%d] data, off[%d], len[%d]" % (t_file_info.m_name,t_file_info.m_file_id,t_file_info.m_last_off,read_len))
             
             #call back step
-            if self.__notify_callback is not None:
-                step = format(t_file_info.m_last_block_num / t_file_info.m_block_num * 100, '.2f')
-                self.__notify_callback(t_file_info.m_session_uid,robot_id,t_file_info.m_path,FILE_TYPE_NORMAL, step, 0, 0)
+            step = format(t_file_info.m_last_block_num / t_file_info.m_block_num * 100, '.2f')
+            if step != t_file_info.m_step :
+                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
+                t_file_info.m_step = step
         else:
             #finish file transform
             Logger().get_logger().info('file[{0}][{1}] data pull finish'.format(t_file_info.m_name,t_file_info.m_file_id))
-            shell_info = self.__shell_manager.get_session_by_id(robot_id)
-            if shell_info is None:
-                print("session cannot find, robot_id:%d" % robot_id)
-                if self.__notify_callback is not None:
-                    self.__notify_callback(t_file_info.m_session_uid,robot_id,t_file_info.m_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1)
-                file_mutex.release()
-                self.__task_thread_pool.task_finish(t_file_info.m_thread_uid)
-                return ERRNO_ROBOT_CONNECT
+
             shell_info.file_complete(t_file_info.m_file_id,block_num,FILE_STATUS_NORMAL)
             
             t_file_info.m_hd.close()
             self.__file_rw.set_file_attr(t_file_info.m_name,t_file_info.m_atime,t_file_info.m_ctime,t_file_info.m_mtime)
             
             #call back step
-            if self.__notify_callback is not None:
-                self.__notify_callback(t_file_info.m_session_uid,robot_id,t_file_info.m_path,FILE_TYPE_NORMAL,100,0,1)
-            
-            self.__task_thread_pool.task_finish(t_file_info.m_thread_uid)
-            del (map_file_info[file_id])
-            if 0 == len(dict_file_info[robot_id]):
-                del (dict_file_info[robot_id])
+            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,100,0,1,t_file_info.m_task_id,t_file_info.m_size)
+            self.remove_file_info(robot_id,file_id)
+            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)       
         file_mutex.release()
     
     
@@ -750,6 +745,7 @@ class file_manager():
         map_file_info = {}
         file_mutex.acquire()
 
+        #关闭连接/断链后 关于该车的 说有正在传输的任务进行取消
         map_file_info = dict_file_info.get(robot_id)
         if map_file_info is not None:
             for k in list(map_file_info):
@@ -761,65 +757,61 @@ class file_manager():
         file_mutex.release()
         
     
-    def cancle_file_transform(self,user_id,robot_id,file_path):
-        #可能还在任务队列中 
+    def cancle_file_transform(self,user_id,robot_id,task_id_list = []):
+        #可能还在任务队列中
         try:
-            ret = self.__task_thread_pool.del_task(session_uid,robot_id,file_path)
-            if ret >= 0 and self.__notify_callback is not None:
-                self.__notify_callback(session_uid,robot_id,file_path,ret,0,ERRNO_FILE_CANCLE,-1)
+            if len(task_id_list) <=0:
                 return
-            
-            print("cancle task robot id[%d], file id:%d" % (robot_id, file_name))
-            map_file_info = {}
-            file_mutex.acquire()
-            map_file_info = dict_file_info.get(robot_id)
-            if map_file_info is None:
-                file_mutex.release()
-                print("cancle task cannot find robot[%d]" % robot_id)
-                return -1
-            
-            for k in list(map_file_info):
-                val = map_file_info[k]
-                print("key:%d, val file name:%s" % (k, val.m_path))
-                if session_uid == val.m_session_uid and file_path == val.m_path:
-                    
 
-                    shell_info = self.__shell_manager.get_session_by_id(robot_id)
-                    if shell_info is None:
-                        print("session cannot find, robot_id:%d" % robot_id)
-                        if self.__notify_callback is not None:
-                            self.__notify_callback(session_uid,robot_id,file_path,val.m_type,0,ERRNO_ROBOT_CONNECT,-1)
-                        file_mutex.release()
-                        self.__task_thread_pool.task_finish(val.m_thread_uid)
-                        return ERRNO_ROBOT_CONNECT
-                    shell_info.file_complete(val.m_file_id,val.m_last_block_num,FILE_STATUS_CANCLE)
-                    if FILE_TYPE_A_UPGRADE == val.m_type:
-                        shell_info.set_upgrade(FILE_TYPE_NORMAL)
-                        if robot_id in dict_robot_upgrade.keys():
-                            dict_robot_upgrade.pop(robot_id)
+            self.__transfer_queue_mutex.acquire()
+            transfer_queue = self.__map_user_transfer_queue.get(user_id)
+            if transfer_queue is not None:
+                #取消待传输文件任务
+                del_task = transfer_queue.del_task(task_id_list,lambda task:task.m_task_id in task_id_list)
+                for task in del_task:
+                    self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
+                    task_id_list.remove(task.m_task_id)
 
-                    Logger().get_logger().info('cancle file transform:{0}'.format(val.m_path))
-                    
-                    if self.__notify_callback is not None:
-                        self.__notify_callback(val.m_session_uid,robot_id,file_path,val.m_type,0,ERRNO_FILE_CANCLE,-1)
-                    self.__task_thread_pool.task_finish(val.m_thread_uid)
-                    map_file_info.pop(k)
-                    break
-            
-            file_mutex.release()
+                #取消正在传输的任务
+                if len(task_id_list) > 0:
+                    file_mutex.acquire()
+                    map_file_info = dict_file_info.get(robot_id)
+                    if map_file_info is not None:
+                        for k in list(map_file_info):
+                            if len(task_id_list) <=0:
+                                break
+                            
+                            val = map_file_info[k]
+                            print("key:%d, val file name:%s" % (k, val.m_path))
+                            if val.m_task_id in task_id_list:
+                                task_id_list.remove(val.m_task_id)
+                                shell_info = self.__shell_manager.get_session_by_id(robot_id)
+                                if shell_info is None:
+                                    print("session cannot find, robot_id:%d" % robot_id)
+                                    self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_ROBOT_CONNECT,-1,task.m_task_id,-1)
+                                    self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+                                    continue
+                                shell_info.file_complete(val.m_file_id,val.m_last_block_num,FILE_STATUS_CANCLE)
+                                if FILE_TYPE_A_UPGRADE == val.m_type:
+                                    shell_info.set_upgrade(FILE_TYPE_NORMAL)         
+                                Logger().get_logger().info('cancle file transform:{0}'.format(val.m_path))
+                                
+                                self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_CANCLE,-1,task.m_task_id,-1)
+                                self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+                                map_file_info.pop(k)
+                    file_mutex.release()
+            self.__transfer_queue_mutex.release()
         except Exception as e:
-            print("cancle exception:", e)
-            
-        
+            print("cancle exception:", str(e))
         
     '''
     file_manager interface begin
     '''
-    def push_file_task(self,user_id,robot_list,file_path,file_type,package_id) ->list:
+    def push_file_task(self,user_id,robot_list,file_path,file_type,package_id) ->(list,list):
         '''
         push 'push file task to task pool'
         '''
-        error = True
+        task_list = []
         err_list = []
         self.__transfer_queue_mutex.acquire()
         transform_queue = self.__map_user_transfer_queue.get(user_id)
@@ -827,18 +819,33 @@ class file_manager():
             error,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
         else:
             transform_queue = user_transfer_queue()
-            error,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
+            task_list,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
             self.__map_user_transfer_queue[user_id] = transform_queue
         self.__transfer_queue_mutex.release()
 
-        return error,err_list
+        return task_list,err_list
         
         
-    def pull_file_task(self,session_uid,robot_list,file_path,file_type=0):
+    def pull_file_task(self,user_id,local_path,file_type,route_path_list):
         '''
         push 'pull file task to task pool'
         '''
-        for item in robot_list:
+        task_list = []
+        err_list = []
+        self.__transfer_queue_mutex.acquire()
+        transform_queue = self.__map_user_transfer_queue.get(user_id)
+        if transform_queue is not None:
+            error,err_list = transform_queue.pull_file_task(user_id,local_path,file_type,route_path_list)
+        else:
+            transform_queue = user_transfer_queue()
+            task_list,err_list = transform_queue.pull_file_task(user_id,local_path,file_type,route_path_list)
+            self.__map_user_transfer_queue[user_id] = transform_queue
+        self.__transfer_queue_mutex.release()
+
+        return task_list,err_list
+
+        pull_file_task
+        for item in route_path_list:
             task = file_task(session_uid,int(item),file_path,FILE_TYPE_NORMAL,FILE_OPER_TYPE_PULL)
             self.__task_thread_pool.add_task(task)
         pass
@@ -896,8 +903,8 @@ class file_manager():
                                 if FILE_TYPE_A_UPGRADE == v1[k2].m_type:
                                     shell_info.set_upgrade(FILE_TYPE_NORMAL)
 
-                        self.task_finish(v1[k2].m_user_id,v1[k2].m_thread_uid,v1[k2].m_task_id,v1[k2].m_oper_type)
                         self.notify(v1[k2].m_user_id,[k1],v1[k2].m_path,v1[k2].m_type,0,ERRNO_FILE_TIMEOUT,v1[k2].m_task_id,-1)
+                        self.task_finish(v1[k2].m_user_id,v1[k2].m_thread_uid,v1[k2].m_task_id,v1[k2].m_oper_type)
                         v1.pop(k2)
                 if len(dict_file_info[k1]) <= 0:
                     dict_file_info.pop(k1)
@@ -905,13 +912,8 @@ class file_manager():
             print("timeout exception:", e)
         file_mutex.release()
     pass
-    
 
-
-    
     
 def TimeStampToTime(timestamp):
     timeStruct = time.localtime(timestamp)
     return time.strftime('%Y-%m-%d %H:%M:%S',timeStruct)
-
-
