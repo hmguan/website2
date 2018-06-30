@@ -113,5 +113,13 @@ def query_transmit_queue( userid ):
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
+def cancle_transform(user_id, robot_id, task_id_list):
+    if type(user_id) != int or type(robot_id) != int or type(task_id_list) != list:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        cancle_file_transform(user_id,robot_id,task_id_list)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
 

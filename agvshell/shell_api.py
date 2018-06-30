@@ -226,8 +226,8 @@ def change_file_block_size(size):
     file_manager().change_block_size(size)
 
 
-def cancle_file_transform(session_uid, robot_id, file_path):
-    file_manager().cancle_file_transform(session_uid, robot_id, file_path)
+def cancle_file_transform(user_id, robot_id, task_id_list):
+    file_manager().cancle_file_transform(user_id,robot_id,task_id_list)
 
 
 def push_file_to_remote(user_id, robot_list, file_path, file_type,package_id):

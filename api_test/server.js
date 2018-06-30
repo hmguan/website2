@@ -16,7 +16,8 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		'QueryPackets':QueryPackets,
 		'QueryUser':QueryUser,
 		'RobotUpgrade':RobotUpgrade,
-		'query_transfer_queue':query_transfer_queue
+		'query_transfer_queue':query_transfer_queue,
+		'cancle_task':cancle_task
 	}
 
 	function RequestRobotDetailInfo (RobotId) {
@@ -79,6 +80,10 @@ app.service('$http_services',['$http','$q',function($http,$q){
 
 	function QueryUser() {
 		return RequestJsonData(JSON.stringify({'event': 'event_users'}))
+	}
+
+	function cancle_task(user_id,robot_id,task_id1){
+		return RequestJsonData(JSON.stringify({'event': 'cancle_file_transform_task', 'user_id': parseInt(user_id),'robot_id':parseInt(robot_id),'task_list':[task_id1]}))
 	}
 
 	function RobotUpgrade(userId,packetId,Robotid1,Robotid2) {

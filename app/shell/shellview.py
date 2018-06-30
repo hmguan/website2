@@ -8,7 +8,7 @@ class shellview(base_event):
         super(shellview,self).__init__()
         self.regist_event('get_online_robot_list','get_offline_robot_list','get_unusual_robot_list',
                           'get_robot_detail_info','get_robot_system_info',
-                          'get_robot_process_detail_info','query_user_transfer_queue')
+                          'get_robot_process_detail_info','query_user_transfer_queue','cancle_file_transform_task')
         pass
 
     def flask_recvdata(self,requst_obj):
@@ -30,4 +30,6 @@ class shellview(base_event):
             return jsonify(get_robot_process_detail_information(json_data.get('robot_id')))
         elif 'query_user_transfer_queue' == event:
             return jsonify(query_transmit_queue(json_data.get('user_id')))
+        elif 'cancle_file_transform_task' == event:
+            return jsonify(cancle_transform(json_data.get('user_id'),json_data.get('robot_id'),json_data.get('task_list')))
         pass

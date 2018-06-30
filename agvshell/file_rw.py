@@ -133,16 +133,17 @@ class task_thread_pool():
         '''
         del_task = []
         self.__queue_mutex.acquire()
-        if callback is not None and task_list is not None:
+        if count > 0 and callback :
             index = 0
             while index < len(self.__work_queue):
-                if callback(task):
+                if callback(self.__work_queue[index]):
                     del_task.append(self.__work_queue[index])
                     del self.__work_queue[index]
                     index = index -1
                     count = count -1
                     if count == 0:
                         break
+                index +=1
         self.__queue_mutex.release()
         return del_task
     
@@ -295,8 +296,8 @@ class user_transfer_queue(object):
     """docstring for user_transfer_queue"""
     def __init__(self):
         super(user_transfer_queue, self).__init__()
-        self.__task_thread_pool_push = task_thread_pool()
-        self.__task_thread_pool_pull = task_thread_pool()
+        self.__task_thread_pool_push = None
+        self.__task_thread_pool_pull = None
         self.__task_id = 0
         self.__task_id_mutex=threading.RLock()
 
@@ -313,9 +314,11 @@ class user_transfer_queue(object):
         if transfer_type != -1 and task_id != -1:
             # self.__thread_upgrade_mutex.acquire()
             if transfer_type == FILE_OPER_TYPE_PUSH:
-                self.__task_thread_pool_push.task_finish(threadid,task_id)
+                if self.__task_thread_pool_push is not None:
+                    self.__task_thread_pool_push.task_finish(threadid,task_id)
             elif transfer_type == FILE_OPER_TYPE_PULL:
-                self.__task_thread_pool_pull.task_finish(threadid,task_id)
+                if self.__task_thread_pool_pull is not None:
+                    self.__task_thread_pool_pull.task_finish(threadid,task_id)
             # self.__thread_upgrade_mutex.release()
 
     def push_file_task(self,user_id,robot_list,file_path,file_type,packet_id):
@@ -331,6 +334,8 @@ class user_transfer_queue(object):
             task_id = self.assign_task_id()
             
             task = file_task(user_id,robot_id,file_path,file_type,FILE_OPER_TYPE_PUSH,task_id,"",packet_id)
+            if self.__task_thread_pool_push is None:
+                self.__task_thread_pool_push = task_thread_pool()
             if self.__task_thread_pool_push.add_task(task) != -1 :
                 task_list.append({'robot_id':robot_id,'task_id':task_id})
             else:
@@ -344,6 +349,8 @@ class user_transfer_queue(object):
         task_list = []
         for item in route_path_list:
             task_id = self.assign_task_id()
+            if self.__task_thread_pool_pull is None:
+                self.__task_thread_pool_pull = task_thread_pool()
             task = file_task(user_id,item.robot_id,item.file_path,file_type,FILE_OPER_TYPE_PULL,task_id,local_folder)
             if self.__task_thread_pool_pull.add_task(task) != -1 :
                 task_list.append({'robot_id':robot_id,'task_id':task_id,'file_path':item.file_path})
@@ -353,14 +360,32 @@ class user_transfer_queue(object):
 
     def get_transfer_queue(self,file_oper_type):
         if file_oper_type == FILE_OPER_TYPE_PUSH:
-            return self.__task_thread_pool_push.Query_Transfer_queue()
+            if self.__task_thread_pool_push:
+                return self.__task_thread_pool_push.Query_Transfer_queue()
         elif file_oper_type == FILE_OPER_TYPE_PULL:
-            return self.__task_thread_pool_pull.Query_Transfer_queue()
+            if self.__task_thread_pool_pull :
+                return self.__task_thread_pool_pull.Query_Transfer_queue()
         return 0
         
 
     def get_transfer_num(self):
-        return self.__task_thread_pool_push.get_queue_size() + self.__task_thread_pool_pull.get_queue_size()
+        task_push_num = 0
+        task_pull_num = 0
+        if self.__task_thread_pool_push:
+            task_push_num = self.__task_thread_pool_push.get_queue_size()
+        if self.__task_thread_pool_pull:
+            task_pull_num = self.__task_thread_pool_pull.get_queue_size()
+
+        return task_pull_num + task_push_num
+
+    def del_task(self,count, callback):
+        del_push_task = list()
+        del_pull_task = list()
+        if self.__task_thread_pool_push:
+            del_push_task = self.__task_thread_pool_push.del_task(count,callback)
+        if self.__task_thread_pool_pull and count > len(del_push_taskl):
+            del_pull_task = self.__task_thread_pool_pull.del_task(count - len(del_push_task),callback)
+        return list(set(del_push_task).union(set(del_pull_task)))
 
 @slt.singleton
 class file_manager():
@@ -765,9 +790,9 @@ class file_manager():
 
             self.__transfer_queue_mutex.acquire()
             transfer_queue = self.__map_user_transfer_queue.get(user_id)
-            if transfer_queue is not None:
+            if transfer_queue :
                 #取消待传输文件任务
-                del_task = transfer_queue.del_task(task_id_list,lambda task:task.m_task_id in task_id_list)
+                del_task = transfer_queue.del_task(len(task_id_list),lambda task:task.m_task_id in task_id_list and task.m_robot_id == robot_id)
                 for task in del_task:
                     self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
                     task_id_list.remove(task.m_task_id)
@@ -816,7 +841,7 @@ class file_manager():
         self.__transfer_queue_mutex.acquire()
         transform_queue = self.__map_user_transfer_queue.get(user_id)
         if transform_queue is not None:
-            error,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
+            task_list,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
         else:
             transform_queue = user_transfer_queue()
             task_list,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
@@ -835,7 +860,7 @@ class file_manager():
         self.__transfer_queue_mutex.acquire()
         transform_queue = self.__map_user_transfer_queue.get(user_id)
         if transform_queue is not None:
-            error,err_list = transform_queue.pull_file_task(user_id,local_path,file_type,route_path_list)
+            task_list,err_list = transform_queue.pull_file_task(user_id,local_path,file_type,route_path_list)
         else:
             transform_queue = user_transfer_queue()
             task_list,err_list = transform_queue.pull_file_task(user_id,local_path,file_type,route_path_list)
