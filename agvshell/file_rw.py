@@ -260,7 +260,7 @@ class file_task(base_task):
         if FILE_OPER_TYPE_PUSH == self.m_oper_type:
             ret = file_manager().push_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id)
         elif FILE_OPER_TYPE_PULL == self.m_oper_type:
-            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_task_id,self.local_folder)
+            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id,self.local_folder)
         else:
             print("for delete task")
         return ret
@@ -446,7 +446,7 @@ class file_manager():
                 del self.__map_user_transfer_queue[user_id]
         self.__transfer_queue_mutex.release()
 
-    def query_transfer_queue(self,user_id,oper_type):
+    def query_transfer_queue(self,user_id,oper_type) ->list:
         queue_data = []
         user_transfer_queue = self.__map_user_transfer_queue.get(user_id)
         if user_transfer_queue is not None:
@@ -517,28 +517,29 @@ class file_manager():
         Logger().get_logger().info('push file head secuss, name:{0} size:{1}, block_num: {2}'.format(t_file_info.m_path, t_file_info.m_size, t_file_info.m_block_num))
         return 0
     
-    def pull_file(self,threadID,userid,robot_id,file_path,taskId,localFolder):
+    def pull_file(self,threadID,userid,robot_id,file_path,file_type,taskId,localFolder):
         if file_path == "":
-            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_FILE_OPEN,-1,taskId)
+            self.notify(userid,robot_id,file_path,file_type,0,ERRNO_FILE_OPEN,-1,taskId)
             self.task_finish(userid,threadID,taskId,FILE_OPER_TYPE_PULL)
             return ERRNO_FILE_OPEN
         
         if self.__shell_manager is None:
             print("shell manager regist failure, robot_id:%d" % robot_id)
-            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1,taskId)
+            self.notify(userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,-1,taskId)
             self.task_finish(userid,threadID,taskId,FILE_OPER_TYPE_PULL)
             return ERRNO_ROBOT_CONNECT
         
         shell_info = self.__shell_manager.get_session_by_id(robot_id)
         if shell_info is None:
             print("session cannot find, robot_id:%d" % robot_id)
-            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_ROBOT_CONNECT,-1,taskId)
+            self.notify(userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,-1,taskId)
             self.task_finish(userid,threadID,taskId,FILE_OPER_TYPE_PULL)
             return ERRNO_ROBOT_CONNECT
         
         t_file_info = file_info()
         t_file_info.m_name = self.__file_dir + localFolder + file_path[file_path.rfind('/') + 1:]
         t_file_info.m_path = file_path
+        t_file_info.m_type = file_type
         t_file_info.m_file_id = self.allocate_file_id()
         t_file_info.m_oper_time = int(round(time.time() * 1000))
         t_file_info.m_oper_type = FILE_OPER_TYPE_PULL
@@ -573,7 +574,7 @@ class file_manager():
         if -1 == t_file_info.m_hd:
             print("wite file[%s] failure" % t_file_info.m_name)
             #notify agvshell
-            self.notify(userid,robot_id,file_path,FILE_TYPE_NORMAL,0,ERRNO_FILE_CREATE,-1,taskId)
+            self.notify(userid,robot_id,file_path,t_file_info.m_type,0,ERRNO_FILE_CREATE,-1,taskId)
             self.task_finish(userid,threadID,taskId,t_file_info.m_oper_type)
             file_mutex.release()
             return ERRNO_FILE_CREATE
@@ -868,12 +869,6 @@ class file_manager():
         self.__transfer_queue_mutex.release()
 
         return task_list,err_list
-
-        pull_file_task
-        for item in route_path_list:
-            task = file_task(session_uid,int(item),file_path,FILE_TYPE_NORMAL,FILE_OPER_TYPE_PULL)
-            self.__task_thread_pool.add_task(task)
-        pass
         
     def change_file_dir(self,dic):
         '''

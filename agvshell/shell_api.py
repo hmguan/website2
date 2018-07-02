@@ -238,8 +238,8 @@ def push_file_to_remote(user_id, robot_list, file_path, file_type,package_id):
 def pull_file_from_remote(user_id, local_folder,file_type,route_path_list=[]):
     return file_manager().pull_file_task(user_id, local_folder,file_type,route_path_list)
 
-def query_user_transmit_queue(user_id,file_type):
-    return file_manager().query_transfer_queue(user_id,file_type)
+def query_user_transmit_queue(user_id,oper_type)->list:
+    return file_manager().query_transfer_queue(user_id,oper_type)
 
 def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_code, status, task_id,file_size=0):
     from app.user.userview import users_center
@@ -256,6 +256,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     notify_dic['task_id'] = task_id
 
     # if step == 100:
+#    print(step)
     u_uuid = users_center.user_uuid(user_id)
     if u_uuid is not None:
         value = int(float(step))
@@ -267,6 +268,8 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
                 shell_info.post_a_begin_upgrade(f_name, file_size)
             socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
         elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
+            pass
+        elif FILE_TYPE_BLACKBOX_PULL_FILES == file_type:
             pass
         else:
             pass

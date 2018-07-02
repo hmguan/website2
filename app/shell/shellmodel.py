@@ -4,6 +4,9 @@ from ..user.userview import users_center
 from agvshell.transfer_file_types import *
 import errtypes
 
+set_push_file_type = {FILE_TYPE_A_UPGRADE,FILE_TYPE_VCU_UPGRADE}
+set_pull_file_type = {FILE_TYPE_BLACKBOX_PULL_FILES}
+
 def get_online_robot_information(user_id):
     '''
     get online robot information models,
@@ -89,26 +92,33 @@ def get_robot_process_detail_information(robot_id):
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e),'process_info_list':''}
 
-def query_transmit_queue( userid ):
+def query_transmit_queue( userid ,file_type):
     from db.db_package import package_manager
 
     if type(userid) != int:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
     try:
-        transfer_queue = query_user_transmit_queue(userid,FILE_OPER_TYPE_PUSH)
-        file_info = {}
-        err_info = {}
+        transfer_queue =list()
+        if file_type in set_push_file_type:
+            transfer_queue = query_user_transmit_queue(userid,FILE_OPER_TYPE_PUSH)
+        elif file_type in set_pull_file_type:
+            transfer_queue = query_user_transmit_queue(userid,FILE_OPER_TYPE_PULL)
+        else:
+            return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+            pass
+
         packet_info = None
         for item in transfer_queue:
-            packet_info = file_info.get(item['packet_id'])
-            if packet_info is None and item['packet_id'] not in err_info:
-                packet_info = package_manager.query_packages(item['packet_id'])
-                if packet_info is None:
-                    err_info[item['packet_id']] = None
-                    continue
-            item['file_name'] = packet_info.package_name
-            item['version'] = packet_info.version
-            item['author'] = packet_info.user.username
+            if file_type == item['file_type']:
+                packet_info = file_info.get(item['packet_id'])
+                if packet_info is None and item['packet_id'] not in err_info:
+                    packet_info = package_manager.query_packages(item['packet_id'])
+                    if packet_info is None:
+                        err_info[item['packet_id']] = None
+                        continue
+                item['file_name'] = packet_info.package_name
+                item['version'] = packet_info.version
+                item['author'] = packet_info.user.username
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'transfer_list': transfer_queue}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
