@@ -795,7 +795,7 @@ class file_manager():
                 #取消待传输文件任务
                 del_task = transfer_queue.del_task(len(task_id_list),lambda task:task.m_task_id in task_id_list and task.m_robot_id == robot_id)
                 for task in del_task:
-                    self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
+                    # self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
                     task_id_list.remove(task.m_task_id)
 
                 #取消正在传输的任务

@@ -107,14 +107,15 @@ def query_transmit_queue( userid ,file_type):
             return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
             pass
 
+        packet_dict = dict()
         packet_info = None
         for item in transfer_queue:
             if file_type == item['file_type']:
-                packet_info = file_info.get(item['packet_id'])
-                if packet_info is None and item['packet_id'] not in err_info:
+                packet_info = packet_dict.get(item['packet_id'])
+                if packet_info is None and item['packet_id'] not in packet_dict:
                     packet_info = package_manager.query_packages(item['packet_id'])
                     if packet_info is None:
-                        err_info[item['packet_id']] = None
+                        packet_dict[item['packet_id']] = packet_info
                         continue
                 item['file_name'] = packet_info.package_name
                 item['version'] = packet_info.version
