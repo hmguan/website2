@@ -287,6 +287,7 @@ class file_info():
         self.m_user_id = 0
         self.m_step = 0         #传输进度
         self.m_task_id = 0
+        self.m_block_size = 32*1024
 
     def __del__(self):
         if self.m_hd is not None and -1 != self.m_hd:
@@ -416,6 +417,14 @@ class file_manager():
         self.__file_id_mutex.release()
         return self.__file_id
 
+    def get_block_size(self) ->int:
+        from configuration import config
+        try:
+            return int(config.TRANSMIT_BLOCK_SIZE)
+            pass
+        except Exception as e:
+            return int(self.__block_size)
+
     def add_file_info(self,t_file_info,robot_id):
         # file_mutex.acquire()
         map_file_info = dict_file_info.get(robot_id)
@@ -506,8 +515,9 @@ class file_manager():
         t_file_info.m_last_block_num = 0
         t_file_info.m_last_off = 0
         t_file_info.m_task_id = task_id
-        t_file_info.m_block_num = int(t_file_info.m_size / self.__block_size)
-        if t_file_info.m_size % self.__block_size > 0:
+        t_file_info.m_block_size = self.get_block_size()
+        t_file_info.m_block_num = int(t_file_info.m_size / t_file_info.m_block_size)
+        if t_file_info.m_size % t_file_info.m_block_size > 0:
             t_file_info.m_block_num += 1
         self.add_file_info(t_file_info,robot_id)
 
@@ -586,8 +596,9 @@ class file_manager():
         print("file:%s, get attr:%d,%d,%d" % (t_file_info.m_name,t_file_info.m_atime,t_file_info.m_ctime,t_file_info.m_mtime))
         t_file_info.m_last_block_num = 0
         t_file_info.m_last_off = 0
-        t_file_info.m_block_num = int(t_file_info.m_size / self.__block_size)
-        if t_file_info.m_size % self.__block_size > 0:
+        t_file_info.m_block_size = self.get_block_size()
+        t_file_info.m_block_num = int(t_file_info.m_size / t_file_info.m_block_size)
+        if t_file_info.m_size % t_file_info.m_block_size > 0:
             t_file_info.m_block_num += 1
         #map_file_info[t_file_info.m_file_id] = t_file_info
         #dict_file_info[robot_id] = map_file_info
@@ -627,20 +638,20 @@ class file_manager():
         if block_num < t_file_info.m_block_num:
             #print("begin send file[%s][%d] data" % (t_file_info.m_name,t_file_info.m_file_id))
             #resize m_block_num
-            t_file_info.m_block_num = t_file_info.m_last_block_num + int((t_file_info.m_size - t_file_info.m_last_off) / self.__block_size)
-            if (t_file_info.m_size - t_file_info.m_last_off) % self.__block_size > 0:
+            t_file_info.m_block_num = t_file_info.m_last_block_num + int((t_file_info.m_size - t_file_info.m_last_off) / t_file_info.m_block_size)
+            if (t_file_info.m_size - t_file_info.m_last_off) % t_file_info.m_block_size > 0:
                 t_file_info.m_block_num += 1
             # print("file bn:%d,last off:%d / bnum:%d" % (t_file_info.m_block_num,t_file_info.m_last_off,t_file_info.m_last_block_num))
-            data = self.__file_rw.read_file(t_file_info.m_hd, t_file_info.m_last_off, self.__block_size)
+            data = self.__file_rw.read_file(t_file_info.m_hd, t_file_info.m_last_off, t_file_info.m_block_size)
                         
             shell_info.push_file_data(t_file_info.m_file_id,block_num,t_file_info.m_last_off,data)
 
             t_file_info.m_last_block_num += 1
-            t_file_info.m_last_off += self.__block_size
+            t_file_info.m_last_off += t_file_info.m_block_size
             t_file_info.m_oper_time = int(round(time.time() * 1000))
             
             #call back step
-            step = format(t_file_info.m_last_block_num / t_file_info.m_block_num * 100, '.2f')
+            step = '{:d}'.format(t_file_info.m_last_block_num * 100 // t_file_info.m_block_num )
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
                 t_file_info.m_step = step
@@ -689,11 +700,11 @@ class file_manager():
         if block_num < t_file_info.m_block_num:
             #print("begin pull file[%s][%d] data" % (t_file_info.m_name,t_file_info.m_file_id))
             #resize block_num
-            t_file_info.m_block_num = t_file_info.m_last_block_num + int((t_file_info.m_size - t_file_info.m_last_off) / self.__block_size)
-            if (t_file_info.m_size - t_file_info.m_last_off) % self.__block_size > 0:
+            t_file_info.m_block_num = t_file_info.m_last_block_num + int((t_file_info.m_size - t_file_info.m_last_off) / t_file_info.m_block_size)
+            if (t_file_info.m_size - t_file_info.m_last_off) % t_file_info.m_block_size > 0:
                 t_file_info.m_block_num += 1
             
-            read_len = self.__block_size
+            read_len = t_file_info.m_block_size
             if 1 == (t_file_info.m_block_num - block_num):
                 read_len = t_file_info.m_size - t_file_info.m_last_off #last block
             
@@ -705,7 +716,7 @@ class file_manager():
             print("begin pull file[%s][%d] data, off[%d], len[%d]" % (t_file_info.m_name,t_file_info.m_file_id,t_file_info.m_last_off,read_len))
             
             #call back step
-            step = format(t_file_info.m_last_block_num / t_file_info.m_block_num * 100, '.2f')
+            step = '{:d}'.format(t_file_info.m_last_block_num * 100 // t_file_info.m_block_num )
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
                 t_file_info.m_step = step

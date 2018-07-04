@@ -13,7 +13,7 @@ class config:
     PATCHFOLDER = '/patch/'
     BLACKBOXFOLDER = '/blackbox/'
     BINFOLDER = '/bin/'
-
+    TRANSMIT_BLOCK_SIZE = 32*1024
     @staticmethod
     def init_app(app):
         pass

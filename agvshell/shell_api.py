@@ -244,14 +244,20 @@ def query_user_transmit_queue(user_id,oper_type)->list:
 def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_code, status, task_id,file_size=0):
     from app.user.userview import users_center
     from app.soketio import socketio_agent_center
+    from app.soketio import sockio_api
+    from .shproto.errno import g_err_str
 
     notify_dic = dict()
-    notify_dic['type'] = errtypes.TypeShell_UpdateSoftware
+    notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
     notify_dic['user_id'] = user_id
     notify_dic['robot_id'] = robot_id
     notify_dic['file_path'] = file_path
     notify_dic['step'] = step
-    notify_dic['error_msg'] = error_code
+    notify_dic['error_code'] = error_code
+    if error_code and error_code in g_err_str:
+        notify_dic['error_msg'] = g_err_str[error_code]
+    else:
+        notify_dic['error_msg'] = ''
     notify_dic['status'] = status
     notify_dic['task_id'] = task_id
 
@@ -260,13 +266,15 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     u_uuid = users_center.user_uuid(user_id)
     if u_uuid is not None:
         value = int(float(step))
-        if FILE_TYPE_A_UPGRADE == file_type and 100 == step:
-            print("a begin upgrade")
-            f_name = file_path[file_path.rfind('/') + 1:]
-            shell_info = shell_manager().get_session_by_id(robot_id)
-            if shell_info is not None:
-                shell_info.post_a_begin_upgrade(f_name, file_size)
-            socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
+        if FILE_TYPE_A_UPGRADE == file_type :
+            if 100 == step:
+                print("a begin upgrade")
+                f_name = file_path[file_path.rfind('/') + 1:]
+                shell_info = shell_manager().get_session_by_id(robot_id)
+                if shell_info is not None:
+                    shell_info.post_a_begin_upgrade(f_name, file_size)
+            sockio_api.response_to_client_data(notify_dic)
+            # socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
         elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
             pass
         elif FILE_TYPE_BLACKBOX_PULL_FILES == file_type:
