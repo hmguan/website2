@@ -110,11 +110,11 @@ def query_transmit_queue( userid ,file_type):
         packet_dict = dict()
         packet_info = None
         for item in transfer_queue:
-            if file_type == item['file_type']:
+            if file_type == item['file_type'] and file_type in set_push_file_type:
                 packet_info = packet_dict.get(item['packet_id'])
                 if packet_info is None and item['packet_id'] not in packet_dict:
                     packet_info = package_manager.query_packages(item['packet_id'])
-                    if packet_info is None:
+                    if packet_info is not None:
                         packet_dict[item['packet_id']] = packet_info
                         continue
                 item['file_name'] = packet_info.package_name

@@ -351,11 +351,11 @@ class user_transfer_queue(object):
             task_id = self.assign_task_id()
             if self.__task_thread_pool_pull is None:
                 self.__task_thread_pool_pull = task_thread_pool()
-            task = file_task(user_id,item.robot_id,item.file_path,file_type,FILE_OPER_TYPE_PULL,task_id,local_folder)
+            task = file_task(userid,item['robot_id'],item['file_path'],file_type,FILE_OPER_TYPE_PULL,task_id,local_folder)
             if self.__task_thread_pool_pull.add_task(task) != -1 :
                 task_list.append({'robot_id':robot_id,'task_id':task_id,'file_path':item.file_path})
             else:
-                err_robot.append(robot_id)
+                err_robot.append(item['robot_id'])
         return task_list , err_robot
 
     def get_transfer_queue(self,file_oper_type):
@@ -654,7 +654,8 @@ class file_manager():
             self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,100,0,1,t_file_info.m_task_id,t_file_info.m_size)
             self.remove_file_info(robot_id,file_id)
             self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
-            file_mutex.release()
+        
+        file_mutex.release()
         pass
     
     
