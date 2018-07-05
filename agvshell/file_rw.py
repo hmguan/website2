@@ -524,6 +524,7 @@ class file_manager():
         #这里不对发送数据失败进行处理 统一在心跳中处理
         shell_info.push_file_head(t_file_info.m_file_id,t_file_info.m_type,t_file_info.m_name,t_file_info.m_size, \
                 (t_file_info.m_ctime+11644473600)*10000000,(t_file_info.m_atime+11644473600)*10000000,(t_file_info.m_mtime+11644473600)*10000000) 
+        self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,0,0,t_file_info.m_task_id,t_file_info.m_size)
         Logger().get_logger().info('push file head secuss, name:{0} size:{1}, block_num: {2}'.format(t_file_info.m_path, t_file_info.m_size, t_file_info.m_block_num))
         return 0
     
@@ -605,7 +606,8 @@ class file_manager():
         Logger().get_logger().info('pull file head secuss, file size:{0}, block_num: {1}'.format(t_file_info.m_size, t_file_info.m_block_num))
         file_mutex.release()
         
-        self.pull_file_data(robot_id,proto_pull_head.file_id.value,0) #begin from 0 
+        self.pull_file_data(robot_id,proto_pull_head.file_id.value,0) #begin from 0
+        self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,0,0,t_file_info.m_task_id,t_file_info.m_size)
         
     
     def send_file_data(self,robot_id,file_id,block_num):
@@ -651,10 +653,10 @@ class file_manager():
             t_file_info.m_oper_time = int(round(time.time() * 1000))
             
             #call back step
-            step = '{:d}'.format(t_file_info.m_last_block_num * 100 // t_file_info.m_block_num )
+            step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
+            t_file_info.m_step,step = step,t_file_info.m_step
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
-                t_file_info.m_step = step
         else:
             #finish transform
             Logger().get_logger().info('file[{0}][{1}] data send finish'.format(t_file_info.m_name,t_file_info.m_file_id))
@@ -716,7 +718,8 @@ class file_manager():
             print("begin pull file[%s][%d] data, off[%d], len[%d]" % (t_file_info.m_name,t_file_info.m_file_id,t_file_info.m_last_off,read_len))
             
             #call back step
-            step = '{:d}'.format(t_file_info.m_last_block_num * 100 // t_file_info.m_block_num )
+            step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
+            t_file_info.m_step,step = step,t_file_info.m_step
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
                 t_file_info.m_step = step
@@ -767,7 +770,7 @@ class file_manager():
         #call back step
         step = 0
         if t_file_info.m_block_num != 0:
-            step = format(t_file_info.m_last_block_num / t_file_info.m_block_num * 100, '.2f')
+            step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
         self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,ERRNO_ROBOT_CONNECT,t_file_info.m_task_id,-1)
         self.remove_file_info(robot_id,file_id)
         file_mutex.release() 

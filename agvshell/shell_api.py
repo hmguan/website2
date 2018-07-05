@@ -241,6 +241,7 @@ def pull_file_from_remote(user_id, local_folder,file_type,route_path_list=[]):
 def query_user_transmit_queue(user_id,oper_type)->list:
     return file_manager().query_transfer_queue(user_id,oper_type)
 
+#传输文件过程中，回调函数中不能处理过长时间调用
 def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_code, status, task_id,file_size=0):
     from app.user.userview import users_center
     from app.soketio import socketio_agent_center
@@ -248,7 +249,6 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     from .shproto.errno import g_err_str
 
     notify_dic = dict()
-    notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
     notify_dic['user_id'] = user_id
     notify_dic['robot_id'] = robot_id
     notify_dic['file_path'] = file_path
@@ -265,8 +265,8 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
 #    print(step)
     u_uuid = users_center.user_uuid(user_id)
     if u_uuid is not None:
-        value = int(float(step))
         if FILE_TYPE_A_UPGRADE == file_type :
+            notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
             if 100 == step:
                 print("a begin upgrade")
                 f_name = file_path[file_path.rfind('/') + 1:]
