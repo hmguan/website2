@@ -233,10 +233,10 @@ def cancle_file_transform(user_id, robot_id, task_id_list):
 def push_file_to_remote(user_id, robot_list, file_path, file_type,package_id):
     return file_manager().push_file_task(user_id, robot_list, file_path, file_type,package_id)
 
-#route_path_list [{'robot_id':None ,'file_path':None}]
+#route_path_list [{'robot_id':None ,'file_path':None,'local_path',None}]
 #return 
-def pull_file_from_remote(user_id, local_folder,file_type,route_path_list=[]):
-    return file_manager().pull_file_task(user_id, local_folder,file_type,route_path_list)
+def pull_file_from_remote(user_id,file_type,route_path_list=[]):
+    return file_manager().pull_file_task(user_id,file_type,route_path_list)
 
 def query_user_transmit_queue(user_id,oper_type)->list:
     return file_manager().query_transfer_queue(user_id,oper_type)

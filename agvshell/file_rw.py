@@ -244,7 +244,7 @@ class agvfile():
 
 
 class file_task(base_task):
-    def __init__(self,s_user_id,r_id,f_path,f_type,oper_type,task_id,local_folder = "",packageId = -1):
+    def __init__(self,s_user_id,r_id,f_path,f_type,oper_type,task_id,local_path = "",packageId = -1):
         self.m_session_uid = 0
         self.m_user_id= s_user_id
         self.m_robot_id = r_id
@@ -252,7 +252,7 @@ class file_task(base_task):
         self.m_file_type = f_type
         self.m_oper_type = oper_type
         self.m_task_id = task_id
-        self.m_local_folder = local_folder
+        self.m_local_path = local_path
         self.m_package_id = packageId
     
     def on_task(self,thread_id):
@@ -260,7 +260,7 @@ class file_task(base_task):
         if FILE_OPER_TYPE_PUSH == self.m_oper_type:
             ret = file_manager().push_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id)
         elif FILE_OPER_TYPE_PULL == self.m_oper_type:
-            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id,self.m_local_folder)
+            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id,self.m_local_path)
         else:
             print("for delete task")
         return ret
@@ -295,17 +295,16 @@ class file_info():
 
 class user_transfer_queue(object):
     """docstring for user_transfer_queue"""
-    def __init__(self):
+    def __init__(self,assign_task_cb):
         super(user_transfer_queue, self).__init__()
         self.__task_thread_pool_push = None
         self.__task_thread_pool_pull = None
         self.__task_id = 0
-        self.__task_id_mutex=threading.RLock()
+        self.__assign_task_cb = assign_task_cb
+
 
     def assign_task_id(self):
-        # self.__task_id_mutex.acquire()
-        self.__task_id = self.__task_id +1
-        # self.__task_id_mutex.release()
+        self.__task_id = self.__task_id+1
         return self.__task_id
 
     def __del__(self):
@@ -328,11 +327,15 @@ class user_transfer_queue(object):
         '''
         err_robot = []
         task_list = []
+        task_id = 0
         # self.__thread_upgrade_mutex.acquire()
         for item in robot_list:
             robot_id = int(item)
 
-            task_id = self.assign_task_id()
+            if self.__assign_task_cb:
+                task_id = self.__assign_task_cb()
+            else:
+                task_id = self.assign_task_id()
             
             task = file_task(user_id,robot_id,file_path,file_type,FILE_OPER_TYPE_PUSH,task_id,"",packet_id)
             if self.__task_thread_pool_push is None:
@@ -345,14 +348,20 @@ class user_transfer_queue(object):
 
         return task_list , err_robot
 
-    def pull_file_task(self,userid,local_folder,file_type,route_path_list):
+    def pull_file_task(self,userid,file_type,route_path_list):
         err_robot = []
         task_list = []
+        task_id = 0
         for item in route_path_list:
-            task_id = self.assign_task_id()
+
+            if self.__assign_task_cb:
+                task_id = __assign_task_cb()
+            else:
+                task_id = self.assign_task_id()
+
             if self.__task_thread_pool_pull is None:
                 self.__task_thread_pool_pull = task_thread_pool()
-            task = file_task(userid,item['robot_id'],item['file_path'],file_type,FILE_OPER_TYPE_PULL,task_id,local_folder)
+            task = file_task(userid,item['robot_id'],item['file_path'],file_type,FILE_OPER_TYPE_PULL,task_id,item['local_path'])
             if self.__task_thread_pool_pull.add_task(task) != -1 :
                 task_list.append({'robot_id':item['robot_id'],'task_id':task_id,'file_path':item['file_path']})
             else:
@@ -404,6 +413,15 @@ class file_manager():
         self.__map_user_transfer_queue = dict()
         #upgrading set
         self.__mutex_set = threading.RLock()
+        self.__task_id = 0
+        self.__task_id_mutex=threading.RLock()
+
+    def assign_task_id(self):
+        self.__task_id_mutex.acquire()
+        self.__task_id = self.__task_id +1
+        self.__task_id_mutex.release()
+        return self.__task_id
+
     def __del__(self):
         pass
 
@@ -528,7 +546,7 @@ class file_manager():
         Logger().get_logger().info('push file head secuss, name:{0} size:{1}, block_num: {2}'.format(t_file_info.m_path, t_file_info.m_size, t_file_info.m_block_num))
         return 0
     
-    def pull_file(self,threadID,userid,robot_id,file_path,file_type,taskId,localFolder):
+    def pull_file(self,threadID,userid,robot_id,file_path,file_type,taskId,localpath):
         if file_path == "":
             self.notify(userid,robot_id,file_path,file_type,0,ERRNO_FILE_OPEN,-1,taskId)
             self.task_finish(userid,threadID,taskId,FILE_OPER_TYPE_PULL)
@@ -548,7 +566,7 @@ class file_manager():
             return ERRNO_ROBOT_CONNECT
         
         t_file_info = file_info()
-        t_file_info.m_name = self.__file_dir + localFolder + file_path[file_path.rfind('/') + 1:]
+        t_file_info.m_name = localpath
         t_file_info.m_path = file_path
         t_file_info.m_type = file_type
         t_file_info.m_file_id = self.allocate_file_id()
@@ -561,7 +579,7 @@ class file_manager():
         self.add_file_info(t_file_info,robot_id)
 
         shell_info.pull_file_head(t_file_info.m_file_id,file_path)
-        
+
         Logger().get_logger().info('begin to pull file:{0}, file id:{1}'.format(t_file_info.m_name, t_file_info.m_file_id))
         return 0
     
@@ -712,13 +730,13 @@ class file_manager():
             
             shell_info.pull_file_data(t_file_info.m_file_id,block_num,t_file_info.m_last_off,read_len)
             
-            t_file_info.m_last_block_num += 1
             t_file_info.m_last_off += read_len
             t_file_info.m_oper_time = int(round(time.time() * 1000))
             print("begin pull file[%s][%d] data, off[%d], len[%d]" % (t_file_info.m_name,t_file_info.m_file_id,t_file_info.m_last_off,read_len))
             
             #call back step
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
+            t_file_info.m_last_block_num += 1
             t_file_info.m_step,step = step,t_file_info.m_step
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
@@ -761,7 +779,7 @@ class file_manager():
                 shell_info.set_upgrade(FILE_TYPE_NORMAL)
             else:
                 print("session cannot find, robot_id:%d" % robot_id)
-                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,t_file_info.m_task_id,-1)
+                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id,-1)
                 self.remove_file_info(robot_id,file_id)
                 file_mutex.release()
                 return ERRNO_ROBOT_CONNECT
@@ -771,7 +789,7 @@ class file_manager():
         step = 0
         if t_file_info.m_block_num != 0:
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
-        self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,ERRNO_ROBOT_CONNECT,t_file_info.m_task_id,-1)
+        self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,ERRNO_FILE_TRANIMIT,-1,t_file_info.m_task_id,-1)
         self.remove_file_info(robot_id,file_id)
         file_mutex.release() 
         
@@ -859,7 +877,7 @@ class file_manager():
         if transform_queue is not None:
             task_list,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
         else:
-            transform_queue = user_transfer_queue()
+            transform_queue = user_transfer_queue(self.assign_task_id)
             task_list,err_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
             self.__map_user_transfer_queue[user_id] = transform_queue
         self.__transfer_queue_mutex.release()
@@ -867,7 +885,7 @@ class file_manager():
         return task_list,err_list
         
         
-    def pull_file_task(self,user_id,local_path,file_type,route_path_list):
+    def pull_file_task(self,user_id,file_type,route_path_list):
         '''
         push 'pull file task to task pool'
         '''
@@ -876,10 +894,10 @@ class file_manager():
         self.__transfer_queue_mutex.acquire()
         transform_queue = self.__map_user_transfer_queue.get(user_id)
         if transform_queue is not None:
-            task_list,err_list = transform_queue.pull_file_task(user_id,local_path,file_type,route_path_list)
+            task_list,err_list = transform_queue.pull_file_task(user_id,file_type,route_path_list)
         else:
-            transform_queue = user_transfer_queue()
-            task_list,err_list = transform_queue.pull_file_task(user_id,local_path,file_type,route_path_list)
+            transform_queue = user_transfer_queue(self.assign_task_id)
+            task_list,err_list = transform_queue.pull_file_task(user_id,file_type,route_path_list)
             self.__map_user_transfer_queue[user_id] = transform_queue
         self.__transfer_queue_mutex.release()
 

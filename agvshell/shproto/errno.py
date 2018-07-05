@@ -23,6 +23,7 @@ ERRNO_FILE_TIMEOUT = 0x00010003
 ERRNO_FILE_UPGRADE = 0x00010010
 ERRNO_FILE_SESSION_CLOSE = 0x00010011
 ERRNO_ROBOT_CONNECT = 0x00010012
+ERRNO_FILE_TRANIMIT = 0X00010013
 
 #system
 g_err_str = {}
@@ -38,4 +39,4 @@ g_err_str[ERRNO_FILE_TIMEOUT] = "File transfrom timeout"
 g_err_str[ERRNO_FILE_UPGRADE] = "Robot is upgrading, cannot transfrom upgrade package again"
 g_err_str[ERRNO_FILE_SESSION_CLOSE] = "File transfrom error, session closed"
 g_err_str[ERRNO_ROBOT_CONNECT] = "Robot is offline, check session status"
-
+g_err_str[ERRNO_FILE_TRANIMIT] = "File transmit error"
