@@ -125,13 +125,15 @@ class mt_session(tcp.obtcp):
         if self.create() < 0:
             return -1
 
+        self.__target_host = ipv4
+        self.__robot_id=robot_id
+
         if self.connect(ipv4,port) < 0:
             self.close()
             print("failed to connect to mt endpoint:",ipv4)
             return -1
 
-        self.__target_host = ipv4
-        self.__robot_id=robot_id
+
 
         #if self.__connect==0:
         return 0

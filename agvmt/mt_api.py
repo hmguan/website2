@@ -27,7 +27,6 @@ def dhcp_notify_change():
     global mt_robot_info
     mt_robot_info.clear()
     mt_robot_info = copy.deepcopy(agv_info)
-    print('mt_robot_len',len(mt_robot_info))
     for key,item in mt_robot_info.items():
         if key not in mt_collection.keys():
             mt_collection[key] = item
@@ -66,9 +65,9 @@ def start_connect_to_mt_th():
                 item = mt_collection[key]
                 del mt_collection[key]
                 global_mt_mutex.release()
-                #if item.mtready:
-                print('mt-ready',item.mtready)
-                mt_manage().login_to_mt(item.id, item.host, item.shport,remote_robot,)
+                if item.mtready:
+                    print('mt-ready',item.mtready)
+                    mt_manage().login_to_mt(item.id, item.host, item.shport,remote_robot,)
 
 #agvinfoser下线通知
 def remote_robot(robot_id):

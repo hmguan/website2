@@ -216,7 +216,7 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
             pass
         else:
             agv = agv_online[_mac]
-            print('aginfoser agv [%d]%s mt closed.' % (agv.vhid, agv.mac))
+            print('aginfoser agv [%d]%s mt closed.' % (agv.id, agv.mac))
             agv.mtready = False
             need_notify = True
         mutex_agvonline.release()
