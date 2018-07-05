@@ -260,7 +260,7 @@ class file_task(base_task):
         if FILE_OPER_TYPE_PUSH == self.m_oper_type:
             ret = file_manager().push_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id)
         elif FILE_OPER_TYPE_PULL == self.m_oper_type:
-            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id,self.local_folder)
+            ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id,self.m_local_folder)
         else:
             print("for delete task")
         return ret
@@ -354,7 +354,7 @@ class user_transfer_queue(object):
                 self.__task_thread_pool_pull = task_thread_pool()
             task = file_task(userid,item['robot_id'],item['file_path'],file_type,FILE_OPER_TYPE_PULL,task_id,local_folder)
             if self.__task_thread_pool_pull.add_task(task) != -1 :
-                task_list.append({'robot_id':robot_id,'task_id':task_id,'file_path':item.file_path})
+                task_list.append({'robot_id':item['robot_id'],'task_id':task_id,'file_path':item['file_path']})
             else:
                 err_robot.append(item['robot_id'])
         return task_list , err_robot
