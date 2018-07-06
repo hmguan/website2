@@ -20,6 +20,8 @@ mt_robot_info=dict()
 
 def dhcp_notify_change():
     agv_info = agvinfoserver_online_robot()
+    if len(mt_robot_info)!=0:
+        refresh_mt_connect(agv_info)
     #start_connect_to_mt(info)
     global global_mt_mutex
     global_mt_mutex.acquire()
@@ -36,6 +38,18 @@ def dhcp_notify_change():
     mt_thread_wait.sig()
 
     mt_manage().callback_error_status(get_mt_error)
+
+def refresh_mt_connect(agv_info):
+    tmp_connects=copy.deepcopy(mt_robot_info)
+    global_mt_mutex.acquire()
+    #global mt_robot_info
+    for iter in tmp_connects:
+        if iter not in agv_info:
+            robot_id=tmp_connects[iter].id
+            print('iter',iter,robot_id)
+            mt_manage().dis_connect(robot_id)
+    global_mt_mutex.release()
+
 
 def start_connect_to_mt_th():
     '''

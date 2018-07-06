@@ -58,6 +58,15 @@ class mt_manage():
 
         self.__mutex.release()
 
+    def dis_connect(self,id):
+        if self.__robot_lnk.__contains__(id) == False:
+            return
+
+        self.__mutex.acquire()
+        session_link=self.__robot_lnk[id]
+        self.__mutex.release()
+        session_link.disconnect_net()
+
     def clear_agv_error(self,robot_list):
         self.__mutex.acquire()
         for robot_id in robot_list:

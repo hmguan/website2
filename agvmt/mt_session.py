@@ -159,6 +159,9 @@ class mt_session(tcp.obtcp):
         stream = login_ack.serialize()
         return self.send(stream, login_ack.length())
 
+    def disconnect_net(self):
+        self.close()
+
     def get_network_status(self):
         return self.__connect
 
