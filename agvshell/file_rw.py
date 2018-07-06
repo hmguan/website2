@@ -818,6 +818,7 @@ class file_manager():
     
     def cancle_file_transform(self,user_id,robot_id,task_id_list = []):
         #可能还在任务队列中
+        remove_list = list()
         try:
             if len(task_id_list) <=0:
                 return
@@ -827,9 +828,10 @@ class file_manager():
             if transfer_queue :
                 #取消待传输文件任务
                 del_task = transfer_queue.del_task(len(task_id_list),lambda task:task.m_task_id in task_id_list and task.m_robot_id == robot_id)
-                for task in del_task:
+                for task_info in del_task:
                     # self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
-                    task_id_list.remove(task.m_task_id)
+                    task_id_list.remove(task_info.m_task_id)
+                    remove_list.append(task_info.m_task_id)
 
                 #取消正在传输的任务
                 if len(task_id_list) > 0:
@@ -855,11 +857,13 @@ class file_manager():
                                     shell_info.set_upgrade(FILE_TYPE_NORMAL)         
                                 Logger().get_logger().info('cancle file transform:{0}'.format(val.m_path))
                                 
-                                self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_CANCLE,-1,task.m_task_id,-1)
+                                # self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_CANCLE,-1,task.m_task_id,-1)
                                 self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+                                remove_list.append(val.m_task_id)
                                 map_file_info.pop(k)
                     file_mutex.release()
             self.__transfer_queue_mutex.release()
+            return remove_list
         except Exception as e:
             print("cancle exception:", str(e))
         

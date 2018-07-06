@@ -65,7 +65,7 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'event_packages','args':['user_id'],'param':[null],'function':'QueryPackets','type':1},
     {'event':'event_users','args':[],'param':[],'function':'QueryUser','type':1},
     {'event':'RobotUpgrade','args':['userId','packetId','Robotid1','Robotid2'],'param':[null,null,null,null],'function':'RobotUpgrade','type':1},
-    {'event':'query_user_transfer_queue','args':['userId'],'param':[null],'function':'query_transfer_queue','type':1},
+    {'event':'query_user_transfer_queue','args':['userId','type'],'param':[null,null],'function':'query_transfer_queue','type':1},
     {'event':'cancle_task','args':['userId','robot_id','task_id'],'param':[null,null,null],'function':'cancle_task','type':1},
     ]
 
