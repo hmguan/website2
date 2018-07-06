@@ -282,4 +282,22 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
         else:
             pass
 
+def get_robot_list_basic_info():
+    from copy import deepcopy
+    group_robot_info = {}
+    robots_info_list = deepcopy(shell_manager().get_robots_configuration_info())
+    for robot_id,robot_info in robots_info_list:
+        process_name = robot_info.get('process_list')
+        system_info = robot_info.get('system_info')
+        if process_name is None or system_info is None:
+            continue
+
+        if process_name not in group_robot_info:
+            group_robot_info[process_name] = {'robot_list':[]}
+        group_robot_info[process_name].get('robot_list').append({'robot_id':robot_id,
+                                                                'robot_host':robot_info.get('robot_host'),
+                                                                'mutex_lock_status':system_info.get('lock_status')
+                                                                })
+    return group_robot_info
+
 

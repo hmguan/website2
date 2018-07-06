@@ -143,3 +143,19 @@ def cancle_transform(user_id, robot_id, task_id_list):
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
 
+def get_on_line_robot_configuration(user_id):
+    if type(user_id) != int:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+
+    try:
+        group_info = []
+        robots_info = get_robot_list_basic_info()
+        for process_name,info in robots_info:
+            alias_name = users_center.group_alias(user_id,process_name)
+            item_info = {'process_group':process_name,'process_group_alias':alias_name if alias_name else''}
+            item_info.update(info)
+            group_info.append(item_info)
+
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'data': group_info}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
