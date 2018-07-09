@@ -20,6 +20,8 @@ mt_robot_info=dict()
 
 def dhcp_notify_change():
     agv_info = agvinfoserver_online_robot()
+    if len(mt_robot_info)!=0:
+        refresh_mt_connect(agv_info)
     #start_connect_to_mt(info)
     global global_mt_mutex
     global_mt_mutex.acquire()
@@ -27,7 +29,6 @@ def dhcp_notify_change():
     global mt_robot_info
     mt_robot_info.clear()
     mt_robot_info = copy.deepcopy(agv_info)
-    print('mt_robot_len',len(mt_robot_info))
     for key,item in mt_robot_info.items():
         if key not in mt_collection.keys():
             mt_collection[key] = item
@@ -37,6 +38,18 @@ def dhcp_notify_change():
     mt_thread_wait.sig()
 
     mt_manage().callback_error_status(get_mt_error)
+
+def refresh_mt_connect(agv_info):
+    tmp_connects=copy.deepcopy(mt_robot_info)
+    global_mt_mutex.acquire()
+    #global mt_robot_info
+    for iter in tmp_connects:
+        if iter not in agv_info:
+            robot_id=tmp_connects[iter].id
+            print('iter',iter,robot_id)
+            mt_manage().dis_connect(robot_id)
+    global_mt_mutex.release()
+
 
 def start_connect_to_mt_th():
     '''
@@ -66,9 +79,9 @@ def start_connect_to_mt_th():
                 item = mt_collection[key]
                 del mt_collection[key]
                 global_mt_mutex.release()
-                #if item.mtready:
-                print('mt-ready',item.mtready)
-                mt_manage().login_to_mt(item.id, item.host, item.shport,remote_robot,)
+                if item.mtready:
+                    print('mt-ready',item.mtready)
+                    mt_manage().login_to_mt(item.id, item.host, item.shport,remote_robot,)
 
 #agvinfoser下线通知
 def remote_robot(robot_id):

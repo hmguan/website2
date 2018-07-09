@@ -89,11 +89,12 @@ app.service('$http_services',['$http','$q',function($http,$q){
 	function RobotUpgrade(userId,packetId,Robotid1,Robotid2) {
 		robot_list = [];
 		robot_list.push(parseInt(Robotid1));
+		robot_list.push(parseInt(Robotid2));
 		return RequestJsonData(JSON.stringify({'event': 'event_robot_upgrade','robot_list':robot_list,'package_id':parseInt(packetId),"user_id":parseInt(userId)}))
 	}
 
-	function query_transfer_queue(userId){
-		return RequestJsonData(JSON.stringify({'event': 'query_user_transfer_queue', 'user_id': parseInt(userId)}))
+	function query_transfer_queue(userId,type){
+		return RequestJsonData(JSON.stringify({'event': 'query_user_transfer_queue', 'user_id': parseInt(userId),'file_type':parseInt(type)}))
 	}
 
 	function 	RequestJsonData(data){

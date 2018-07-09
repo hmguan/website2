@@ -32,4 +32,6 @@ class shellview(base_event):
             return jsonify(query_transmit_queue(json_data.get('user_id'),json_data.get('file_type')))
         elif 'cancle_file_transform_task' == event:
             return jsonify(cancle_transform(json_data.get('user_id'),json_data.get('robot_id'),json_data.get('task_list')))
+        elif 'query_robots_configuration_info' == event:
+            return jsonify(get_on_line_robot_configuration(json_data.get('user_id')))
         pass

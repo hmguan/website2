@@ -145,6 +145,19 @@ class shell_manager():
         self.__mutex.release()
         #key:robot id
         return shtime_info,version_info,process_list
+
+    def get_robots_configuration_info(self):
+        robots_info = dict()
+
+        self.__mutex.acquire()
+        keys = list(self.__robot_lnk.keys())
+        for key in keys:
+            robots_info[key] ={'process_list':self.__robot_lnk.get(key).get_shell_process_list(),
+                                'system_info':self.__robot_lnk.get(key).get_fixed_system_info(),
+                                'robot_host':self.__robot_lnk.get(key).get_host_ipv4()}
+
+        self.__mutex.release()
+
         
     def get_session_by_id(self,robot_id):
         return self.__robot_lnk.get(robot_id)

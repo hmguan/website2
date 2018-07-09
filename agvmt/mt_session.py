@@ -125,13 +125,15 @@ class mt_session(tcp.obtcp):
         if self.create() < 0:
             return -1
 
+        self.__target_host = ipv4
+        self.__robot_id=robot_id
+
         if self.connect(ipv4,port) < 0:
             self.close()
             print("failed to connect to mt endpoint:",ipv4)
             return -1
 
-        self.__target_host = ipv4
-        self.__robot_id=robot_id
+
 
         #if self.__connect==0:
         return 0
@@ -156,6 +158,9 @@ class mt_session(tcp.obtcp):
         login_ack.phead.size(login_ack.length())
         stream = login_ack.serialize()
         return self.send(stream, login_ack.length())
+
+    def disconnect_net(self):
+        self.close()
 
     def get_network_status(self):
         return self.__connect

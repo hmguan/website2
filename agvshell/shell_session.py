@@ -90,6 +90,8 @@ class shell_session(tcp.obtcp):
             self.recv_push_file_data_reply(data,cb)
         elif typedef.PKTTYPE_AGV_SHELL_RW_FILE_STATUS_ACK == phead.type:
             self.recv_file_status(data,cb)
+        elif typedef.PKTTYPE_AGV_SHELL_FILE_MUTEX_STATUS_ACK == phead.type:
+            pass
         else:
             Logger().get_logger().warning("not support type:%8x" % phead.type)
 

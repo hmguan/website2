@@ -116,7 +116,6 @@ def query_transmit_queue( userid ,file_type):
                     packet_info = package_manager.query_packages(item['packet_id'])
                     if packet_info is not None:
                         packet_dict[item['packet_id']] = packet_info
-                        continue
                 item['file_name'] = packet_info.package_name
                 item['version'] = packet_info.version
                 item['author'] = packet_info.user.username
@@ -128,9 +127,35 @@ def cancle_transform(user_id, robot_id, task_id_list):
     if type(user_id) != int or type(robot_id) != int or type(task_id_list) != list:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
     try:
-        cancle_file_transform(user_id,robot_id,task_id_list)
-        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal}
+        remove_task_list = list()
+        for task_id in task_id_list:
+            if type(task_id) != int:
+                task_id = int(task_id)
+            remove_task_list.append(task_id)
+
+        remove_list = cancle_file_transform(user_id,robot_id,remove_task_list)
+        err_task = []
+        for task_id in remove_task_list:
+            if task_id not in remove_list:
+                err_task.append(task_id)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,'err_task':err_task,'success':remove_list}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
 
+def get_on_line_robot_configuration(user_id):
+    if type(user_id) != int:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+
+    try:
+        group_info = []
+        robots_info = get_robot_list_basic_info()
+        for process_name,info in robots_info:
+            alias_name = users_center.group_alias(user_id,process_name)
+            item_info = {'process_group':process_name,'process_group_alias':alias_name if alias_name else''}
+            item_info.update(info)
+            group_info.append(item_info)
+
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'data': group_info}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

@@ -226,21 +226,22 @@ def change_file_block_size(size):
     file_manager().change_block_size(size)
 
 
-def cancle_file_transform(user_id, robot_id, task_id_list):
-    file_manager().cancle_file_transform(user_id,robot_id,task_id_list)
+def cancle_file_transform(user_id, robot_id, task_id_list) ->list:
+    return file_manager().cancle_file_transform(user_id,robot_id,task_id_list)
 
 
 def push_file_to_remote(user_id, robot_list, file_path, file_type,package_id):
     return file_manager().push_file_task(user_id, robot_list, file_path, file_type,package_id)
 
-#route_path_list [{'robot_id':None ,'file_path':None}]
+#route_path_list [{'robot_id':None ,'file_path':None,'local_path',None}]
 #return 
-def pull_file_from_remote(user_id, local_folder,file_type,route_path_list=[]):
-    return file_manager().pull_file_task(user_id, local_folder,file_type,route_path_list)
+def pull_file_from_remote(user_id,file_type,route_path_list=[]):
+    return file_manager().pull_file_task(user_id,file_type,route_path_list)
 
 def query_user_transmit_queue(user_id,oper_type)->list:
     return file_manager().query_transfer_queue(user_id,oper_type)
 
+#传输文件过程中，回调函数中不能处理过长时间调用
 def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_code, status, task_id,file_size=0):
     from app.user.userview import users_center
     from app.soketio import socketio_agent_center
@@ -248,7 +249,6 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     from .shproto.errno import g_err_str
 
     notify_dic = dict()
-    notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
     notify_dic['user_id'] = user_id
     notify_dic['robot_id'] = robot_id
     notify_dic['file_path'] = file_path
@@ -265,8 +265,8 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
 #    print(step)
     u_uuid = users_center.user_uuid(user_id)
     if u_uuid is not None:
-        value = int(float(step))
         if FILE_TYPE_A_UPGRADE == file_type :
+            notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
             if 100 == step:
                 print("a begin upgrade")
                 f_name = file_path[file_path.rfind('/') + 1:]
@@ -281,5 +281,23 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
             pass
         else:
             pass
+
+def get_robot_list_basic_info():
+    from copy import deepcopy
+    group_robot_info = {}
+    robots_info_list = deepcopy(shell_manager().get_robots_configuration_info())
+    for robot_id,robot_info in robots_info_list:
+        process_name = robot_info.get('process_list')
+        system_info = robot_info.get('system_info')
+        if process_name is None or system_info is None:
+            continue
+
+        if process_name not in group_robot_info:
+            group_robot_info[process_name] = {'robot_list':[]}
+        group_robot_info[process_name].get('robot_list').append({'robot_id':robot_id,
+                                                                'robot_host':robot_info.get('robot_host'),
+                                                                'mutex_lock_status':system_info.get('lock_status')
+                                                                })
+    return group_robot_info
 
 
