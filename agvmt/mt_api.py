@@ -19,6 +19,7 @@ mt_collection = dict()
 mt_robot_info=dict()
 
 def dhcp_notify_change():
+    global mt_robot_info
     agv_info = agvinfoserver_online_robot()
     if len(mt_robot_info)!=0:
         refresh_mt_connect(agv_info)
@@ -26,7 +27,7 @@ def dhcp_notify_change():
     global global_mt_mutex
     global_mt_mutex.acquire()
     global mt_collection
-    global mt_robot_info
+    
     mt_robot_info.clear()
     mt_robot_info = copy.deepcopy(agv_info)
     for key,item in mt_robot_info.items():
