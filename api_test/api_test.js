@@ -4,8 +4,8 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     var socket = null;
     var namespace = '/notify_call';
     var init = true;
-    $scope.Ip = "10.10.100.152";
-    $scope.Port = "5007";
+    $scope.Ip = "172.20.10.3";
+    $scope.Port = "5008";
     $scope.disabled = true;
     $scope.bconnected = false;
     $scope.disabled_socketio = false;
@@ -67,6 +67,7 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'RobotUpgrade','args':['userId','packetId','Robotid1','Robotid2'],'param':[null,null,null,null],'function':'RobotUpgrade','type':1},
     {'event':'query_user_transfer_queue','args':['userId','type'],'param':[null,null],'function':'query_transfer_queue','type':1},
     {'event':'cancle_task','args':['userId','robot_id','task_id'],'param':[null,null,null],'function':'cancle_task','type':1},
+    {'event':'query_robots_configuration_info','args':['userId'],'param':[null],'function':'query_robots_configuration','type':1},
     ]
 
     $scope.submit = function( api_param ){

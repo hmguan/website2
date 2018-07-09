@@ -157,6 +157,7 @@ class shell_manager():
                                 'robot_host':self.__robot_lnk.get(key).get_host_ipv4()}
 
         self.__mutex.release()
+        return robots_info
 
         
     def get_session_by_id(self,robot_id):

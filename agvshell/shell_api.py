@@ -286,7 +286,7 @@ def get_robot_list_basic_info():
     from copy import deepcopy
     group_robot_info = {}
     robots_info_list = deepcopy(shell_manager().get_robots_configuration_info())
-    for robot_id,robot_info in robots_info_list:
+    for (robot_id,robot_info) in robots_info_list.items():
         process_name = robot_info.get('process_list')
         system_info = robot_info.get('system_info')
         if process_name is None or system_info is None:

@@ -355,7 +355,7 @@ class user_transfer_queue(object):
         for item in route_path_list:
 
             if self.__assign_task_cb:
-                task_id = __assign_task_cb()
+                task_id = self.__assign_task_cb()
             else:
                 task_id = self.assign_task_id()
 
@@ -674,7 +674,7 @@ class file_manager():
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
             t_file_info.m_step,step = step,t_file_info.m_step
             if step != t_file_info.m_step :
-                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
+                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,t_file_info.m_step,0,0,t_file_info.m_task_id,t_file_info.m_size)
         else:
             #finish transform
             Logger().get_logger().info('file[{0}][{1}] data send finish'.format(t_file_info.m_name,t_file_info.m_file_id))
@@ -739,8 +739,7 @@ class file_manager():
             t_file_info.m_last_block_num += 1
             t_file_info.m_step,step = step,t_file_info.m_step
             if step != t_file_info.m_step :
-                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,0,0,t_file_info.m_task_id,t_file_info.m_size)
-                t_file_info.m_step = step
+                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,t_file_info.m_step,0,0,t_file_info.m_task_id,t_file_info.m_size)
         else:
             #finish file transform
             Logger().get_logger().info('file[{0}][{1}] data pull finish'.format(t_file_info.m_name,t_file_info.m_file_id))
