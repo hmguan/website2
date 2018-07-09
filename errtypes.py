@@ -36,6 +36,7 @@ HttpResponseCode_InvaildGroup_Name=30
 HttpResponseCode_UPLOADEXCEPTIONERROR=50
 HttpResponseCode_NOFILE=51
 HttpResponseCode_EXISTFILE=51
+HttpResponseCode_InvaildPath = 52
 
 HttpResponseCode_NotFound=404
 HttpResponseCode_ServerError=500
@@ -45,4 +46,5 @@ HttpResponseCode_ServerError=500
 #############################以下定义http响应消息###############################
 HttpResponseMsg_Normal='success'
 HttpResponseMsg_InvaildParament='invalid input parament'
+HttpResponseMsg_InvaildPath='File Not Found'
 HttpResponseMsg_Failed='failed'

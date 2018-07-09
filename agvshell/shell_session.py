@@ -17,7 +17,7 @@ HOUR_SECONDS=3600
 MIN_SECONDS=60
 
 class shell_session(tcp.obtcp):
-    def __init__(self,rlink = -1,notify_closed=None,notify_file_manager=None):
+    def __init__(self,rlink = -1,notify_closed=None,notify_file_manager=None,push_notify= None):
         super(shell_session, self).__init__(rlink)
         self.__net_manager=nm.net_manager()
         self.__net_status=typedef.NetworkStatus_Closed
@@ -39,6 +39,7 @@ class shell_session(tcp.obtcp):
         self.__current_netio_r = 0.0
         self.__current_netio_t = 0.0
         self.__previous_timestamp = int(round(time.time() * 1000))
+        self.__push_notify_cb = push_notify
         return
 
     def __del__(self):

@@ -10,6 +10,7 @@ from .shproto import proto_typedef as typedef
 from .shproto.errno import *
 from pynsp.logger import *
 from pynsp.waite_handler import *
+from .notify_thread_socket_io import *
 
 #监测心跳超时时间戳差
 CHECK_ALIVE_TIMESTAMP_OUT=6000
@@ -23,11 +24,13 @@ class shell_manager():
         self.__check_timeout=threading.Thread(target=shell_manager.check_session_timeout,args=(self,))
         self.__check_timeout.setDaemon(True)
         self.__check_timeout.start()
+        self.__notify_thread = notify_thread()
         pass
 
     def __del__(self):
         self.__is_exist_th=True
         self.__check_timeout.join()
+        del self.__notify_thread
         pass
 
     def login_to_shell(self,robot_id,ipv4,port,notify_callback = None)->int:
@@ -43,7 +46,7 @@ class shell_manager():
             Logger().get_logger().warning("the robot id {0} is already connected.".format(robot_id))
             return 1
 
-        session_link = shell_session.shell_session(notify_closed = notify_callback, notify_file_manager = file_rw.file_manager())
+        session_link = shell_session.shell_session(notify_closed = notify_callback, notify_file_manager = file_rw.file_manager(),push_notify=self.push_notify)
         if session_link.try_connect(ipv4,port,robot_id) < 0:
             return -1
 
@@ -186,3 +189,11 @@ class shell_manager():
             info = self.__robot_lnk.get(robot_id).get_shell_process_detail_list()
         self.__mutex.release()
         return info
+
+    def push_notify(self,msg_type,data):
+        if self.__notify_thread:
+            self.__notify_thread.add_notify(msg_type,data)
+
+    def register_socket_io_notify(self,socketio_notify):
+        if self.__notify_thread:
+            self.__notify_thread.register_socketio_notify(socketio_notify)

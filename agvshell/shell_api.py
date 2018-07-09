@@ -185,6 +185,7 @@ def register_browser_notify(notify_call=None):
     if notify_call is not None:
         global notify_client_function
         notify_client_function=notify_call
+    shell_manager().register_socket_io_notify(notify_call)
 
 def get_robot_detail_info(robot_id):
     '''
@@ -245,8 +246,8 @@ def query_user_transmit_queue(user_id,oper_type)->list:
 def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_code, status, task_id,file_size=0):
     from app.user.userview import users_center
     from app.soketio import socketio_agent_center
-    from app.soketio import sockio_api
     from .shproto.errno import g_err_str
+    global notify_client_function
 
     notify_dic = dict()
     notify_dic['user_id'] = user_id
@@ -273,7 +274,10 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
                 shell_info = shell_manager().get_session_by_id(robot_id)
                 if shell_info is not None:
                     shell_info.post_a_begin_upgrade(f_name, file_size)
-            sockio_api.response_to_client_data(notify_dic)
+
+            if notify_client_function is not None:
+                notify_client_function({'msg_type':errtypes.TypeShell_Offline,'robot_id':robot_id})
+            # sockio_api.response_to_client_data(notify_dic)
             # socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
         elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
             pass
