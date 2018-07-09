@@ -1,27 +1,18 @@
 
+#from hdfs import Client
+from db.db_logger import login_manager
+from datetime import datetime
 
-from db.db_users import user
-from app.user.userview import users_center
-import ptvsd
-import base64
-import random
-import time
-from db.db_package import package_manager
 
-#远程调试
-ptvsd.settrace(None, ('0.0.0.0', 2345))
-#ptvsd.wait_for_attach()
 
 def main():
+#    client = Client("http://hadoop100:50070")
+#    print(client)
+#    print(client.status("/",strict=True))
 
-    ret = user.append('gz','e10adc3949ba59abbe56e057f20f883e','r')
-    ret = user.append('robot','e10adc3949ba59abbe56e057f20f883e','r')
-
-    
-    ret = package_manager.query_packages(1)
-    print(ret.id)
-
-    print(ret)
-
+#    print('-----------------------------')
+#    print(client.list("/user/stefan"))
+    filename ='sss'
+    login_manager.insert(1,login_type='packages',time =datetime.now(),msg="upload file:",u_uuid='')
 if __name__ == "__main__":
     main()

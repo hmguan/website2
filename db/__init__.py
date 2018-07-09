@@ -40,12 +40,12 @@ class package_info(Base):
     remarks = Column(String(256),nullable=True)
     user = relationship("user_info", foreign_keys=[user_id])
 
-#用户登陆日志
-class login_logger(Base):
-    __tablename__ = 'login_logger'
+
+class logger(Base):
+    __tablename__ = 'logger'
     id= Column(Integer,primary_key = True,autoincrement=True)
     user_id = Column(Integer,ForeignKey('users.id'),nullable=False)
-    login_type = Column(Enum('online','offline'),nullable = False)
+    login_type = Column(Enum('online','offline','packages','bin'),nullable = False)
     msg = Column(String(256),nullable=False)
     u_uuid = Column(String(256),nullable=True)
     time = Column(DateTime,nullable=False)

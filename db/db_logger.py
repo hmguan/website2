@@ -1,6 +1,6 @@
-from db import session_obj,login_logger,user_info
+from db import session_obj,logger,user_info
 
-class login_manager():
+class logger_manager():
     def __init__(self):
         pass
 
@@ -11,7 +11,7 @@ class login_manager():
         if(tmp ==None):
             return -1
 
-        package_obj = login_logger(user_id = user_id,login_type= login_type,time =time,msg=msg,u_uuid=u_uuid,remarks = remark )
+        package_obj = logger(user_id = user_id,login_type= login_type,time =time,msg=msg,u_uuid=u_uuid,remarks = remark )
         session_obj.add(package_obj)
         session_obj.commit()
         return 0
