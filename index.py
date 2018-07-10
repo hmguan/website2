@@ -5,6 +5,7 @@ from agvmt import start_mt_manager,register_mt_notify_function
 from pynsp.logger import *
 import traceback
 import sys
+from black_box.black_box import init_black_box
 import ptvsd
  
 ptvsd.settrace(None, ('0.0.0.0', 12345))
@@ -26,6 +27,7 @@ if __name__ == '__main__':
 
     #初始化日志文件
     init_logger()
+    init_black_box()
     #启动agvinfo server服务
     start_agvinfo_service()
     #启动agvshell manager管理服务
