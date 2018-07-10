@@ -9,7 +9,6 @@ import os, sys
 import zipfile
 from db.db_users import user
 from configuration import config
-from app.soketio import sockio_api
 
 #task_data_=dict()
 user_task_data=dict()
@@ -163,12 +162,11 @@ def pull_log_step_notify(user_id,robot_id,step,file_path,error_code):#file_path�
     print('type',task_recv_count_,task_id_count_)
     if task_recv_count_[int(user_id)]==task_id_count_[int(user_id)]:
         notify_dic['step'] = 100
-        sockio_api.response_to_client_data(notify_dic)
+        #推送前台
         pass  # 压缩完删除文件
     else:
         sch = (task_recv_count_[int(user_id)]+float(step) / 100) / task_id_count_[int(user_id)]  # 总进度
         notify_dic['step']=sch
-        sockio_api.response_to_client_data(notify_dic)
         # sockio推给前台
     mutex.release()
 
