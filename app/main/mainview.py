@@ -66,7 +66,6 @@ def upload_file():
                     if os.path.exists(folder_path) == False:
                         os.makedirs(folder_path)
 
-                    
                     file_path = os.path.join(folder_path,filename)
 
                     file.save(file_path)

@@ -1,16 +1,14 @@
 
-from hdfs import Client
+#from hdfs import Client
 
-
-
+from db.db_blackbox import blackbox_manager
+from datetime import datetime
 
 def main():
-   client = Client("http://hadoop100:50070")
-   print(client)
-   print(client.status("/",strict=True))
 
-   print('-----------------------------')
-   print(client.list("/user/stefan"))
+
+
+   blackbox_manager.remove_temps(5)
 
 if __name__ == "__main__":
     main()

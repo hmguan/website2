@@ -21,12 +21,6 @@ class package_manager():
         tmp = session_obj.query(package_info).filter_by(package_name= package_name).filter_by(user_id = user_id).first()
         if tmp is not None:
             tmp  = session_obj.query(package_info).get(tmp.id)
-            folder_path = config.ROOTDIR +tmp.user.username +config.PATCHFOLDER
-                    
-            # file_path = os.path.join(folder_path,tmp.package_name)
-            # if os.path.exists(file_path):
-            #     os.remove(file_path)
-
             session_obj.delete(tmp)
             session_obj.commit()
         
