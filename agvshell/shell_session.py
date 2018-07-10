@@ -95,7 +95,7 @@ class shell_session(tcp.obtcp):
             self.recv_file_status(data,cb)
         elif typedef.PKTTYPE_AGV_SHELL_FILE_MUTEX_STATUS_ACK == phead.type:
             pass
-		elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_TYPE_ACK == phead.type:
+        elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_TYPE_ACK == phead.type:
             self.recv_log_type(pkt_id, data)
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_FILE_NAME_ACK == phead.type:
             self.recv_log_name(phead.id,data)
