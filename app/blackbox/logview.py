@@ -7,7 +7,7 @@ from db.db_blackbox import blackbox_manager
 class logview(base_event):
     def __init__(self):
         super(logview,self).__init__()
-        self.regist_event('get_log_types','send_log_condition','cancle_get_log')
+        self.regist_event('get_log_types','send_log_condition','cancle_get_log','event_bk_temps_insert','event_bk_temps_remove','event_bk_temps')
         pass
 
     def flask_recvdata(self,requst_obj):
@@ -31,24 +31,22 @@ class logview(base_event):
             return jsonify(ret)
 
         if 'event_bk_temps_insert'==event:
-            ret = blackbox_manager.insert_temps(json_data['user_id'],json_data.get('temps_types'),json_data.get('others'),json_data.get('time'))
+            ret = blackbox_manager.insert_temps(json_data['user_id'],json_data.get('temps_types'),json_data.get('others'))
             if ret<0:
                 return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '添加失败'})
             
             return jsonify({'code': 0, 'msg': '添加成功'})
 
         if 'event_bk_temps_remove'==event:
-            ret = blackbox_manager.remove_temps(json_data['user_id'])
+            ret = blackbox_manager.remove_temps(json_data['temps_id'])
             if ret<0:
                 return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '删除失败'})
             
             return jsonify({'code': 0, 'msg': '删除成功'})
         
         if 'event_bk_temps'==event:
-            ret = blackbox_manager.temps(json_data['temps_id'])
-            if ret<0:
-                return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '查询失败'})
-            
+            ret = blackbox_manager.temps(json_data['user_id'])
+                       
             list_temps=[]
             for index, value in enumerate(ret):
                 tmp={}
@@ -58,4 +56,4 @@ class logview(base_event):
                 tmp['time']= value.time
                 list_temps.append(tmp)
             ret = {'code':0,'msg':'查询成功','data':{'temps':list_temps}}
-            return jsonify({'code': 0, 'msg': '查询成功'})
+            return jsonify(ret)
