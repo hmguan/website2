@@ -11,6 +11,7 @@ TypeShell_NewArrival = 0x00000101
 TypeShell_Offline = 0x00000102
 TypeShell_UpdateSoftware=0x00000103
 TypeShell_ConnectException=0x00000104
+TypeShell_Blackbox_Log=0x00000106
 
 #mt与前端交互类型定义
 TypeMT_Error=0x00000601
