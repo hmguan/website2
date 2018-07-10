@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from pynsp import obtcp as tcp
-from .shproto import proto_head as head,proto_typedef as typedef,login,proto_file,proto_upgrade,proto_sysinfo as sysinfo
+from .shproto import proto_head as head,proto_typedef as typedef,login,proto_file,proto_upgrade,proto_sysinfo as sysinfo,proto_log as log
 from agvshell import net_manager as nm
 from pynsp.encrypt import *
 import random
@@ -15,6 +15,7 @@ from pynsp.waite_handler import *
 DAY_SECONDS=86400
 HOUR_SECONDS=3600
 MIN_SECONDS=60
+path_notify_callback=None
 
 class shell_session(tcp.obtcp):
     def __init__(self,rlink = -1,notify_closed=None,notify_file_manager=None,push_notify= None):
@@ -38,6 +39,7 @@ class shell_session(tcp.obtcp):
         self.__upgrading = 0
         self.__current_netio_r = 0.0
         self.__current_netio_t = 0.0
+        self.__log_type=b''
         self.__previous_timestamp = int(round(time.time() * 1000))
         self.__push_notify_cb = push_notify
         return
@@ -93,6 +95,10 @@ class shell_session(tcp.obtcp):
             self.recv_file_status(data,cb)
         elif typedef.PKTTYPE_AGV_SHELL_FILE_MUTEX_STATUS_ACK == phead.type:
             pass
+		elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_TYPE_ACK == phead.type:
+            self.recv_log_type(pkt_id, data)
+        elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_FILE_NAME_ACK == phead.type:
+            self.recv_log_name(phead.id,data)
         else:
             Logger().get_logger().warning("not support type:%8x" % phead.type)
 
@@ -312,6 +318,59 @@ class shell_session(tcp.obtcp):
 
     def get_shell_process_detail_list(self):
         return self.__shell_process_info
+
+    def load_log_type(self):
+        pkt_id = wait_handler().allocat_pkt_id()
+        pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_GET_LOG_TYPE, _id=pkt_id)
+        pkt.set_pkt_size(24)
+        stream = pkt.serialize()
+        ret = self.send(stream, pkt.length())
+        if ret < 0:
+            wait_handler().wait_destory(pkt_id)
+            return -1
+        return pkt_id
+
+    def recv_log_type(self, pkt_id, data):
+        self.__log_type = data
+        print('data0',data)
+        wait_handler().wait_singal(pkt_id)
+
+    def get_log_types(self):
+        return self.__log_type
+
+    def get_log_data(self,task_id, start_time, end_time, types):
+        pkt = log.proto_log_condition()
+        pkt.phead.id(task_id)
+        pkt.start_time(start_time)
+        pkt.end_time(end_time)
+        for it_type in types:
+            pkt_item = log.proto_log_type_item()
+            print('type',it_type)
+            pkt_item.log_type(it_type)
+            pkt.vct_log_type.append(pkt_item)
+        stream = pkt.serialize()
+        ret = self.send(stream, pkt.length())
+        return ret
+
+    def register_notify_log_path(self,notify_callback=None):
+        if notify_callback is not None:
+            global path_notify_callback
+            path_notify_callback = notify_callback
+
+    def recv_log_name(self,task_id, data):
+        print('recv_log_name')
+        global path_notify_callback
+        if path_notify_callback is not None:
+            path_notify_callback(self.__robot_id,task_id, data)
+        # load_log_path(self.__robot_id,data)
+        pass
+
+    def cancle_log_data(self):
+        pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_CANCEL_GET_LOG)
+        pkt.set_pkt_size(24)
+        stream = pkt.serialize()
+        ret = self.send(stream, pkt.length())
+        return ret
 
 ##################################################以下为fts文件传输协议代码#######################################################
 

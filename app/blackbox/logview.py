@@ -1,7 +1,7 @@
 from app.main.mainview import base_event
 import json
 from flask import jsonify
-from blackbox.black_box import *
+from black_box.black_box import *
 
 class logview(base_event):
     def __init__(self):

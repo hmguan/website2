@@ -284,9 +284,17 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
         elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
             pass
         elif FILE_TYPE_BLACKBOX_PULL_FILES == file_type:
-            pass
+            global step_notify_callback
+            print('pull', step_notify_callback,step)
+            if step_notify_callback is not None:
+                step_notify_callback(user_id,robot_id, step, file_path, error_code)
         else:
             pass
+
+def register_notify_log_step(notify_call=None):
+    if notify_call is not None:
+        global step_notify_callback
+        step_notify_callback=notify_call
 
 def get_robot_list_basic_info():
     from copy import deepcopy
