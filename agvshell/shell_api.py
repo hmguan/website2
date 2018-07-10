@@ -54,9 +54,11 @@ def start_connect_to_robot():
                 if result == 0:
                     #新的客户端登录成功，则通知浏览器
                     if notify_client_function is not None:
+                        fiex_system_info = shell_manager().get_fixed_sysytem_info(item.id)
                         notify_client_function({'msg_type':errtypes.TypeShell_NewArrival,'process_group':
                                                 shell_manager().get_shell_process_name_join(item.id),'robot_id':item.id,
-                                                'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00'})
+                                                'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00',
+                                                'shell_version':fiex_system_info.get('config_version'),'lock_status':fiex_system_info.get('lock_status')})
                     global_mutex.acquire()
                     if item.id in unusual_collection.keys():
                         del unusual_collection[item.id]
@@ -276,7 +278,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
                     shell_info.post_a_begin_upgrade(f_name, file_size)
 
             if notify_client_function is not None:
-                notify_client_function({'msg_type':errtypes.TypeShell_Offline,'robot_id':robot_id})
+                notify_client_function(notify_dic)
             # sockio_api.response_to_client_data(notify_dic)
             # socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
         elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:

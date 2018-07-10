@@ -1,5 +1,6 @@
 from .agvinfoser import *
 from .agvinfotrs import *
+from pynsp.logger import *
 
 notify_function_list=[]
 
@@ -19,7 +20,7 @@ def dhcp_notify_change():
     the regist function will get all robot information
     :return:
     '''
-    print('get agvinfoserver changed')
+    Logger().get_logger().info('get agvinfoserver changed.')
     for item in notify_function_list:
         item()
 

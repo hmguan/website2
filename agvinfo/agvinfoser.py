@@ -8,6 +8,7 @@ from agvmt.mtproto import discover
 from agvinfo import agvinfodata
 from copy import deepcopy
 import pdb
+from pynsp.logger import *
 
 class agvinfo_runtime:
     aid = 0
@@ -55,7 +56,8 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
         self.__terminate = False
 
     def __del__(self):
-        print('agvinfo_shellser __del__')
+        pass
+        # print('agvinfo_shellser __del__')
 
     def __select_agv_bymac(self, _rep, _from, _port):
         global current_max_agvid_config
@@ -107,7 +109,7 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
             mutex_agvonline.acquire()
             agv_online[agv.mac] = agv
             mutex_agvonline.release()
-            print('aginfoser agv [%d]%s online.' % (agv.id, agv.mac))
+            Logger().get_logger().info('aginfoser agv id={} mac= {} online.'.format(agv.id, agv.mac))
 
             # update config file any way
             cfgagv = agvinfodata.agvinfo_t()
@@ -127,19 +129,19 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
             self.notify_changed()
 
     def on_mt_discover_ack(self, _from):
-        print('on_mt_discover_ack')
+        Logger().get_logger().info('on_mt_discover_ack')
         mutex_agvonline.acquire()
         ls_keys = list(agv_online.keys())
         for i in ls_keys:
             agv = agv_online[i]
             if agv.host == _from:
                 agv.mtready = True
-                print('[', agv.id, ']', agv.host,'mt ready')
+                # print('[', agv.id, ']', agv.host,'mt ready')
                 need_notify = True
                 break
         mutex_agvonline.release()
 
-        print('notify:{0},need_notify:{1}'.format(self.notify_changed,need_notify))
+        # print('notify:{0},need_notify:{1}'.format(self.notify_changed,need_notify))
         if None != self.notify_changed and need_notify:
             self.notify_changed()
 
@@ -168,7 +170,7 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
                 agv = agv_online[i]
                 agv.alive -= 1
                 if agv.alive == 0:
-                    print('aginfoser agv [%d]%s has been removed.' % (agv.id, agv.mac))
+                    Logger().get_logger().info('aginfoser agv id:{} mac:{} has been removed.'.format(agv.id,agv.mac))
                     need_notify = True
                     del(agv_online[i])
 
@@ -201,7 +203,7 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
             pass
         else:
             agv = agv_online[_mac]
-            print('aginfoser agv [%d]%s has been force removed.' % (agv.id, agv.mac))
+            Logger().get_logger().info('aginfoser agv id:{} mac:{} has been force removed.'.format(agv.id,agv.mac))
             del(agv_online[_mac])
             need_notify = True
         mutex_agvonline.release()
@@ -216,7 +218,7 @@ class agvinfo_shellser(obudp.obudp, threading.Thread):
             pass
         else:
             agv = agv_online[_mac]
-            print('aginfoser agv [%d]%s mt closed.' % (agv.id, agv.mac))
+            Logger().get_logger().info('aginfoser agv id:{} mac:{} mt closed.'.format(agv.id,agv.mac))
             agv.mtready = False
             need_notify = True
         mutex_agvonline.release()
@@ -237,18 +239,18 @@ def agvinfoser_startup(_host = '0.0.0.0', _port = 9022, _notify_changed = None)-
     for n in agvinfodata.dict_xml_agvinfo:
         if (type(n.vhid) == int) and (n.vhid > current_max_agvid_config):
             current_max_agvid_config = n.vhid
-    print('current maximum agvid=', current_max_agvid_config)
 
+    Logger().get_logger().info('current maximum agvid={}'.format(current_max_agvid_config))
     # create udp service
     if ser == None:
         ser = agvinfo_shellser(_notify_changed)
     if ser.create(_host, _port) < 0:
-        print('failed create udp server for agvinfo.')
+        Logger().get_logger().error('failed create udp server for agvinfo.')
         del(ser)
         ser = None
         return -1
 
-    print('agvinfo server startup successful.')
+    Logger().get_logger().error('agvinfo server startup successful.')
     return 0
 
 def agvinfoser_shclosed(_mac):

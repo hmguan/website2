@@ -8,6 +8,7 @@ from agvinfo import agvinfoproto
 from agvinfo.agvinfoser import mutex_agvcfg
 import pdb
 import time
+from pynsp.logger import *
 
 dhcp_data_change = False
 SESSION_TIMEOUT_TIMESTAMP=30000
@@ -139,6 +140,7 @@ class agvinfo_tcptrs(obtcp.obtcp):
 
     def start(self, _host = '0.0.0.0', _port = 9022)->int:
         if super(agvinfo_tcptrs, self).create(_host, _port) < 0:
+            Logger().get_logger().error('aginfotrs start error')
             return -1
         if None == self.__thread_check_state:
             # pdb.set_trace()
@@ -161,6 +163,7 @@ class agvinfo_tcptrs(obtcp.obtcp):
 
     def on_accepted(self,_rlink):
         session = agvinfo_tcptrs(_rlink=_rlink, disconncet_callback = self.remove_link)
+        Logger().get_logger().info('agvinfotrs new connection{} ip{}:{}'.format(_rlink,session.rhost,session.rport))
         self.__map_mutex.acquire()
         self.__map_tcp_session[_rlink] = session
         self.__map_mutex.release()
@@ -191,6 +194,7 @@ class agvinfo_tcptrs(obtcp.obtcp):
                     dec_timestamp = current_timestamp - self.__map_tcp_session[link].get_timestamp()
                     # print('thread_check_notify',dec_timestamp,current_timestamp,self.__map_tcp_session[link].get_timestamp())
                     if dec_timestamp > SESSION_TIMEOUT_TIMESTAMP:
+                        Logger().get_logger().info('agvinfotrs session timeout lnk{} ip{}:{}'.format(link,self.__map_tcp_session[link].rhost,self.__map_tcp_session[link].rport))
                         close_list.append(self.__map_tcp_session[link])
                     elif dec_timestamp > 4000:
                         if self.__map_tcp_session[link].__keepalive() < 0:

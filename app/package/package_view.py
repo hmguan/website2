@@ -58,6 +58,7 @@ class package_view(base_event):
                 list_package.append(tmp)
             ret = {'code':0,'msg':'查询成功','data':{'users':list_package}}
         elif 'event_robot_upgrade' == event:
+            import os
             package_id = json_data.get('package_id')
             robot_list = json_data.get('robot_list')
             user_id = json_data.get('user_id')
@@ -71,6 +72,9 @@ class package_view(base_event):
                 user_name = retval.user.username
                 package_name = retval.package_name
                 file_path = config.ROOTDIR +user_name +config.PATCHFOLDER + package_name
+                if os.path.exists(file_path) == False:
+                    return jsonify({'code': errtypes.HttpResponseCode_InvaildPath, 'msg': errtypes.HttpResponseMsg_InvaildPath })
+                
                 err_robots = None
                 task_list,err_robots = push_file_to_remote(user_id,robot_list,file_path,FILE_TYPE_A_UPGRADE,package_id)
 

@@ -80,7 +80,6 @@ class task_thread_pool():
             return -1
             
         for i in range(MAX_THREAD_NUM):
-            print(i)
             t_th = threading.Thread(target=task_thread_pool.th_handler,args=(self,i,))
             t_th.setDaemon(True)
             t_th.start()
@@ -90,11 +89,11 @@ class task_thread_pool():
     def th_handler(self,id):
         thread_id = id
         self.__is_working[thread_id] = False
-        print("thread id:%d" % thread_id)
         while 0 == self.__exit_flag:
             if self.__is_working[thread_id]:
                 time.sleep(2)
                 continue
+
             self.__queue_mutex.acquire()
             while 0 == len(self.__work_queue):
                 self.__queue_mutex.release()
@@ -109,18 +108,17 @@ class task_thread_pool():
             task = self.__work_queue.pop(0)
             self.__working_queue.append({'thread_id':thread_id,'task_info':task})
 
-            print("thread:%d start task, queue size:%d" % (thread_id, len(self.__work_queue)))
+            Logger().get_logger().info('thread:{} start task, queue size:{}'.format(thread_id,len(self.__work_queue)))
             self.__is_working[thread_id] = True
             self.__queue_mutex.release()
             ret = task.on_task(thread_id)
-            print("thread:%d after on_task ret:%d" % (thread_id, ret))
-            
-        print("thread id:%d exit" % thread_id)
+            Logger().get_logger().info('thread:{} after on_task ret{}'.format(thread_id,ret))
+        Logger().get_logger().info('thread id:{} exit'.format(thread_id))  
         
     def add_task(self,task):
         self.__queue_mutex.acquire()
         if len(self.__work_queue) >= MAX_QUEUE_NUM:
-            print("task queue full!!!")
+            Logger().get_logger().error('task queue full!!!') 
             return -1
         self.__work_queue.append(task)
         self.__queue_mutex.release()
@@ -155,7 +153,7 @@ class task_thread_pool():
                 self.__working_queue.remove(transfer_task)
                 break
         self.__queue_mutex.release()
-        print("thread[%d] working status change" % thread_id)
+        Logger().get_logger().info("thread[{}] working status change".format(thread_id)) 
         pass
 
     def thread_join(self):
@@ -188,20 +186,20 @@ class agvfile():
         try:
             fd = open(name, 'wb')
         except IOError:
-            print ('create_file file %s failure' % name)
+            Logger().get_logger().error("create_file file {} failure".format(name)) 
             return -1
         else:
-            print ('create_file file %s success' % name)
+            Logger().get_logger().info("create_file file {} success".format(name)) 
             return fd
 
     def open_file(self,name):
         try:
             fd=open(name, 'rb')
         except IOError:
-            print ('open_file %s failure' % name)
+            Logger().get_logger().error("open_file file {} failure".format(name)) 
             return -1
         else:
-            print ('open_file %s success' % name)
+            Logger().get_logger().info("open_file file {} success".format(name)) 
             return fd
     
     def read_file(self,fd,off,len):
@@ -262,7 +260,7 @@ class file_task(base_task):
         elif FILE_OPER_TYPE_PULL == self.m_oper_type:
             ret = file_manager().pull_file(thread_id,self.m_user_id,self.m_robot_id,self.m_file_path,self.m_file_type,self.m_task_id,self.m_local_path)
         else:
-            print("for delete task")
+            pass
         return ret
 
         
@@ -487,14 +485,14 @@ class file_manager():
 
     def push_file(self,threadID,m_userid,robot_id,file_path,file_type,task_id):
         if self.__shell_manager is None:
-            print("shell manager regist failure, robot_id:%d" % robot_id)
+            Logger().get_logger().error("shell manager regist failure, robot_id{}".format(robot_id)) 
             self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,-1,task_id)
             self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
             return ERRNO_ROBOT_CONNECT
         
         shell_info = self.__shell_manager.get_session_by_id(robot_id)
         if shell_info is None:
-            print("session cannot find, robot_id:%d" % robot_id)
+            Logger().get_logger().error("session cannot find, robot_id{}".format(robot_id)) 
             self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,-1,task_id)
             self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
             return ERRNO_ROBOT_CONNECT
@@ -502,7 +500,7 @@ class file_manager():
         t_file_info = file_info()
         t_file_info.m_hd = self.__file_rw.open_file(file_path)
         if -1 == t_file_info.m_hd:
-            print("open file[%s] failure" % file_path)
+            Logger().get_logger().error("open file[{}] failure".format(file_path))
             self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_OPEN,-1,task_id)
             self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
             return ERRNO_FILE_OPEN
@@ -585,7 +583,7 @@ class file_manager():
     
     
     def create_file_pull_data(self,robot_id,proto_pull_head):
-        print("create_file_pull_data file id:%d, name:%s" % (proto_pull_head.file_id.value, proto_pull_head.file_name.value))
+        Logger().get_logger().info("create_file_pull_data file id:{}, name:{}".format(proto_pull_head.file_id.value, proto_pull_head.file_name.value)) 
         map_file_info = {}
         file_mutex.acquire()
         map_file_info = dict_file_info.get(robot_id)
@@ -612,7 +610,6 @@ class file_manager():
         t_file_info.m_ctime = int(proto_pull_head.file_create_time.value / 10000000 - 11644473600) #11644444800+8*60*60
         t_file_info.m_atime = int(proto_pull_head.file_access_time.value / 10000000 - 11644473600)
         t_file_info.m_mtime = int(proto_pull_head.file_modify_time.value / 10000000 - 11644473600)
-        print("file:%s, get attr:%d,%d,%d" % (t_file_info.m_name,t_file_info.m_atime,t_file_info.m_ctime,t_file_info.m_mtime))
         t_file_info.m_last_block_num = 0
         t_file_info.m_last_off = 0
         t_file_info.m_block_size = self.get_block_size()
@@ -629,20 +626,20 @@ class file_manager():
         
     
     def send_file_data(self,robot_id,file_id,block_num):
-        print("send_file_data file id:%d, block num:%d" % (file_id, block_num))
+        Logger().get_logger().info('send_file_data file id:{}, block num:{}'.format(file_id, block_num))
         map_file_info = {}
         file_mutex.acquire()
         map_file_info = dict_file_info.get(robot_id)
         if map_file_info is None:
             file_mutex.release()
-            print("send_file_data cannot find robot[%d]" % robot_id)
+            Logger().get_logger().error('send_file_data cannot find robot[{}]'.format(robot_id))
             return -1
         
         t_file_info = map_file_info.get(file_id)
         if t_file_info is None:
             #self.print_file_dic_list()
             file_mutex.release()
-            print("send_file_data file[%d] doesnot exist in list" % file_id)
+            Logger().get_logger().error('send_file_data file[{}] doesnot exist in list'.format(file_id))
             return -1
         
         shell_info = self.__shell_manager.get_session_by_id(robot_id)
@@ -688,21 +685,20 @@ class file_manager():
         
         file_mutex.release()
         pass
-    
-    
+
     def pull_file_data(self,robot_id,file_id,block_num,off=0,data_len=0,data=""):
-        print("pull_file_data file id:%d, block num:%d" % (file_id, block_num))
+        # print("pull_file_data file id:%d, block num:%d" % (file_id, block_num))
         map_file_info = {}
         file_mutex.acquire()
         map_file_info = dict_file_info.get(robot_id)
         if map_file_info is None:
             file_mutex.release()
-            print("pull_file_data cannot find robot[%d]" % robot_id)
+            Logger().get_logger().error('send_file_data cannot find robot[{}]'.format(robot_id))
             return -1
         t_file_info = map_file_info.get(file_id)
         if t_file_info is None:
             file_mutex.release()
-            print("pull_file_data file[%d] doesnot exist in list" % file_id)
+            Logger().get_logger().error('send_file_data file[{}] doesnot exist in list'.format(file_id))
             return -1
         
         if t_file_info.m_hd is not None and data != "":
@@ -738,6 +734,7 @@ class file_manager():
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
             t_file_info.m_last_block_num += 1
             t_file_info.m_step,step = step,t_file_info.m_step
+            print(step,t_file_info.m_step)
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,t_file_info.m_step,0,0,t_file_info.m_task_id,t_file_info.m_size)
         else:

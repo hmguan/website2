@@ -5,6 +5,7 @@ from xml.dom.minidom import Document
 from copy import deepcopy
 import os,sys
 import threading
+from pynsp.logger import *
 
 mutex_agvinfo = threading.RLock()
 
@@ -38,10 +39,10 @@ def load_agvinfo_xml():
     try:
         getTree = ElementTree.parse(path)
     except IOError:
-        print("Error:load_agvinfo_xml can not find agv_info.xml")
+        Logger().get_logger().error('Error:load_agvinfo_xml can not find agv_info.xml.')
         return
     except xml.etree.ElementTree.ParseError:
-        print('parse error. maybe no element existed.')
+        Logger().get_logger().error('parse error. maybe no element existed.')
         return
 
     root = getTree.getroot()
@@ -75,7 +76,7 @@ def load_agvinfo_xml():
         dict_xml_agvinfo.append(agvinfos)
 
 def update_agvinfo(agvinfo):
-    print('updata write_xml id:', agvinfo.vhid, 'ip', agvinfo.inet, 'port:', agvinfo.mtport, 'shell port:',agvinfo.shport)
+    Logger().get_logger().error('updata write_xml id {}. ip{} port{} shell_port {}'.format(agvinfo.vhid,agvinfo.inet,agvinfo.mtport,agvinfo.shport))
     #print(agvinfo)
     flag=0
     for index in range(len(dict_xml_agvinfo)):
@@ -108,7 +109,7 @@ def change_agvinfo_xml(agvinfo):
     try:
         updateTree = ElementTree.parse(path)
     except IOError:
-        print("Error:change_agvinfo_xml can not find agv_info.xml")
+        Logger().get_logger().error('Error:change_agvinfo_xml can not find agv_info.xml')
         return
 
     root = updateTree.getroot()
@@ -135,11 +136,11 @@ def add_agvinfo_xml(agvinfo):
     try:
         updateTree = ElementTree.parse(path)
     except IOError:
-        print("Error:add_agvinfo_xml can not find agv_info.xml filed")
+        Logger().get_logger().error('Error:add_agvinfo_xml can not find agv_info.xml filed')
         new_agvinfo_xml(path, agvinfo)
         return
     except xml.etree.ElementTree.ParseError:
-        print('parse error. maybe no element existed.')
+        Logger().get_logger().error('parse error. maybe no element existed')
         new_agvinfo_xml(agvinfo,path)
         return
     root = updateTree.getroot()
@@ -181,7 +182,7 @@ if __name__ == "__main__":
     load_agvinfo_xml()
 
     for i in range(len(dict_xml_agvinfo)):
-        print(dict_xml_agvinfo[i].vhid)
+        Logger().get_logger().info('dict_xml_agvinfo vhid ={}.'.format(dict_xml_agvinfo[i].vhid))
 
     t=agvinfo_t()
     t.vhid=11
