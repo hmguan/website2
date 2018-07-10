@@ -9,7 +9,7 @@ class shellview(base_event):
         self.regist_event('get_online_robot_list','get_offline_robot_list','get_unusual_robot_list',
                           'get_robot_detail_info','get_robot_system_info',
                           'get_robot_process_detail_info','query_user_transfer_queue','cancle_file_transform_task',
-                          'query_robots_configuration_info')
+                          'query_robots_configuration_info','event_modify_file_lock')
         pass
 
     def flask_recvdata(self,requst_obj):
@@ -35,4 +35,6 @@ class shellview(base_event):
             return jsonify(cancle_transform(json_data.get('user_id'),json_data.get('robot_id'),json_data.get('task_list')))
         elif 'query_robots_configuration_info' == event:
             return jsonify(get_on_line_robot_configuration(json_data.get('user_id')))
+        elif 'event_modify_file_lock' == event:
+            return jsonify(modify_file_lock(json_data.get('opcode'),json_data.get('robot_list')))
         pass

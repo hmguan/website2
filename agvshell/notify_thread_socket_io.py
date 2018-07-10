@@ -38,16 +38,17 @@ class notify_thread(object):
             else:
                 notify_dict = dict()
                 self.__mutex_queue.acquire()
-                notify_dict = self.__notify_queue
+                notify_dict = deepcopy(self.__notify_queue)
                 self.__notify_queue.clear()
                 self.__mutex_queue.release()
 
                 if self.__notify_cb:
                     for (msg_type,data) in notify_dict.items():
-                        self.__notify_cb(msg_type,data)
+                        self.__notify_cb({'msg_type':msg_type,'data':data})
+    
                 self.__wait_handle.wait(check_time)
 
-    def add_notify(msg_type,data):
+    def add_notify(self,msg_type,data):
         self.__mutex_queue.acquire()
         if msg_type not in self.__notify_queue:
             self.__notify_queue[msg_type] = list()

@@ -97,6 +97,10 @@ class shell_session(tcp.obtcp):
             self.recv_log_type(pkt_id, data)
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_FILE_NAME_ACK == phead.type:
             self.recv_log_name(phead.id,data)
+        elif typedef.PKTTYPE_AGV_SHELL_FILE_MUTEX_STATUS_ACK == phead.type:
+            pass
+        elif typedef.PKTTYPE_AGV_SHELL_MODIFY_FILE_MUTEX_ACK == phead.type:
+            self.recv_modify_file_mutex(data,cb)
         else:
             Logger().get_logger().warning("not support type:%8x" % phead.type)
 
@@ -369,6 +373,38 @@ class shell_session(tcp.obtcp):
         stream = pkt.serialize()
         ret = self.send(stream, pkt.length())
         return ret
+
+    def post_modify_file_mutex(self,lock_status):
+        packet_modify_file_mutex = sysinfo.proto_msg_int_sync()
+        pkt_id = wait_handler().allocat_pkt_id()
+        packet_modify_file_mutex.head_.type(typedef.PKTTYPE_AGV_SHELL_MODIFY_FILE_MUTEX)
+        packet_modify_file_mutex.head_.id(pkt_id)
+        packet_modify_file_mutex.pkt_id(pkt_id)
+        packet_modify_file_mutex.msg_int(lock_status)
+        packet_modify_file_mutex.head_.size(packet_modify_file_mutex.length())
+        return self.send(packet_modify_file_mutex.serialize(),packet_modify_file_mutex.head_.size.value)
+
+    def recv_modify_file_mutex(self,data,cb):
+        import errtypes
+        if cb < 0:
+            Logger().get_logger().error("recv modify_file_mutex packet error.")
+            return
+
+        packet_file_mutex = sysinfo.proto_msg_int_sync()
+        if (packet_file_mutex.build(data, 0) < 0):
+            Logger().get_logger().error("recv_modify_file_mutex build  proto_msg_int_sync packet error.")
+            return
+
+        if 0 == packet_file_mutex.head_.err.value:
+            if packet_file_mutex.msg_int.value == 1:
+                self.__shell_systeminfo['lock_status'] = 1
+            else:
+                self.__shell_systeminfo['lock_status'] = 0
+
+        if self.__push_notify_cb:
+            self.__push_notify_cb(errtypes.TypeShell_ModifyFileMutex,{"robot_id":self.__robot_id,"opecode":packet_file_mutex.msg_int.value,"error_code":packet_file_mutex.head_.err.value})
+
+        pass
 
 ##################################################以下为fts文件传输协议代码#######################################################
 

@@ -195,6 +195,24 @@ class proto_sysinfo_changed(proto_interface):
         return self.process_list.build(data, offset)
 
 
+class proto_msg_int_sync(proto_interface):
+    def __init__(self):
+        super(proto_msg_int_sync, self).__init__()
+        self.head_ = proto_head.proto_head()
+        self.pkt_id = proto_int32(0)
+        self.msg_int = proto_int32(0)
+
+    def length(self):
+        return self.head_.length() + self.pkt_id.length() + self.msg_int.length()
+
+    def serialize(self)->bytes:
+        return self.head_.serialize() + self.pkt_id.serialize() + self.msg_int.serialize()
+
+    def build(self,data,offset) -> int:
+        offset = self.head_.build(data,offset)
+        offset = self.pkt_id.build(data,offset)
+        return self.msg_int.build(data,offset)
+
 def recv_sysinfo_fixed(data, len,offset)->tuple:
     tmp = proto_sysinfo_fixed()
     offset = tmp.build(data, offset)

@@ -18,7 +18,8 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		'RobotUpgrade':RobotUpgrade,
 		'query_transfer_queue':query_transfer_queue,
 		'cancle_task':cancle_task,
-		'query_robots_configuration':query_robots_configuration
+		'query_robots_configuration':query_robots_configuration,
+		'modify_file_lock':modify_file_lock
 	}
 
 	function RequestRobotDetailInfo (RobotId) {
@@ -100,6 +101,10 @@ app.service('$http_services',['$http','$q',function($http,$q){
 
 	function query_transfer_queue(userId,type){
 		return RequestJsonData(JSON.stringify({'event': 'query_user_transfer_queue', 'user_id': parseInt(userId),'file_type':parseInt(type)}))
+	}
+
+	function modify_file_lock(opecode,robot1){
+		return RequestJsonData(JSON.stringify({'event': 'event_modify_file_lock', 'opcode': parseInt(opecode),'robot_list':[parseInt(robot1)]}))
 	}
 
 	function 	RequestJsonData(data){

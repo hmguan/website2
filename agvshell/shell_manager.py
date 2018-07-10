@@ -197,3 +197,14 @@ class shell_manager():
     def register_socket_io_notify(self,socketio_notify):
         if self.__notify_thread:
             self.__notify_thread.register_socketio_notify(socketio_notify)
+
+    def modify_robot_file_lock(self,robotid,opecode) ->int:
+        err_code = 0
+        self.__mutex.acquire()
+        session = self.__robot_lnk.get(robotid)
+        if session:
+            session.post_modify_file_mutex(opecode)
+        else:
+            err_code = 1
+        self.__mutex.release()
+        return err_code

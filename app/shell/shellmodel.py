@@ -158,3 +158,12 @@ def get_on_line_robot_configuration(user_id):
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'data': group_info}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def modify_file_lock(opcode, robot_list):
+    if type(opcode) != int or type(robot_list) != list or opcode not in {0,1}:
+        return {'code':errtypes.HttpResponseCode_InvaildParament,'msg':errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        error_list = modify_robot_file_lock(robot_list,opcode)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

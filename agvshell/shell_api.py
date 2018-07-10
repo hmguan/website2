@@ -314,4 +314,10 @@ def get_robot_list_basic_info():
                                                                 })
     return group_robot_info
 
+def modify_robot_file_lock(robot_list,opecode) ->list:
+    error_list = list()
+    for robot_id in robot_list:
+        if shell_manager().modify_robot_file_lock(robot_id,opecode) != 0:
+            error_list.append(robot_id)
+    return error_list
 
