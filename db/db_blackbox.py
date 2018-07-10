@@ -5,19 +5,19 @@ from sqlalchemy import asc
 from sqlalchemy import desc
 from configuration import config
 import os
-
+from datetime import datetime
 
 class blackbox_manager():
     def __init__(self):
         pass
     
     @staticmethod
-    def insert_temps(user_id,temps_types,others,time):
+    def insert_temps(user_id,temps_types,others):
         tmp = session_obj.query(user_info).filter_by(id=user_id).first()
         if(tmp ==None):
             return -1
         
-        temps_obj = blackbox_temps(user_id = user_id,temps_types= temps_types,others=others,time=time)
+        temps_obj = blackbox_temps(user_id = user_id,temps_types= temps_types,others=others,time=datetime.now())
         session_obj.add(temps_obj)
         session_obj.commit()
         return temps_obj.id

@@ -28,6 +28,8 @@ class user_manager():
         try:
             data = s.loads(token)
             user_id = data['id']
+            if user.is_exist_id(user_id)<0:
+                 return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':"用户不存在",'data':{'token':token}} 
         except SignatureExpired:
             msg = "登陆信息已过期，请重新登陆！"
             logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid=user_uuid)

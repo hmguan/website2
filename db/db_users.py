@@ -13,6 +13,13 @@ class user:
         if(ret ==None):
             return -1
         return 0
+        
+    @staticmethod
+    def is_exist_id(user_id)->int:
+        ret = session_obj.query(user_info).filter_by(id=user_id).first()
+        if(ret ==None):
+            return -1
+        return 0
 
     #用户校验 
     @staticmethod
