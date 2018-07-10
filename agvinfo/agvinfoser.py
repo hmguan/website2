@@ -250,7 +250,7 @@ def agvinfoser_startup(_host = '0.0.0.0', _port = 9022, _notify_changed = None)-
         ser = None
         return -1
 
-    Logger().get_logger().error('agvinfo server startup successful.')
+    Logger().get_logger().info('agvinfo server startup successful.')
     return 0
 
 def agvinfoser_shclosed(_mac):
