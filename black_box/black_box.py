@@ -33,41 +33,47 @@ def get_task_id()->int:
 
 #对外接口：获取日志类型
 def get_agv_types(robot_list):
+    log_type=dict()
+    ret_list=[]
+    for id in robot_list:
+        shell_info = shell_manager().get_session_by_id(int(id))
+        if shell_info is not None:
+            pkt_id = shell_info.load_log_type()
+            if pkt_id < 0:
+                Logger().get_logger().error("failed post get log type to agvshell.")
+                break
+            # 同步等待
+            if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
+                data = shell_info.get_log_types()
+                type_list = log.proto_log_type_vct()
+                type_list.build(data, 0)
+                for index in type_list.log_type_vct:
+                    log_type[index.log_type.value]=0#取并集
+                    print('log_type:', index.log_type.value)
+                wait_handler().wait_destory(pkt_id)
+    for index in log_type.keys():
+        ret_list.append(index)
+        print('log_type:', index)
+    return ret_list
 
-    # for id in robot_list:
-    #     shell_info = shell_manager().get_session_by_id(int(robot_list))
-    #     if shell_info is not None:
-    #         pkt_id = shell_info.load_log_type()
-    #         if pkt_id < 0:
-    #             Logger().get_logger().error("failed post get log type to agvshell.")
-    #             break
-    #         # 同步等待
-    #         if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
-    #             data = shell_info.get_log_types()
-    #             type_list = log.proto_log_type_vct()
-    #             type_list.build(data, 0)
-    #             for index in type_list.log_type_vct:
-    #                 log_type[index.log_type.value]=0#取并集
-    #                 print('log_type:', index.log_type.value)
-    #             wait_handler().wait_destory(pkt_id)
-    shell_info = shell_manager().get_session_by_id(int(robot_list))
-    if shell_info is not None:
-        pkt_id=shell_info.load_log_type()
-        if pkt_id < 0:
-            Logger().get_logger().error("failed post get log type to agvshell.")
-            # break
-        # 同步等待
-        if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
-            data = shell_info.get_log_types()
-            type_vct = log.proto_log_type_vct()
-            type_vct.build(data, 0)
-            print('type length:', len(type_vct.log_type_vct))
-            type_list=[]
-            for index in type_vct.log_type_vct:
-                type_list.append(index.log_type.value)
-                print('log_type:', index.log_type.value)
-            wait_handler().wait_destory(pkt_id)
-            return type_list
+    # shell_info = shell_manager().get_session_by_id(int(robot_list))
+    # if shell_info is not None:
+    #     pkt_id=shell_info.load_log_type()
+    #     if pkt_id < 0:
+    #         Logger().get_logger().error("failed post get log type to agvshell.")
+    #         # break
+    #     # 同步等待
+    #     if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
+    #         data = shell_info.get_log_types()
+    #         type_vct = log.proto_log_type_vct()
+    #         type_vct.build(data, 0)
+    #         print('type length:', len(type_vct.log_type_vct))
+    #         type_list=[]
+    #         for index in type_vct.log_type_vct:
+    #             type_list.append(index.log_type.value)
+    #             print('log_type:', index.log_type.value)
+    #         wait_handler().wait_destory(pkt_id)
+    #         return type_list
 
 
 #对外接口：下发获取日志的筛选条件
