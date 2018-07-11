@@ -7,12 +7,13 @@ import json
 from pynsp.logger import *
 from . import main
 import errtypes
-from db.db_users import user
-from configuration import config
-from db.db_package import package_manager
-from db.db_logger import logger_manager
-from datetime import datetime
-from app.user.user_manager import user_manager
+
+# from db.db_users import user
+# from configuration import config
+# from db.db_package import package_manager
+
+#the dict save the relationship route with event,
+#{event:object}
 map_event_obj = {}
 
 @main.route('/', methods=["GET",'POST'])
@@ -20,7 +21,7 @@ def index():
     print('main route method:',request.method)
     if 'GET' == request.method:
         uid_value = uuid.uuid4()
-        # flask.session['uid']=uiduser_manager
+        # flask.session['uid']=uid_value
 
         resp= flask.make_response(render_template('index.html'))
         resp.set_cookie('token',str(uid_value).encode('utf-8'))
@@ -42,42 +43,6 @@ def index():
 @main.route('/test')
 def test():
     return render_template('test.html')
-
-@main.route('/upload',methods=['GET','POST'])
-def upload_file():
-    user_id = int(request.form['user_id'])
-    logger_manager.insert(user_id,login_type='packages',time =datetime.now(),
-    msg="recv file:{0}".format(request.files['file'].filename),u_uuid=user_manager().user_uuid(user_id))
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': '参数有误'})
-        file=request.files['file']
-        if file.filename == '':
-            return jsonify({'code': errtypes.HttpResponseCode_NOFILE, 'msg': '未选文件'})
-        else:
-            filename = file.filename
-            try:
-                if file:
-                    version = request.form['version']
-                    remark=request.form['remark']
-                    user_name = user.query_name_by_id(user_id)
-                    folder_path = config.ROOTDIR +user_name +config.PATCHFOLDER
-                    
-                    if os.path.exists(folder_path) == False:
-                        os.makedirs(folder_path)
-
-                    file_path = os.path.join(folder_path,filename)
-
-                    file.save(file_path)
-                    time = datetime.now()
-                    ret = package_manager.upload(user_id,filename,version,time,remark)
-                    if ret==-1:
-                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': '上传失败，用户不存在'})
-                    logger_manager.insert(user_id,login_type='packages',time =datetime.now(),msg="upload file:{0}".format(filename),u_uuid=user_manager().user_uuid(user_id))
-                    return jsonify({'code': 0, 'msg': '上传成功'})
-            except Exception as e:
-                    print(e)
-                    return jsonify({'code': errtypes.HttpResponseCode_UPLOADEXCEPTIONERROR, 'msg': '上传失败'})
 
 class base_event():
     def __init__(self):

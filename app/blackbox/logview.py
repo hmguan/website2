@@ -20,8 +20,8 @@ class logview(base_event):
             return jsonify(ret)
 
         if 'send_log_condition' == event:
-            robot_list=json_data['robot_id']
-            task_id=send_log_condition(robot_list,json_data['user_id'],json_data.get('start_time'),json_data.get('end_time'),{'motion_template','agv_shell'},json_data['name'])#json_data.get('type_list')
+            robot_id=int(json_data['robot_id'])
+            task_id=send_log_condition(robot_id,int(json_data['user_id']),json_data.get('start_time'),json_data.get('end_time'),{'motion_template','agv_shell'},json_data['name'])#json_data.get('type_list')
             ret={'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'task_id':task_id}
             return jsonify(ret)
 
