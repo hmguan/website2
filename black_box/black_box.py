@@ -59,11 +59,11 @@ def get_agv_types(robot_list):
         # 同步等待
         if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
             data = shell_info.get_log_types()
-            type_list = log.proto_log_type_vct()
-            type_list.build(data, 0)
-            print('type length:', len(type_list.log_type_vct))
+            type_vct = log.proto_log_type_vct()
+            type_vct.build(data, 0)
+            print('type length:', len(type_vct.log_type_vct))
             type_list=[]
-            for index in type_list.log_type_vct:
+            for index in type_vct.log_type_vct:
                 type_list.append(index.log_type.value)
                 print('log_type:', index.log_type.value)
             wait_handler().wait_destory(pkt_id)
@@ -76,8 +76,8 @@ def send_log_condition(robot_list,user_id,start_time,end_time,types,name):
     global task_user_,user_task_data,task_id_count_,task_recv_count_
     task_user_[task_id]=user_id
     print('task-user',task_user_[task_id])
-    task_id_count_[user_id]=0
-    task_recv_count_[user_id]=0
+    task_id_count_[int(user_id)]=0
+    task_recv_count_[int(user_id)]=0
     zip_file=get_user_path(user_id)+name
     hzip = zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED)
     mutex.acquire()
@@ -137,17 +137,15 @@ def zip_threading_func(file_path,user_id):
     global user_task_data
     filefullpath = os.path.join(open_path, file_path)
     user_task_data[user_id]['handle'].write(filefullpath,file_path)
-    user_task_data[user_id]['handle'].write(filefullpath,'2_log_20180709_100251.tar.xz')
-    user_task_data[user_id]['handle'].write(filefullpath, '2_log_20180709_100310.tar.xz')
     user_task_data[user_id]['handle'].close()
     mutex.release()
 
 #pull文件时，回调进度
 def pull_log_step_notify(user_id,robot_id,step,file_path,error_code):#file_path需要改成保存后台的文件名,status状态表示file_rw推拉是否正常
     print('step',step)
-    notify_dic = dict()
-    notify_dic['msg_type'] = errtypes.TypeShell_Blackbox_Log
-    notify_dic['user_id'] = user_id
+    # notify_dic = dict()
+    # notify_dic['msg_type'] = errtypes.TypeShell_Blackbox_Log
+    # notify_dic['user_id'] = user_id
     global task_id_count_,task_recv_count_
     mutex.acquire()
     if step==100 :
@@ -160,14 +158,16 @@ def pull_log_step_notify(user_id,robot_id,step,file_path,error_code):#file_path�
         task_recv_count_[int(user_id)] += 1
 
     print('type',task_recv_count_,task_id_count_)
+    print('count',task_recv_count_[int(user_id)])
     if task_recv_count_[int(user_id)]==task_id_count_[int(user_id)]:
-        notify_dic['step'] = 100
+        # notify_dic['step'] = 100
         #推送前台
         pass  # 压缩完删除文件
     else:
         sch = (task_recv_count_[int(user_id)]+float(step) / 100) / task_id_count_[int(user_id)]  # 总进度
-        notify_dic['step']=sch
+        #notify_dic['step']=sch
         # sockio推给前台
+        print('sch',sch)
     mutex.release()
 
 #获取存后台的路径
