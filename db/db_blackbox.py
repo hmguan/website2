@@ -3,7 +3,6 @@ from db import session_obj,user_info,blackbox_temps
 from sqlalchemy import or_
 from sqlalchemy import asc
 from sqlalchemy import desc
-from configuration import config
 import os
 from datetime import datetime
 

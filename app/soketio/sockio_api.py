@@ -42,6 +42,6 @@ def socketio_leave(room_identify):
 
 @local_socketio.on('client_ping', namespace='/notify_call')
 def ping_pong():
-    Logger().get_logger().info('client send ping message.')
+    #Logger().get_logger().info('client send ping message.')
     pass
 
