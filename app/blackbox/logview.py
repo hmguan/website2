@@ -31,7 +31,7 @@ class logview(base_event):
             return jsonify(ret)
 
         if 'event_bk_temps_insert'==event:
-            ret = blackbox_manager.insert_temps(json_data['user_id'],json_data.get('temps_types'),json_data.get('others'))
+            ret = blackbox_manager.insert_temps(json_data['user_id'],json_data['name'],json_data.get('temps_types'),json_data.get('others'))
             if ret<0:
                 return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '添加失败'})
             
@@ -51,6 +51,7 @@ class logview(base_event):
             for index, value in enumerate(ret):
                 tmp={}
                 tmp['id']= value.id
+                tmp['name']= value.name
                 tmp['temps_types']= value.temps_types
                 tmp['others'] = value.others
                 tmp['time']= value.time
