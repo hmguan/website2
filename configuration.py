@@ -2,18 +2,22 @@
 
 import os
 from werkzeug.utils import secure_filename
+import uuid
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class config:
-    SECRET_KEY='webserver!'
+    SECRET_KEY=str(uuid.uuid4())
     MAX_CONTENT_LENGTH=1024*1024*1024
 
     ROOTDIR='./website/'
     PATCHFOLDER = '/patch/'
     BLACKBOXFOLDER = '/blackbox/'
     BINFOLDER = '/bin/'
-    TRANSMIT_BLOCK_SIZE = 32*1024
+
+    SOCKET_PORT=5008
+    HTTP_PORT=5010
+
     @staticmethod
     def init_app(app):
         pass
