@@ -37,6 +37,7 @@ def create_http_app(config_name)->Flask:
     :return: the application instance object
     '''
     upapp = Flask(__name__,static_url_path='',static_folder='web', template_folder='web')
+    CORS(upapp, supports_credentials=True)
     upapp.config.from_object(config_setting[config_name])
     config_setting[config_name].init_app(upapp)
 
