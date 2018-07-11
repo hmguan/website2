@@ -7,6 +7,7 @@ import traceback
 import sys
 from black_box.black_box import init_black_box
 import ptvsd
+from configuration import config
  
 ptvsd.settrace(None, ('0.0.0.0', 12345))
 #ptvsd.wait_for_attach()
@@ -24,6 +25,10 @@ sys.excepthook = quiet_errors
 
 if __name__ == '__main__':
     from app.soketio import sockio_api as soket_center
+    try:
+        socket_port = config.SOCKET_PORT
+    except Exception as e:
+        socket_port = 5008
 
     #初始化日志文件
     init_logger()
@@ -39,4 +44,5 @@ if __name__ == '__main__':
     #注册通知浏览器回调例程
     register_notify_function(notify_call = soket_center.response_to_client_data)
     #启动socket io服务
-    local_socketio.run(app,host='0.0.0.0', port=5008, debug=True,use_reloader=False)
+
+    local_socketio.run(app,host='0.0.0.0', port=socket_port, debug=True,use_reloader=False)
