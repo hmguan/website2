@@ -56,6 +56,7 @@ class logger(Base):
 class blackbox_temps(Base):
     __tablename__ = 'bk_temps'
     id= Column(Integer,primary_key = True,autoincrement=True)
+    name =  Column(String(256),nullable=False)
     user_id = Column(Integer,ForeignKey('users.id'),nullable=False)
     temps_types = Column(String(1024),nullable=False)
     others = Column(String(256),nullable=True)

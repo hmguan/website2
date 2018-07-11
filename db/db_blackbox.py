@@ -12,12 +12,12 @@ class blackbox_manager():
         pass
     
     @staticmethod
-    def insert_temps(user_id,temps_types,others):
+    def insert_temps(user_id,name,temps_types,others):
         tmp = session_obj.query(user_info).filter_by(id=user_id).first()
         if(tmp ==None):
             return -1
         
-        temps_obj = blackbox_temps(user_id = user_id,temps_types= temps_types,others=others,time=datetime.now())
+        temps_obj = blackbox_temps(user_id = user_id,name=name,temps_types= temps_types,others=others,time=datetime.now())
         session_obj.add(temps_obj)
         session_obj.commit()
         return temps_obj.id
