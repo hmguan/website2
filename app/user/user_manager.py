@@ -25,6 +25,7 @@ class user_manager():
     def verify_auth_token(self,token,user_uuid):
         # step 1: 验证token
         s = Serializer(config.SECRET_KEY)
+        user_id = 0
         try:
             data = s.loads(token)
             user_id = data['id']
