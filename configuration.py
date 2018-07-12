@@ -14,8 +14,7 @@ class config:
     PATCHFOLDER = '/patch/'
     BLACKBOXFOLDER = '/blackbox/'
     BINFOLDER = '/bin/'
-	
-	TRANSMIT_BLOCK_SIZE = 32*1024
+    TRANSMIT_BLOCK_SIZE = 32*1024
     SOCKET_PORT=5008
     HTTP_PORT=5010
 

@@ -3,6 +3,7 @@ from pynsp.logger import *
 from ..user.userview import users_center
 from agvshell.transfer_file_types import *
 import errtypes
+from configuration import config
 
 set_push_file_type = {FILE_TYPE_A_UPGRADE,FILE_TYPE_VCU_UPGRADE}
 set_pull_file_type = {FILE_TYPE_BLACKBOX_PULL_FILES}
@@ -165,5 +166,11 @@ def modify_file_lock(opcode, robot_list):
     try:
         error_list = modify_robot_file_lock(robot_list,opcode)
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def query_ftp_port():
+    try:
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'ftp_port': config.HTTP_PORT}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
