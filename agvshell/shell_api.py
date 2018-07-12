@@ -4,6 +4,7 @@ from .shell_manager import shell_manager
 from agvinfo.dhcp_agent_center import agvinfoserver_online_robot,agvinfoserver_sh_closed,agvinfoserver_offline_robot
 from .file_rw import *
 import copy
+import os
 
 #全局在线机器人信息
 global_robot_info=dict()
@@ -65,6 +66,8 @@ def start_connect_to_robot():
                     global_mutex.release()
                 elif result < 0:
                     #记录连接不成功的异常
+                    #连接异常时，直接从在线信息中删除
+                    del_robot(item.id)
                     global_mutex.acquire()
                     if item.id not in unusual_collection.keys():
                         unusual_collection[item.id]={'robot_mac':item.mac,'robot_host':item.host}
@@ -73,6 +76,50 @@ def start_connect_to_robot():
                     if notify_client_function is not None:
                         notify_client_function({'msg_type':errtypes.TypeShell_ConnectException,'robot_id':item.id,
                                                 'robot_mac':item.mac,'robot_host':item.host})
+
+
+#检测文件是否过期
+def thread_check_file_expired():
+    from time import sleep
+    from configuration import system_config
+    default_retention_time_min = 24*60
+    default_time_intervel_sec = 10*60
+
+    while is_exit_thread == False:
+        retention_time_min = system_config.get('retention_time_min')
+        if retention_time_min is None:
+            retention_time_min = default_retention_time_min
+
+        time_intervel_sec = system_config.get('time_intervel_sec')
+        if time_intervel_sec is None:
+            time_intervel_sec = default_time_intervel_sec
+
+        path_config = system_config.get('path_element')
+
+        if path_config is None:
+            Logger().get_logger().error('No path_element configuration item was found')
+            return
+
+        for folder_path in path_config:
+            walk_file(folder_path,retention_time_min *60)
+
+        sleep(time_intervel_sec)
+
+
+def walk_file(path,retention_time):
+    #文件夹不存在 或者 非文件夹路径
+    if os.path.isdir(path) == False:
+        return
+
+    current_timestamp = int(round(time.time() * 1000))
+    for root,dirs,files in os.walk(path,False):
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            last_update_file = os.path.getmtime(file_path)
+            if last_update_file >= current_timestamp :
+                continue
+            elif (current_timestamp - last_update_file) > retention_time:
+                os.remove(file_path)
 
 
 #切换线程进行登录，不适用回调函数上来的线程，在调试过程中发现不切换线程时，容易造成登录agv_shell超时
@@ -103,19 +150,9 @@ def remote_robot(robot_id):
     if notify_client_function is not None:
         notify_client_function({'msg_type':errtypes.TypeShell_Offline,'robot_id':robot_id})
     #删除global_robot_info中对应机器人信息
-    mac_addr = ''
+    
     print('start remove global robot info')
-    global global_mutex
-    global_mutex.acquire()
-    print('global_robot_info:',global_robot_info)
-    for key,item in global_robot_info.items():
-        if item.id == robot_id:
-            mac_addr = key
-            del (global_robot_info[key])
-            print('success delete global robot info of key:',key)
-            break
-
-    global_mutex.release()
+    mac_addr = del_robot(robot_id)
     if len(mac_addr) == 0:
         print('-----remote robot mac address is empty-----')
         return
@@ -123,6 +160,17 @@ def remote_robot(robot_id):
     print('offline robot mac:',mac_addr)
     agvinfoserver_sh_closed(mac_addr)
 
+def del_robot(robot_id):
+    global global_mutex
+    global_mutex.acquire()
+    for key,item in global_robot_info.items():
+        if item.id == robot_id:
+            del (global_robot_info[key])
+            global_mutex.release()
+            print('success delete global robot info of key:',key)
+            return mac_addr
+    global_mutex.release()
+    return ''
 
 ###############################################对外接口层，用户提供外部调用#############################################
 

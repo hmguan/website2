@@ -39,4 +39,4 @@ def upload_file():
 
                     return jsonify({'code': 0, 'msg': '上传成功'})
             except Exception as e:
-                return jsonify({'code': errtypes.HttpResponseCode_UPLOADEXCEPTIONERROR, 'msg': '上传失败'})
+                return jsonify({'code': errtypes.HttpResponseCode_UPLOADEXCEPTIONERROR, 'msg': str(e)})

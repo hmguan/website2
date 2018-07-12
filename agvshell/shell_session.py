@@ -109,12 +109,13 @@ class shell_session(tcp.obtcp):
 
     def on_closed(self, previous):
         self.__net_status=typedef.NetworkStatus_Closed
-        Logger().get_logger().warning("close the session {0} ,lnk is {1}".format(self.__target_host,self.link))
-        if self.__notify_fm is not None:
-            self.__notify_fm.close_robot_file(self.__robot_id)
-        if self.__notify_closed is not None:
-            Logger().get_logger().warning('notify closed,robot id:{0}'.format(self.__robot_id))
-            self.__notify_closed(self.__robot_id)
+        if self.link >= 0:
+            Logger().get_logger().warning("close the session {0} ,lnk is {1}".format(self.__target_host,self.link))
+            if self.__notify_fm is not None:
+                self.__notify_fm.close_robot_file(self.__robot_id)
+            if self.__notify_closed is not None:
+                Logger().get_logger().warning('notify closed,robot id:{0}'.format(self.__robot_id))
+                self.__notify_closed(self.__robot_id)
         pass
 
     def on_connected(self):
@@ -207,8 +208,11 @@ class shell_session(tcp.obtcp):
             self.__shell_serviceinfo['host_time'] = info.host_time.value
             #print('netio:',info.net_io_rec.value - self.__current_netio_r)
             #print('time_stamp:',self.__timestamp-self.__previous_timestamp)
-            self.__shell_serviceinfo['net_io_rec'] = int((info.net_io_rec.value - self.__current_netio_r)/float((self.__timestamp-self.__previous_timestamp)/1000))
-            self.__shell_serviceinfo['net_io_tra'] = int((info.net_io_tra.value - self.__current_netio_t)/float((self.__timestamp-self.__previous_timestamp)/1000))
+            
+            dec_timestamp = (self.__timestamp-self.__previous_timestamp)/1000
+            if dec_timestamp > 0:
+                self.__shell_serviceinfo['net_io_rec'] = int((info.net_io_rec.value - self.__current_netio_r)/float(dec_timestamp))
+                self.__shell_serviceinfo['net_io_tra'] = int((info.net_io_tra.value - self.__current_netio_t)/float(dec_timestamp))
             #print('net_io_rec',self.__shell_serviceinfo['net_io_rec'])
             #print('net_io_tra',self.__shell_serviceinfo['net_io_tra'])
             self.__current_netio_r=info.net_io_rec.value

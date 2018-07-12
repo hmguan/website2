@@ -33,6 +33,18 @@ class test_config(config):
 class produce_config(config):
     sqlite_database = ''
 
+system_config = {
+#文件保留时间
+    'retention_time_min':10*24*60,
+#检测文件间隔
+    'time_intervel_sec':10*60,
+#文件检测路径
+    'path_element':[
+        # config.ROOTDIR +config.BLACKBOXFOLDER
+        config.ROOTDIR
+    ]
+}
+
 config_setting={
     'development':development_config,
     'test':test_config,
