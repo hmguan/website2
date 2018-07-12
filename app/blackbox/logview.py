@@ -7,7 +7,8 @@ from db.db_blackbox import blackbox_manager
 class logview(base_event):
     def __init__(self):
         super(logview,self).__init__()
-        self.regist_event('get_log_types','send_log_condition','cancle_get_log','event_bk_temps_insert','event_bk_temps_remove','event_bk_temps')
+        self.regist_event('get_log_types','send_log_condition','cancle_get_log','event_bk_temps_insert','event_bk_temps_remove','event_bk_temps',
+                          'get_executing_log','delete_log','get_log_list','download_log')
         pass
 
     def flask_recvdata(self,requst_obj):
@@ -20,9 +21,13 @@ class logview(base_event):
             return jsonify(ret)
 
         if 'send_log_condition' == event:
-            robot_id=int(json_data['robot_id'])
-            task_id=send_log_condition(robot_id,int(json_data['user_id']),json_data.get('start_time'),json_data.get('end_time'),{'motion_template','agv_shell'},json_data['name'])#json_data.get('type_list')
-            ret={'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'task_id':task_id}
+            robot_id=json_data['robot_id']
+            back=send_log_condition(robot_id,int(json_data['user_id']),json_data.get('start_time'),json_data.get('end_time'),json_data.get('type_list'),json_data['name'])#['agv_shell','nshost']
+            if back ==0:
+                ret={'code': 0,'msg':errtypes.HttpResponseMsg_Normal}
+            else:
+                ret={'code': errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed}
+
             return jsonify(ret)
 
         if 'cancle_get_log'==event:
@@ -58,3 +63,28 @@ class logview(base_event):
                 list_temps.append(tmp)
             ret = {'code':0,'msg':'查询成功','data':{'temps':list_temps}}
             return jsonify(ret)
+
+        if 'get_executing_log'==event:
+            user_id = int(json_data['user_id'])
+            task_id,step=get_executing_log(user_id)
+            ret={'code':0,'msg':errtypes.HttpResponseCode_Normal,'task_id':task_id,'step':step}
+            return jsonify(ret)
+
+        if 'delete_log'==event:
+            user_id = int(json_data['user_id'])
+            log_name=json_data['log_name']
+            ret=delete_log(user_id,log_name)
+            if ret<0:
+                return jsonify({'code':errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed})
+            return jsonify({'code':errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
+
+        if 'get_log_list'==event:
+            user_id = int(json_data['user_id'])
+            log_list=get_log_list(user_id)
+            return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,'log_list':log_list})
+
+        if 'download_log'==event:
+            user_id = int(json_data['user_id'])
+            log_name = json_data['log_name']
+            download_log(user_id,log_name)
+            return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})

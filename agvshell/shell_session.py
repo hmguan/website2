@@ -345,9 +345,10 @@ class shell_session(tcp.obtcp):
         pkt.phead.id(task_id)
         pkt.start_time(start_time)
         pkt.end_time(end_time)
+        if len(types)==0:
+            return -1
         for it_type in types:
             pkt_item = log.proto_log_type_item()
-            print('type',it_type)
             pkt_item.log_type(it_type)
             pkt.vct_log_type.append(pkt_item)
         stream = pkt.serialize()

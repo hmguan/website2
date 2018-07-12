@@ -76,7 +76,7 @@ def load_agvinfo_xml():
         dict_xml_agvinfo.append(agvinfos)
 
 def update_agvinfo(agvinfo):
-    Logger().get_logger().error('updata write_xml id {}. ip{} port{} shell_port {}'.format(agvinfo.vhid,agvinfo.inet,agvinfo.mtport,agvinfo.shport))
+    Logger().get_logger().info('updata write_xml id {}. ip{} port{} shell_port {}'.format(agvinfo.vhid,agvinfo.inet,agvinfo.mtport,agvinfo.shport))
     #print(agvinfo)
     flag=0
     for index in range(len(dict_xml_agvinfo)):

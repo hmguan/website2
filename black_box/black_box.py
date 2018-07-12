@@ -87,15 +87,18 @@ def send_log_condition(robot_list,user_id,start_time,end_time,types,name):
     zip_file=get_user_path(user_id)+name
     hzip = zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED)
     mutex.acquire()
-    user_task_data[user_id]={'task':task_id,'name':zip_file,'handle':hzip,'path':{}}
+    user_task_data[user_id]={'task':task_id,'name':zip_file,'handle':hzip,'path':{},'step':0}
+    print('user--',user_task_data)
     mutex.release()
-    robot_list = {2}
+    # robot_list={2}
     for id in robot_list:
         shell_info = shell_manager().get_session_by_id(int(id))
         if shell_info is not None:
             if shell_info.get_log_data(task_id, start_time, end_time, types)>=0:
                 shell_info.register_notify_log_path(load_log_path)
                 task_id_count_[user_id] +=1#发送成功的个数
+            else: return -1
+    return 0
 
 #取消任务
 def cancle_get_log(task_id):
@@ -112,6 +115,37 @@ def cancle_get_log(task_id):
         mutex.release()
     return -1
 
+#正在执行的任务
+def get_executing_log(user_id):
+    if user_task_data[user_id] is None:
+        return -1, -1
+    return user_task_data[user_id]['task_id'],user_task_data[user_id]['step']
+
+#删除日志文件
+def delete_log(user_id,log_name):
+    path=get_user_path(user_id)
+    print('---',path + log_name)
+    if os.path.isfile(path + log_name):
+        os.remove(path + log_name)
+        return 0
+    return -1
+
+#用户下的日志文件
+def get_log_list(user_id):
+    file_list=[]
+    path = get_user_path(user_id)
+    list=os.listdir(path)
+    for index in list:
+        attr=dict()
+        print('path',index)
+        if os.path.isfile(path+index) and os.path.splitext(index)[1] == ".tar":
+            attr['name']=index
+            timestamp=os.path.getmtime(path+index)
+            attr['time'] =time.strftime('%Y/%m/%d %H:%M:%S',time.localtime(timestamp))
+            attr['size']=os.path.getsize(path+index)
+            file_list.append(attr)
+    return file_list
+
 
 #收到车上shell压缩的文件，返回的车上路径
 def load_log_path(id,task_id,data):
@@ -119,13 +153,14 @@ def load_log_path(id,task_id,data):
     print('back----',task_id)
     path = log.proto_logs_file_path()
     path.build(data, 0)
-    print('build',task_id,len(path.vct_log_file_name))
-    user=task_user_[int(task_id)]
+    user = task_user_[int(task_id)]
+    if len(path.vct_log_file_name)==0:#没有文件返回
+        if notify_step_function is not None:
+            notify_step_function({'msg_type':errtypes.TypeShell_Blackbox_None,'user_id':user})
     mutex.acquire()
     if len(path.vct_log_file_name)!=0 and user_task_data[user]['path'] is not None:
         print('id_log_path', id, path.vct_log_file_name[0])
-        user_task_data[user]['path'][id] = path.vct_log_file_name[0].value
-        #log_path[id]=path.vct_log_file_name[0]
+        #del user_task_data[user]
         # fts去取压缩好的文件
         strpath=path.vct_log_file_name[0].value
         local_path=get_user_path(user)+str(id)+'_'+strpath[strpath.rfind('/') + 1:]
@@ -137,22 +172,25 @@ def load_log_path(id,task_id,data):
 #压缩文件
 def zip_threading_func(file_path,user_id):
     mutex.acquire()
+    global user_task_data
+    if user_task_data[user_id]['handle'] is not None:
+        handle=user_task_data[user_id]['handle']
+    mutex.release()
     open_path = get_user_path(user_id)
     print('write------',file_path,open_path)
-    #os.chdir(open_path)  # 转到路径
-    global user_task_data
     filefullpath = os.path.join(open_path, file_path)
-    user_task_data[user_id]['handle'].write(filefullpath,file_path)
-    user_task_data[user_id]['handle'].close()
-    mutex.release()
+    handle.write(filefullpath,file_path)
+    handle.close()
+    # os.remove(filefullpath)
 
 #pull文件时，回调进度
 def pull_log_step_notify(user_id,robot_id,step,file_path,error_code):#file_path需要改成保存后台的文件名,status状态表示file_rw推拉是否正常
-    print('step',step)
-    # notify_dic = dict()
-    # notify_dic['msg_type'] = errtypes.TypeShell_Blackbox_Log
-    # notify_dic['user_id'] = user_id
-    global task_id_count_,task_recv_count_
+    print('step',step,error_code)
+    notify_dic = dict()
+    notify_dic['msg_type'] = errtypes.TypeShell_Blackbox_Log
+    notify_dic['user_id'] = user_id
+    global notify_step_function
+    global task_id_count_,task_recv_count_,user_task_data
     mutex.acquire()
     if step==100 :
         task_recv_count_[int(user_id)]+=1
@@ -160,21 +198,29 @@ def pull_log_step_notify(user_id,robot_id,step,file_path,error_code):#file_path�
         t = threading.Thread(target=zip_threading_func, args=(tmp,int(user_id)))
         #t.setDaemon(True)
         t.start()
-    if error_code < 0:
+    if error_code != 0:
         task_recv_count_[int(user_id)] += 1
 
     print('type',task_recv_count_,task_id_count_)
-    print('count',task_recv_count_[int(user_id)])
+    print('--',task_recv_count_[int(user_id)])
     if task_recv_count_[int(user_id)]==task_id_count_[int(user_id)]:
-        # notify_dic['step'] = 100
-        #推送前台
-        pass  # 压缩完删除文件
+        user_task_data[user_id]['step'] =100
+        notify_dic['step'] = 100
+        if notify_step_function is not None:
+            notify_step_function(notify_dic)
+        pass
     else:
         sch = (task_recv_count_[int(user_id)]+float(step) / 100) / task_id_count_[int(user_id)]  # 总进度
-        #notify_dic['step']=sch
-        # sockio推给前台
-        print('sch',sch)
+        print('data',user_task_data)
+        user_task_data[int(user_id)]['step'] =sch*100
+        notify_dic['step']=user_task_data[int(user_id)]['step']
+        if notify_step_function is not None:
+            notify_step_function(notify_dic)
     mutex.release()
+
+def register_blackbox_step_notify(mt_notify=None):
+    global notify_step_function
+    notify_step_function = mt_notify
 
 #获取存后台的路径
 def get_user_path(user_id):
@@ -188,6 +234,18 @@ def get_user_path(user_id):
 
     #file_path = os.path.join(folder_path, filename)
 
+
+from flask import request, jsonify, send_from_directory, abort
+import os
+
+#后台的文件下到用户电脑上
+def download_log(user_id,log_name):
+    pass
+    # path=get_user_path(user_id)
+    # if os.path.isfile(os.path.join(path, log_name)):
+    #     print('----is')
+    #     return send_from_directory(path, log_name, as_attachment=True)
+    # abort(404)
 
 if __name__ == "__main__":
 
