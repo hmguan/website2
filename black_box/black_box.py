@@ -88,7 +88,6 @@ def send_log_condition(robot_list,user_id,start_time,end_time,types,name):
     hzip = zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED)
     mutex.acquire()
     user_task_data[user_id]={'task':task_id,'name':zip_file,'handle':hzip,'path':{},'step':0}
-    print('user--',user_task_data)
     mutex.release()
     # robot_list={2}
     for id in robot_list:
@@ -124,7 +123,6 @@ def get_executing_log(user_id):
 #删除日志文件
 def delete_log(user_id,log_name):
     path=get_user_path(user_id)
-    print('---',path + log_name)
     if os.path.isfile(path + log_name):
         os.remove(path + log_name)
         return 0
@@ -149,7 +147,7 @@ def get_log_list(user_id):
 
 #收到车上shell压缩的文件，返回的车上路径
 def load_log_path(id,task_id,data):
-    global task_user_
+    global task_user_,notify_step_function
     print('back----',task_id)
     path = log.proto_logs_file_path()
     path.build(data, 0)
@@ -201,8 +199,6 @@ def pull_log_step_notify(user_id,robot_id,step,file_path,error_code):#file_path�
     if error_code != 0:
         task_recv_count_[int(user_id)] += 1
 
-    print('type',task_recv_count_,task_id_count_)
-    print('--',task_recv_count_[int(user_id)])
     if task_recv_count_[int(user_id)]==task_id_count_[int(user_id)]:
         user_task_data[user_id]['step'] =100
         notify_dic['step'] = 100
@@ -218,9 +214,9 @@ def pull_log_step_notify(user_id,robot_id,step,file_path,error_code):#file_path�
             notify_step_function(notify_dic)
     mutex.release()
 
-def register_blackbox_step_notify(mt_notify=None):
+def register_blackbox_step_notify(log_notify=None):
     global notify_step_function
-    notify_step_function = mt_notify
+    notify_step_function = log_notify
 
 #获取存后台的路径
 def get_user_path(user_id):

@@ -23,6 +23,7 @@ def create_app(config_name):
     from .shell import shell_flask
     from .mt import mtflask
     from .package import packageflask
+    from .blackbox import logview
     #加载主蓝图
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
