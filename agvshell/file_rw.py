@@ -511,9 +511,9 @@ class file_manager():
             self.__mutex_set.acquire()
             if FILE_TYPE_A_UPGRADE == shell_info.get_upgrade_flag():
                 print("upgrade exit, stop this time upgrade")
+                self.__mutex_set.release()
                 self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_UPGRADE,-1,task_id)
                 self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
-                self.__mutex_set.release()
                 return ERRNO_FILE_UPGRADE
             shell_info.set_upgrade(FILE_TYPE_A_UPGRADE)
             self.__mutex_set.release()
@@ -600,10 +600,10 @@ class file_manager():
         t_file_info.m_hd = self.__file_rw.create_file(t_file_info.m_name)
         if -1 == t_file_info.m_hd:
             print("wite file[%s] failure" % t_file_info.m_name)
+            file_mutex.release()
             #notify agvshell
             self.notify(userid,robot_id,file_path,t_file_info.m_type,0,ERRNO_FILE_CREATE,-1,taskId)
             self.task_finish(userid,threadID,taskId,t_file_info.m_oper_type)
-            file_mutex.release()
             return ERRNO_FILE_CREATE
         
         t_file_info.m_size = proto_pull_head.total_size.value
@@ -645,9 +645,9 @@ class file_manager():
         shell_info = self.__shell_manager.get_session_by_id(robot_id)
         if shell_info is None:
             #print("session cannot find, robot_id:%d" % robot_id)
+            file_mutex.release()
             self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
             self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
-            file_mutex.release()
             #在关闭/断链中处理移除正在传输的文件信息
             # self.remove_file_info(robot_id,file_id)  
             return ERRNO_ROBOT_CONNECT
@@ -670,6 +670,7 @@ class file_manager():
             #call back step
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
             t_file_info.m_step,step = step,t_file_info.m_step
+            file_mutex.release()
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,t_file_info.m_step,0,0,t_file_info.m_task_id,t_file_info.m_size)
         else:
@@ -679,11 +680,10 @@ class file_manager():
             if FILE_TYPE_A_UPGRADE == t_file_info.m_type:
                 shell_info.set_upgrade(FILE_TYPE_NORMAL)
             #call back step
-            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,100,0,1,t_file_info.m_task_id,t_file_info.m_size)
             self.remove_file_info(robot_id,file_id)
+            file_mutex.release()
+            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,100,0,1,t_file_info.m_task_id,t_file_info.m_size)
             self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
-        
-        file_mutex.release()
         pass
 
     def pull_file_data(self,robot_id,file_id,block_num,off=0,data_len=0,data=""):
@@ -708,8 +708,8 @@ class file_manager():
         shell_info = self.__shell_manager.get_session_by_id(robot_id)
         if shell_info is None:
             print("session cannot find, robot_id:%d" % robot_id)
-            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
             file_mutex.release()
+            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
             self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
             return ERRNO_ROBOT_CONNECT
         
@@ -735,6 +735,7 @@ class file_manager():
             t_file_info.m_last_block_num += 1
             t_file_info.m_step,step = step,t_file_info.m_step
             print(step,t_file_info.m_step)
+            file_mutex.release()
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,t_file_info.m_step,0,0,t_file_info.m_task_id,t_file_info.m_size)
         else:
@@ -747,10 +748,11 @@ class file_manager():
             self.__file_rw.set_file_attr(t_file_info.m_name,t_file_info.m_atime,t_file_info.m_ctime,t_file_info.m_mtime)
             
             #call back step
-            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,100,0,1,t_file_info.m_task_id,t_file_info.m_size)
             self.remove_file_info(robot_id,file_id)
+            file_mutex.release()
+            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,100,0,1,t_file_info.m_task_id,t_file_info.m_size)
             self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)       
-        file_mutex.release()
+        
     
     
     def file_err(self,robot_id,file_id,error_code):
@@ -775,9 +777,9 @@ class file_manager():
                 shell_info.set_upgrade(FILE_TYPE_NORMAL)
             else:
                 print("session cannot find, robot_id:%d" % robot_id)
-                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id,-1)
                 self.remove_file_info(robot_id,file_id)
                 file_mutex.release()
+                self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id,-1)
                 return ERRNO_ROBOT_CONNECT
               
         Logger().get_logger().info('file[{0}] transform err:{1}'.format(t_file_info.m_path, error_code))
@@ -785,9 +787,9 @@ class file_manager():
         step = 0
         if t_file_info.m_block_num != 0:
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
-        self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,ERRNO_FILE_TRANIMIT,-1,t_file_info.m_task_id,-1)
         self.remove_file_info(robot_id,file_id)
         file_mutex.release() 
+        self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,ERRNO_FILE_TRANIMIT,-1,t_file_info.m_task_id,-1)
         
     def print_file_dic_list(self):
         for k1 in dict_file_info.keys():

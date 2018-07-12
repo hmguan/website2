@@ -168,7 +168,7 @@ def del_robot(robot_id):
             del (global_robot_info[key])
             global_mutex.release()
             print('success delete global robot info of key:',key)
-            return mac_addr
+            return key
     global_mutex.release()
     return ''
 
