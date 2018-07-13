@@ -69,6 +69,8 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'cancle_task','args':['userId','robot_id','task_id'],'param':[null,null,null],'function':'cancle_task','type':1},
     {'event':'query_robots_configuration_info','args':['userId'],'param':[null],'function':'query_robots_configuration','type':1},
     {'event':'event_modify_file_lock','args':['opcode','robot1'],'param':[null,null],'function':'modify_file_lock','type':1},
+    {'event':'query_ftp_port','args':[],'param':[],'function':'query_ftp_port','type':1},
+    {'event':'get_file','args':[],'param':[],'function':'get_file','type':1},
     ]
 
     $scope.submit = function( api_param ){

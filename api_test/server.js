@@ -19,7 +19,9 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		'query_transfer_queue':query_transfer_queue,
 		'cancle_task':cancle_task,
 		'query_robots_configuration':query_robots_configuration,
-		'modify_file_lock':modify_file_lock
+		'modify_file_lock':modify_file_lock,
+		'query_ftp_port':query_ftp_port,
+		'get_file':get_file
 	}
 
 	function RequestRobotDetailInfo (RobotId) {
@@ -107,12 +109,38 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		return RequestJsonData(JSON.stringify({'event': 'event_modify_file_lock', 'opcode': parseInt(opecode),'robot_list':[parseInt(robot1)]}))
 	}
 
+	function query_ftp_port(){
+		return RequestJsonData(JSON.stringify({'event': 'event_query_ftp_port'}))
+	}
+
+	function get_file(){
+		
+		return Downer(url+'/download/jquery-3.3.2.zip/user_id=2,type=1')
+
+		// return Downer(url+'/download/jquery-3.3.1.zip')
+		// return GetData(url+'/download/jquery-3.3.1.zip')
+	}
+
 	function 	RequestJsonData(data){
 		var defer = $q.defer();
 		$http({
 			method:'POST',
 			url:url,
 			data:data,
+			dataType: "json"
+		}).then(function successCallback(response) {
+			defer.resolve(response.data);
+		}, function errorCallback(error) {
+			defer.reject(error);
+		});
+		return defer.promise;
+	}
+
+	function GetData(request_url,data){
+		var defer = $q.defer();
+		$http({
+			method:'GET',
+			url:request_url,
 			dataType: "json"
 		}).then(function successCallback(response) {
 			defer.resolve(response.data);

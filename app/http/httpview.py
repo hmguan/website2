@@ -56,18 +56,18 @@ def download_file(filepath):
     data = fileinfo.split(',',1)
     if len(data) <2:
         Logger().get_logger().error('Incorrectly formatting')
-        return
+        return '',404
     
     userinfo = data[0].split('=',1)
     type_info = data[1].split('=',1)
     if len(userinfo) < 2 or len(type_info) <2:
         Logger().get_logger().error('Incorrectly formatting {}:{}'.format(data[0],data[1]))
-        return
+        return '',404
 
     user_name = user.query_name_by_id(int(userinfo[1]))
     if user_name is None:
         Logger().get_logger().error('can not find user by user_id = {}'.format(user_id))
-        return
+        return '',404
 
     type_id = int(type_info[1])
 
@@ -80,9 +80,9 @@ def download_file(filepath):
         [dirname,filename]=os.path.split(dirname)
         file_path = os.path.join(directory, dirname)
 
-        if os.path.exists(file_path) is False:
+        if os.path.exists(file_path+'/'+filename) is False :
             Logger().get_logger().error('file  not exist path= {}'.format(file_path))
-            return
+            return 'file could not find',404
 
         response = make_response(send_from_directory(file_path, filename, as_attachment=True))
         response.headers["Content-Disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
