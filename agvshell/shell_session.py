@@ -365,7 +365,6 @@ class shell_session(tcp.obtcp):
             path_notify_callback = notify_callback
 
     def recv_log_name(self,task_id, data):
-        print('recv_log_name')
         global path_notify_callback
         if path_notify_callback is not None:
             path_notify_callback(self.__robot_id,task_id, data)

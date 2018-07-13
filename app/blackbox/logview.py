@@ -66,8 +66,8 @@ class logview(base_event):
 
         if 'get_executing_log'==event:
             user_id = int(json_data['user_id'])
-            task_id,step=get_executing_log(user_id)
-            ret={'code':0,'msg':errtypes.HttpResponseCode_Normal,'task_id':task_id,'step':step}
+            log_name,task_id,step=get_executing_log(user_id)
+            ret={'code':0,'msg':errtypes.HttpResponseCode_Normal,'log_name':log_name,'task_id':task_id,'step':step}
             return jsonify(ret)
 
         if 'delete_log'==event:
@@ -86,5 +86,5 @@ class logview(base_event):
         if 'download_log'==event:
             user_id = int(json_data['user_id'])
             log_name = json_data['log_name']
-            download_log(user_id,log_name)
-            return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
+            path=download_log(user_id,log_name)
+            return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,'path':path})
