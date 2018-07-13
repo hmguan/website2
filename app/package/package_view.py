@@ -53,7 +53,7 @@ class package_view(base_event):
                 tmp['user_name']= value.user.username
                 tmp['version']= value.version
                 tmp['package_name'] = value.package_name
-                tmp['time']= value.time.strftime("%Y-%m-%d %H:%M:%S") 
+                tmp['time']= value.time.strftime("%Y/%m/%d %H:%M:%S") 
                 tmp['remarks'] = value.remarks
                 list_package.append(tmp)
             ret = {'code':0,'msg':'查询成功','data':{'users':list_package}}

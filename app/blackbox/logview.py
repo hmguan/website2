@@ -59,7 +59,7 @@ class logview(base_event):
                 tmp['name']= value.name
                 tmp['temps_types']= value.temps_types
                 tmp['others'] = value.others
-                tmp['time']= value.time.strftime("%Y-%m-%d %H:%M:%S") 
+                tmp['time']= value.time.strftime("%Y/%m/%d %H:%M:%S") 
                 list_temps.append(tmp)
             ret = {'code':0,'msg':'查询成功','data':{'temps':list_temps}}
             return jsonify(ret)
