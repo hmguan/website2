@@ -7,6 +7,7 @@ from db.db_users import user
 from configuration import config
 import os,datetime
 from db.db_package import package_manager
+from pynsp.logger import *
 
 @http_main.route('/upload' ,methods=['GET' ,'POST'])
 def upload_file():
@@ -22,9 +23,15 @@ def upload_file():
             filename = file.filename
             try:
                 if file:
+                    user_id = request.form['user_id']
+                    user_name = user.query_name_by_id(user_id)
+                    if user_name is None:
+                        Logger().get_logger().error('can not find user by user_id = {}'.format(user_id))
+                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': 'can not find user'})
+
                     version = request.form['version']
                     remark =request.form['remark']
-                    user_name = user.query_name_by_id(request.form['user_id'])
+
                     folder_path = config.ROOTDIR +user_name + config.PATCHFOLDER
 
                     if os.path.exists(folder_path) == False:
@@ -44,11 +51,53 @@ def upload_file():
 from flask import send_file, send_from_directory
 from flask import make_response
 
-@http_main.route("/download/<path:filename>", methods=['GET'])
-def download_file(filename):
-    [dirname,name]=os.path.split(filename)
-    directory = os.getcwd()  # 假设在当前目录
-    file_path = os.path.join(directory, dirname)
-    response = make_response(send_from_directory(file_path, name, as_attachment=True))
-    response.headers["Content-Disposition"] = "attachment; filename={}".format(name.encode().decode('latin-1'))
-    return response
+@http_main.route("/download/<path:filepath>", methods=['GET'])
+def download_file(filepath):
+    [dirname,fileinfo]=os.path.split(filepath)
+    data = fileinfo.split(',',1)
+    if len(data) <2:
+        Logger().get_logger().error('Incorrectly formatting')
+        return
+    
+    userinfo = data[0].split('=',1)
+    type_info = data[1].split('=',1)
+    if len(userinfo) < 2 or len(type_info) <2:
+        Logger().get_logger().error('Incorrectly formatting {}:{}'.format(data[0],data[1]))
+        return
+
+    user_name = user.query_name_by_id(int(userinfo[1]))
+    if user_name is None:
+        Logger().get_logger().error('can not find user by user_id = {}'.format(user_id))
+        return
+
+    type_id = int(type_info[1])
+
+    config_path = ''
+    if type_id == errtypes.HttpRequestFileType_Patch:
+        config_path = config.PATCHFOLDER
+    elif type_id == errtypes.HttpRequestFileType_BlackBox:
+        config_path = config.BLACKBOXFOLDER
+    elif type_id == errtypes.HttpRequestFileType_Bin:
+        config_path = config.BINFOLDER
+    else:
+        pass
+
+        # return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': 'can not find user'})
+    try:
+        directory = config.ROOTDIR +user_name + config_path
+        if config.ROOTDIR.startswith('./'):
+            directory = os.path.abspath(directory)
+        
+        [dirname,filename]=os.path.split(dirname)
+        file_path = os.path.join(directory, dirname)
+
+        if os.path.exists(file_path) is False:
+            Logger().get_logger().error('file  not exist path= {}'.format(file_path))
+            return
+
+        response = make_response(send_from_directory(file_path, filename, as_attachment=True))
+        response.headers["Content-Disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
+        return response
+    except Exception as e:
+        raise e
+    
