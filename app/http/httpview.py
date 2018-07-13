@@ -7,8 +7,6 @@ from db.db_users import user
 from configuration import config
 import os,datetime
 from db.db_package import package_manager
-import requests
-from flask import request, stream_with_context, Response
 
 @http_main.route('/upload' ,methods=['GET' ,'POST'])
 def upload_file():
