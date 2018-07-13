@@ -94,6 +94,7 @@ def cancle_get_log(task_id):
                 ret=shell_info.cancle_log_data()
                 cancle_file_transform(user, id, task_id)
                 if ret>=0:
+                    del user_task_data[user]
                     return 0
     return -1
 
