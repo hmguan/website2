@@ -9,7 +9,7 @@ from flask import jsonify
 from flask import Flask, request
 from db.db_users import user
 from db.db_package import package_manager
-from configuration import config
+from configuration import get_config_path
 from agvshell.shell_api import push_file_to_remote
 from agvshell.transfer_file_types import *
 import errtypes
@@ -67,11 +67,11 @@ class package_view(base_event):
             try:
                 retval = package_manager.query_packages(package_id)
                 if retval is None:
-                    return jsonify({'code': errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed })
+                    return jsonify({'code': errtypes.HttpResponseCode_NOFILE, 'msg': errtypes.HttpResponseMsg_FileNotExist })
 
                 user_name = retval.user.username
                 package_name = retval.package_name
-                file_path = config.ROOTDIR +user_name +config.PATCHFOLDER + package_name
+                file_path = get_config_path(user_name,errtypes.HttpRequestFileType_Patch) + package_name
                 if os.path.exists(file_path) == False:
                     return jsonify({'code': errtypes.HttpResponseCode_InvaildPath, 'msg': errtypes.HttpResponseMsg_InvaildPath })
                 

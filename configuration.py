@@ -6,6 +6,20 @@ import uuid
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+def get_config_path(user_name,file_type):
+    import errtypes
+    config_path = ''
+    if file_type == errtypes.HttpRequestFileType_Patch:
+        config_path = config.PATCHFOLDER
+    elif file_type == errtypes.HttpRequestFileType_BlackBox:
+        config_path = config.BLACKBOXFOLDER
+    elif file_type == errtypes.HttpRequestFileType_Bin:
+        config_path = config.BINFOLDER
+    else:
+        pass
+
+    return config.ROOTDIR +user_name + config_path
+
 class config:
     SECRET_KEY=str(uuid.uuid4())
     MAX_CONTENT_LENGTH=1024*1024*1024
@@ -17,6 +31,7 @@ class config:
     TRANSMIT_BLOCK_SIZE = 32*1024
     SOCKET_PORT=5008
     HTTP_PORT=5010
+
 
     @staticmethod
     def init_app(app):
@@ -34,11 +49,11 @@ class produce_config(config):
     sqlite_database = ''
 
 system_config = {
-#文件保留时间
+    #文件保留时间
     'retention_time_min':10*24*60,
-#检测文件间隔
+    #检测文件间隔
     'time_intervel_sec':10*60,
-#文件检测路径
+    #文件检测路径
     'path_element':[
         #config.ROOTDIR +config.BLACKBOXFOLDER
     ]

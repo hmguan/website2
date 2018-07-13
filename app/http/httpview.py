@@ -4,7 +4,7 @@ from flask import Flask,render_template,request, session
 import errtypes
 from . import http_main
 from db.db_users import user
-from configuration import config
+from configuration import get_config_path
 import os,datetime
 from db.db_package import package_manager
 from pynsp.logger import *
@@ -31,8 +31,7 @@ def upload_file():
 
                     version = request.form['version']
                     remark =request.form['remark']
-
-                    folder_path = config.ROOTDIR +user_name + config.PATCHFOLDER
+                    folder_path = get_config_path(user_name,errtypes.HttpRequestFileType_Patch)
 
                     if os.path.exists(folder_path) == False:
                         os.makedirs(folder_path)
@@ -72,20 +71,10 @@ def download_file(filepath):
 
     type_id = int(type_info[1])
 
-    config_path = ''
-    if type_id == errtypes.HttpRequestFileType_Patch:
-        config_path = config.PATCHFOLDER
-    elif type_id == errtypes.HttpRequestFileType_BlackBox:
-        config_path = config.BLACKBOXFOLDER
-    elif type_id == errtypes.HttpRequestFileType_Bin:
-        config_path = config.BINFOLDER
-    else:
-        pass
-
         # return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': 'can not find user'})
     try:
-        directory = config.ROOTDIR +user_name + config_path
-        if config.ROOTDIR.startswith('./'):
+        directory = get_config_path(user_name,type_id)
+        if directory.startswith('./'):
             directory = os.path.abspath(directory)
         
         [dirname,filename]=os.path.split(dirname)
