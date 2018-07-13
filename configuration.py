@@ -40,8 +40,7 @@ system_config = {
     'time_intervel_sec':10*60,
 #ÎÄ¼þ¼ì²âÂ·¾¶
     'path_element':[
-        # config.ROOTDIR +config.BLACKBOXFOLDER
-        config.ROOTDIR
+        config.ROOTDIR +config.BLACKBOXFOLDER
     ]
 }
 

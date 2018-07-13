@@ -119,7 +119,12 @@ def walk_file(path,retention_time):
             if last_update_file >= current_timestamp :
                 continue
             elif (current_timestamp - last_update_file) > retention_time:
-                os.remove(file_path)
+                if skip_file(file_name) is not False:
+                    os.remove(file_path)
+
+
+def skip_file(filename) ->bool:
+    return False
 
 
 #切换线程进行登录，不适用回调函数上来的线程，在调试过程中发现不切换线程时，容易造成登录agv_shell超时
@@ -318,7 +323,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     if u_uuid is not None:
         if FILE_TYPE_A_UPGRADE == file_type :
             notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
-            if 100 == step:
+            if 100 == step and status == 1:
                 print("a begin upgrade")
                 f_name = file_path[file_path.rfind('/') + 1:]
                 shell_info = shell_manager().get_session_by_id(robot_id)

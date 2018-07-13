@@ -7,6 +7,8 @@ from db.db_users import user
 from configuration import config
 import os,datetime
 from db.db_package import package_manager
+import requests
+from flask import request, stream_with_context, Response
 
 @http_main.route('/upload' ,methods=['GET' ,'POST'])
 def upload_file():
@@ -40,3 +42,15 @@ def upload_file():
                     return jsonify({'code': 0, 'msg': '上传成功'})
             except Exception as e:
                 return jsonify({'code': errtypes.HttpResponseCode_UPLOADEXCEPTIONERROR, 'msg': str(e)})
+
+from flask import send_file, send_from_directory
+from flask import make_response
+
+@http_main.route("/download/<path:filename>", methods=['GET'])
+def download_file(filename):
+    [dirname,name]=os.path.split(filename)
+    directory = os.getcwd()  # 假设在当前目录
+    file_path = os.path.join(directory, dirname)
+    response = make_response(send_from_directory(file_path, name, as_attachment=True))
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(name.encode().decode('latin-1'))
+    return response
