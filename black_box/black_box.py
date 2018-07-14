@@ -20,6 +20,7 @@ task_recv_count_=dict()#一个任务回的robot数
 task_user_=dict()
 task_id_=0
 mutex = threading.RLock()
+notify_step_function=None
 #初始化注册进度回调
 def init_black_box():
     print('init black')
@@ -161,7 +162,7 @@ def load_log_path(id,task_id,data):
 #压缩文件
 def zip_threading_func(file_path,user_id):
     mutex.acquire()
-    global user_task_data
+    global user_task_data,notify_step_function
     if user_task_data[int(user_id)]['handle'] is not None:
         handle=user_task_data[user_id]['handle']
     mutex.release()
@@ -169,7 +170,7 @@ def zip_threading_func(file_path,user_id):
     print('write------',file_path,open_path)
     Logger().get_logger().info('tar log')
     filefullpath = os.path.join(open_path, file_path)
-    handle.add(filefullpath)
+    handle.add(filefullpath,arcname=os.path.join('.',file_path))
     # handle.write(filefullpath,file_path)
     if user_task_data[int(user_id)]['step']==100 and notify_step_function is not None:
         handle.close()
