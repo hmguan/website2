@@ -170,7 +170,7 @@ def zip_threading_func(file_path,user_id):
     print('write------',file_path,open_path)
     Logger().get_logger().info('tar log')
     filefullpath = os.path.join(open_path, file_path)
-    handle.add(filefullpath,arcname=os.path.join('.',file_path))
+    handle.add(filefullpath,arcname=file_path)
     # handle.write(filefullpath,file_path)
     if user_task_data[int(user_id)]['step']==100 and notify_step_function is not None:
         handle.close()
