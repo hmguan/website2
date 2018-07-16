@@ -55,6 +55,13 @@ system_config = {
     'time_intervel_sec':10*60,
     #ÎÄ¼þ¼ì²âÂ·¾¶
     'path_element':[
+        {
+            'path_root':config.ROOTDIR,
+            'path_model':[config.BLACKBOXFOLDER.strip('/')]
+        },
+        {
+            'path_root':'./pynsp/logs'
+        }
         #config.ROOTDIR +config.BLACKBOXFOLDER
     ]
 }

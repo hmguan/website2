@@ -81,8 +81,6 @@ class shell_manager():
         :return:
         '''
         while self.__is_exist_th == False:
-            self.__mutex.acquire()
-            keys = list(self.__robot_lnk.keys())
             current_timestamp = int(round(time.time() * 1000))
 
             # 文件传输超时检测
@@ -90,6 +88,8 @@ class shell_manager():
             file_rw.file_manager().check_file_timeout(current_timestamp)
             #Logger().get_logger().info('end file manager check timeout')
 
+            self.__mutex.acquire()
+            keys = list(self.__robot_lnk.keys())
             for key_item in keys:
                 # if self.__robot_lnk[key_item] is not None:
                 host = self.__robot_lnk[key_item].get_host_ipv4()
@@ -138,6 +138,7 @@ class shell_manager():
         shtime_info = dict()
         version_info = dict()
         process_list = dict()
+        system_info = dict()
 
         self.__mutex.acquire()
         keys = list(self.__robot_lnk.keys())
@@ -145,9 +146,10 @@ class shell_manager():
             shtime_info[key] = self.__robot_lnk.get(key).get_connectedtime_value()
             version_info[key] = self.__robot_lnk.get(key).get_shell_version()
             process_list[key] =self.__robot_lnk.get(key).get_shell_process_list()
+            system_info[key] = self.__robot_lnk.get(key).get_fixed_system_info()
         self.__mutex.release()
         #key:robot id
-        return shtime_info,version_info,process_list
+        return shtime_info,version_info,process_list,system_info
 
     def get_robots_configuration_info(self):
         robots_info = dict()

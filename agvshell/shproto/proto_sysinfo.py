@@ -102,6 +102,7 @@ class proto_sysinfo_fixed(proto_interface):
         self.config_version = proto_string('')
         self.process_info=proto_vector(proto_process_config)
         self.status=proto_uint32(0)
+        self.ntp_server = proto_string('')
 
 
     def length(self)->int:
@@ -114,7 +115,8 @@ class proto_sysinfo_fixed(proto_interface):
                 self.soft_version.length() + \
                 self.config_version.length() + \
                 self.process_info.length() + \
-                self.status.length()
+                self.status.length() +\
+                self.ntp_server.length()
 
     def serialize(self)->bytes:
         return self.phead.serialize()+\
@@ -123,10 +125,12 @@ class proto_sysinfo_fixed(proto_interface):
                self.cpu_list.serialize() + \
                self.disk_total_size.serialize() + \
                self.uname.serialize()+\
-                self.soft_version.serialize()+\
-                self.config_version.serialize()+\
-                self.process_info.serialize()+ \
-                self.status.serialize()
+               self.soft_version.serialize()+\
+               self.config_version.serialize()+\
+               self.process_info.serialize()+ \
+               self.status.serialize() + \
+               self.ntp_server.length()
+
 
     def build(self, data, offset=0)->int:
         offset=self.phead.build(data, offset)
@@ -138,7 +142,8 @@ class proto_sysinfo_fixed(proto_interface):
         offset = self.soft_version.build(data, offset)
         offset = self.config_version.build(data, offset)
         offset = self.process_info.build(data, offset)
-        return self.status.build(data, offset)
+        offset = self.status.build(data,offset)
+        return self.ntp_server.build(data, offset)
 
 class proto_sysinfo_changed(proto_interface):
     def __init__(self):

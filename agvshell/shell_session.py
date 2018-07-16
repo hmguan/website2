@@ -109,8 +109,8 @@ class shell_session(tcp.obtcp):
 
     def on_closed(self, previous):
         self.__net_status=typedef.NetworkStatus_Closed
-        if self.link >= 0:
-            Logger().get_logger().warning("close the session {0} ,lnk is {1}".format(self.__target_host,self.link))
+        if previous >= 0:
+            Logger().get_logger().warning("close the session {0} ,lnk is {1}".format(self.__target_host,previous))
             if self.__notify_fm is not None:
                 self.__notify_fm.close_robot_file(self.__robot_id)
             if self.__notify_closed is not None:
@@ -240,6 +240,7 @@ class shell_session(tcp.obtcp):
             self.__shell_systeminfo['software_version'] =info.soft_version.value
             self.__shell_systeminfo['config_version'] =info.config_version.value
             self.__shell_systeminfo['lock_status'] =info.status.value
+            self.__shell_systeminfo['ntp_server']  = info.ntp_server.value
             cpu_l = list()
             for item in info.cpu_list:
                 cpu_info = dict()

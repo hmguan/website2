@@ -59,7 +59,8 @@ def start_connect_to_robot():
                         notify_client_function({'msg_type':errtypes.TypeShell_NewArrival,'process_group':
                                                 shell_manager().get_shell_process_name_join(item.id),'robot_id':item.id,
                                                 'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00',
-                                                'shell_version':fiex_system_info.get('config_version'),'lock_status':fiex_system_info.get('lock_status')})
+                                                'shell_version':fiex_system_info.get('config_version'),'lock_status':fiex_system_info.get('lock_status'),
+                                                'ntp_server':fiex_system_info.get('ntp_server')})
                     global_mutex.acquire()
                     if item.id in unusual_collection.keys():
                         del unusual_collection[item.id]
@@ -101,18 +102,28 @@ def thread_check_file_expired():
             return
 
         for folder_path in path_config:
-            walk_file(folder_path,retention_time_min *60)
+            walk_file(folder_path.get('path_root'),retention_time_min *60,folder_path.get('path_model'))
 
         sleep(time_intervel_sec)
 
 
-def walk_file(path,retention_time):
+def walk_file(root_path,retention_time,model=None):
     #文件夹不存在 或者 非文件夹路径
-    if os.path.isdir(path) == False:
+    if os.path.isdir(root_path) == False:
         return
 
     current_timestamp = int(round(time.time() * 1000))
-    for root,dirs,files in os.walk(path,False):
+    # files = os.listdir(filepath)
+    # for file_name in files:
+    #     fi_d = os.path.join(filepath,file_name)
+    #     if os.path.isdir(fi_d):
+    #         walk_file(fi_d)
+    #     else:
+    #         print os.path.join(filepath,fi_d)
+
+    for root,dirs,files in os.walk(root_path,True):
+        if root != root_path and model is not None:
+            dirs[:] = list(set(dirs).intersection(set(model)))
         for file_name in files:
             file_path = os.path.join(root, file_name)
             last_update_file = os.path.getmtime(file_path)
@@ -120,6 +131,7 @@ def walk_file(path,retention_time):
                 continue
             elif (current_timestamp - last_update_file) > retention_time:
                 if skip_file(file_name) is not False:
+                    Logger().get_logger().info('remove file:filename{}'.format(file_path))
                     os.remove(file_path)
 
 
@@ -189,11 +201,13 @@ def get_online_robot_list():
     group_robot_info = {}
     global global_mutex
     global_mutex.acquire()
-    (shelltime,versionifno,process_list) = shell_manager().get_all_robot_online_info()
+    (shelltime,versionifno,process_list,system_info) = shell_manager().get_all_robot_online_info()
     for mac_key,item in global_robot_info.items():
         process = process_list.get(item.id)
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
-                      'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id)}
+                      'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
+                      'lock_status':system_info.get('lock_status'),
+                      'ntp_server':system_info.get('ntp_server')}
         if process not in group_robot_info.keys():
             group_list = list()
             group_list.append(robot_info)
@@ -363,7 +377,8 @@ def get_robot_list_basic_info():
             group_robot_info[process_name] = {'robot_list':[]}
         group_robot_info[process_name].get('robot_list').append({'robot_id':robot_id,
                                                                 'robot_host':robot_info.get('robot_host'),
-                                                                'mutex_lock_status':system_info.get('lock_status')
+                                                                'lock_status':system_info.get('lock_status'),
+                                                                'ntp_server':system_info.get('ntp_server')
                                                                 })
     return group_robot_info
 
