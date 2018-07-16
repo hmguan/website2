@@ -206,8 +206,8 @@ def get_online_robot_list():
         process = process_list.get(item.id)
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
                       'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
-                      'lock_status':system_info.get('lock_status'),
-                      'ntp_server':system_info.get('ntp_server')}
+                      'lock_status':system_info.get(item.id).get('lock_status'),
+                      'ntp_server':system_info.get(item.id).get('ntp_server')}
         if process not in group_robot_info.keys():
             group_list = list()
             group_list.append(robot_info)
