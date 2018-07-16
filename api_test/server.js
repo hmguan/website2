@@ -21,7 +21,8 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		'query_robots_configuration':query_robots_configuration,
 		'modify_file_lock':modify_file_lock,
 		'query_ftp_port':query_ftp_port,
-		'get_file':get_file
+		'get_file':get_file,
+		'update_ntp_server':update_ntp_server
 	}
 
 	function RequestRobotDetailInfo (RobotId) {
@@ -113,6 +114,10 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		return RequestJsonData(JSON.stringify({'event': 'event_query_ftp_port'}))
 	}
 
+	function update_ntp_server(robot1,ntp_server){
+		return RequestJsonData(JSON.stringify({'event': 'event_update_ntp_server','robot_list':[parseInt(robot1)],'ntp_host':ntp_server}))
+	}
+
 	function get_file(){
 		
 		return Downer(url+'/download/jquery-3.3.2.zip/user_id=2,type=1')
@@ -120,6 +125,7 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		// return Downer(url+'/download/jquery-3.3.1.zip')
 		// return GetData(url+'/download/jquery-3.3.1.zip')
 	}
+		http://192.168.5.121:5010/download/jquery-3.3.3.zip/user_id=2,type=1
 
 	function 	RequestJsonData(data){
 		var defer = $q.defer();

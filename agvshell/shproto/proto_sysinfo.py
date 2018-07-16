@@ -218,6 +218,22 @@ class proto_msg_int_sync(proto_interface):
         offset = self.pkt_id.build(data,offset)
         return self.msg_int.build(data,offset)
 
+class proto_msg(proto_interface):
+  def __init__(self):
+    super(proto_msg, self).__init__()
+    self.head_ = proto_head.proto_head()
+    self.msg_str_ = proto_string('')
+
+  def length(self):
+    return self.head_.length() + self.msg_str_.length()
+
+  def serialize(self)->bytes:
+    return self.head_.serialize() + self.msg_str_.serialize()
+
+  def build(self,data,offset)->int:
+    offset = self.head_.build(data,offset)
+    return self.msg_str_.build(data,offset) 
+
 def recv_sysinfo_fixed(data, len,offset)->tuple:
     tmp = proto_sysinfo_fixed()
     offset = tmp.build(data, offset)

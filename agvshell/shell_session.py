@@ -101,6 +101,8 @@ class shell_session(tcp.obtcp):
             pass
         elif typedef.PKTTYPE_AGV_SHELL_MODIFY_FILE_MUTEX_ACK == phead.type:
             self.recv_modify_file_mutex(data,cb)
+        elif typedef.PKTTYPE_AGV_SHELL_UPDATE_NTP_ACK == phead.type:
+            self.on_update_ntp_server(data,cb)
         else:
             Logger().get_logger().warning("not support type:%8x" % phead.type)
 
@@ -411,6 +413,35 @@ class shell_session(tcp.obtcp):
 
         pass
 
+    def update_ntp_server(self,ntp_host):
+        packet_ntp_server = sysinfo.proto_msg()
+        pkt_id = wait_handler().allocat_pkt_id()
+        packet_ntp_server.head_.type(typedef.PKTTYPE_AGV_SHELL_UPDATE_NTP)
+        packet_ntp_server.head_.id(pkt_id)
+        packet_ntp_server.msg_str_(ntp_host)
+        packet_ntp_server.head_.size(packet_ntp_server.length())
+        return self.send(packet_ntp_server.serialize(),packet_ntp_server.head_.size.value)
+
+
+    def on_update_ntp_server(self,data,cb):
+        import errtypes
+
+        if cb < 0:
+            Logger().get_logger().error("update_ntp_server error.")
+            return
+
+        packet_ntp_ack = sysinfo.proto_msg()
+        if (packet_ntp_ack.build(data, 0) < 0):
+            Logger().get_logger().error("update_ntp_server build  proto_msg packet error.")
+            return
+
+        if 0 == packet_ntp_ack.head_.err.value:
+            self.__shell_systeminfo['ntp_server'] = packet_ntp_ack.msg_str_.value
+
+        if self.__push_notify_cb:
+            self.__push_notify_cb(errtypes.TypeShell_UpdateNtpServer,{"robot_id":self.__robot_id,"err_code":packet_ntp_ack.head_.err.value,"ntp_server":packet_ntp_ack.msg_str_.value})
+
+        pass
 ##################################################以下为fts文件传输协议代码#######################################################
 
 

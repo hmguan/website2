@@ -389,3 +389,9 @@ def modify_robot_file_lock(robot_list,opecode) ->list:
             error_list.append(robot_id)
     return error_list
 
+def update_ntp_server(robot_list,ntp_host) ->list:
+    error_list = list()
+    for robot_id in robot_list:
+        if shell_manager().update_robot_ntp_server(robot_id,ntp_host) != 0:
+            error_list.append(robot_id)
+    return error_list

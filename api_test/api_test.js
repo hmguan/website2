@@ -71,6 +71,7 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'event_modify_file_lock','args':['opcode','robot1'],'param':[null,null],'function':'modify_file_lock','type':1},
     {'event':'query_ftp_port','args':[],'param':[],'function':'query_ftp_port','type':1},
     {'event':'get_file','args':[],'param':[],'function':'get_file','type':1},
+    {'event':'update_ntp_server','args':['robot_id','ntp_host'],'param':[null,null],'function':'update_ntp_server','type':1},
     ]
 
     $scope.submit = function( api_param ){

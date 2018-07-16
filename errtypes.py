@@ -14,6 +14,7 @@ TypeShell_ConnectException=0x00000104
 TypeShell_ModifyFileMutex =0x00000105
 TypeShell_Blackbox_Log=0x00000106
 TypeShell_Blackbox_None=0x00000107
+TypeShell_UpdateNtpServer=0x00000108
 
 #mt与前端交互类型定义
 TypeMT_Error=0x00000601

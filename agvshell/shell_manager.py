@@ -202,11 +202,31 @@ class shell_manager():
 
     def modify_robot_file_lock(self,robotid,opecode) ->int:
         err_code = 0
-        self.__mutex.acquire()
-        session = self.__robot_lnk.get(robotid)
-        if session:
-            session.post_modify_file_mutex(opecode)
-        else:
-            err_code = 1
-        self.__mutex.release()
-        return err_code
+        try:
+            self.__mutex.acquire()
+            session = self.__robot_lnk.get(robotid)
+            if session:
+                session.post_modify_file_mutex(opecode)
+            else:
+                err_code = 1
+            self.__mutex.release()
+            return err_code
+        except Exception as e:
+            self.__mutex.release()
+            return 1
+
+    def update_robot_ntp_server(self,robot_id,ntp_server) ->int:
+        err_code = 0
+        try:
+            self.__mutex.acquire()
+            session = self.__robot_lnk.get(robot_id)
+            if session:
+                session.update_ntp_server(ntp_server)
+            else:
+                err_code = 1
+            self.__mutex.release()
+            return err_code
+        except Exception as e:
+            self.__mutex.release()
+            return 1
+
