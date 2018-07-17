@@ -10,7 +10,7 @@ class shellview(base_event):
                           'get_robot_detail_info','get_robot_system_info',
                           'get_robot_process_detail_info','query_user_transfer_queue','cancle_file_transform_task',
                           'query_robots_configuration_info','event_modify_file_lock','event_query_ftp_port',
-                          'event_update_ntp_server')
+                          'event_update_ntp_server','event_query_progress_info','event_operate_system_process')
         pass
 
     def flask_recvdata(self,requst_obj):
@@ -42,4 +42,8 @@ class shellview(base_event):
             return jsonify(query_ftp_port())
         elif 'event_update_ntp_server' == event:
             return jsonify(update_robots_ntp_server(json_data.get('robot_list'),json_data.get('ntp_host')))
+        elif 'event_query_progress_info' == event:
+            return jsonify(query_robots_progress_info(json_data.get('user_id')))
+        elif 'event_operate_system_process' ==event:
+            return jsonify(operate_system_process(json_data.get('robot_list'),json_data.get('command')))
         pass

@@ -9,6 +9,7 @@ import hashlib
 import threading
 import time
 import copy
+import errtypes
 from pynsp.logger import *
 from pynsp.waite_handler import *
 
@@ -103,6 +104,8 @@ class shell_session(tcp.obtcp):
             self.recv_modify_file_mutex(data,cb)
         elif typedef.PKTTYPE_AGV_SHELL_UPDATE_NTP_ACK == phead.type:
             self.on_update_ntp_server(data,cb)
+        elif typedef.PKTTYPE_AGV_SHELL_PROCESS_COMMAND_ACK == phead.type:
+            self.on_recv_process_cmd_ack(data,cb)
         else:
             Logger().get_logger().warning("not support type:%8x" % phead.type)
 
@@ -221,14 +224,24 @@ class shell_session(tcp.obtcp):
             self.__current_netio_t=info.net_io_tra.value
             self.__previous_timestamp=self.__timestamp
             shell_process_name = self.get_shell_process_list()
+            shell_process_status = list()
+            update_process_status = list()
+            for item in self.__shell_process_info:
+                shell_process_status.append({'process_name':item.get('process_name'),'status':(1 if (item.get('process_pid') > 0) else 0)})
+            
             self.__shell_process_info.clear()
             for item in info.process_list:
                 if shell_process_name.find(item.name.value) != -1:
+                    update_process_status.append({'process_name':item.name.value,'status':(1 if (item.pid.value > 0) else 0)})
                     self.__shell_process_info.append({'process_name':item.name.value,'process_pid':item.pid.value,
                                                       'run_time':item.run_time.value,'vir_mm':item.vir_mm.value,
                                                       'rss':item.rss.value,'average_cpu':item.average_cpu.value,
                                                       'average_mem':item.average_mem.value})
             self.__mutex.release()
+            import operator 
+            if operator.eq(shell_process_status,update_process_status) is False:
+                if self.__push_notify_cb:
+                    self.__push_notify_cb(errtypes.TypeShell_UpdateProcessStatus,{"robot_id":self.__robot_id,"process_list":update_process_status})
 
     def recv_fixed_systeminfo(self,pkt_id,data,cb):
         (ret, info) = sysinfo.recv_sysinfo_fixed(data, cb, 0)
@@ -392,7 +405,6 @@ class shell_session(tcp.obtcp):
         return self.send(packet_modify_file_mutex.serialize(),packet_modify_file_mutex.head_.size.value)
 
     def recv_modify_file_mutex(self,data,cb):
-        import errtypes
         if cb < 0:
             Logger().get_logger().error("recv modify_file_mutex packet error.")
             return
@@ -409,7 +421,7 @@ class shell_session(tcp.obtcp):
                 self.__shell_systeminfo['lock_status'] = 0
 
         if self.__push_notify_cb:
-            self.__push_notify_cb(errtypes.TypeShell_ModifyFileMutex,{"robot_id":self.__robot_id,"opecode":packet_file_mutex.msg_int.value,"error_code":packet_file_mutex.head_.err.value})
+            self.__push_notify_cb(errtypes.TypeShell_ModifyFileMutex,{"robot_id":self.__robot_id,"opcode":packet_file_mutex.msg_int.value,"error_code":packet_file_mutex.head_.err.value})
 
         pass
 
@@ -424,8 +436,6 @@ class shell_session(tcp.obtcp):
 
 
     def on_update_ntp_server(self,data,cb):
-        import errtypes
-
         if cb < 0:
             Logger().get_logger().error("update_ntp_server error.")
             return
@@ -441,6 +451,37 @@ class shell_session(tcp.obtcp):
         if self.__push_notify_cb:
             self.__push_notify_cb(errtypes.TypeShell_UpdateNtpServer,{"robot_id":self.__robot_id,"err_code":packet_ntp_ack.head_.err.value,"ntp_server":packet_ntp_ack.msg_str_.value})
 
+        pass
+
+    def operate_system_process(self,command):
+        from .shproto import proto_process_status
+        process_count = len(self.__shell_process_info)
+        if process_count <= 0:
+            Logger().get_logger().error("Process state anomaly")
+            return -1
+
+        process_id = int(0)
+        for index in range(process_count):
+            process_id = (process_id << 1) + 0x01
+        packet_command_process = proto_process_status.proto_command_process()
+        pkt_id = wait_handler().allocat_pkt_id()
+        packet_command_process.head_.type(typedef.PKTTYPE_AGV_SHELL_PROCESS_COMMAND)
+        packet_command_process.head_.id(pkt_id)
+        packet_command_process.command_(command)
+        packet_command_process.process_id_all_(int(process_id))
+
+        packet_command_process.head_.size(packet_command_process.length())
+        return self.send(packet_command_process.serialize(),packet_command_process.head_.size.value)
+
+    def on_recv_process_cmd_ack(self,data,cb):
+        if cb < 0:
+            Logger().get_logger().error("on_recv_process_cmd_ack error.")
+            return
+
+        ack = head.proto_head()
+        if (ack.build(data, 0) < 0):
+            Logger().get_logger().error("on_recv_process_cmd_ack build  proto_head packet error.")
+            return
         pass
 ##################################################以下为fts文件传输协议代码#######################################################
 

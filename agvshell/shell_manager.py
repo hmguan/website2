@@ -101,6 +101,7 @@ class shell_manager():
                     print("shell manager check timeout thread id:",threading.current_thread().ident," thread name:",threading.current_thread().name)
                     self.__robot_lnk[key_item].close()
                 else:
+                    # print('post_alive_pkt')
                     if self.__robot_lnk[key_item].post_alive_pkt() < 0:
                         self.__robot_lnk[key_item].close()
 
@@ -139,7 +140,7 @@ class shell_manager():
         version_info = dict()
         process_list = dict()
         system_info = dict()
-
+        process_info = dict()
         self.__mutex.acquire()
         keys = list(self.__robot_lnk.keys())
         for key in keys:
@@ -147,9 +148,10 @@ class shell_manager():
             version_info[key] = self.__robot_lnk.get(key).get_shell_version()
             process_list[key] =self.__robot_lnk.get(key).get_shell_process_list()
             system_info[key] = self.__robot_lnk.get(key).get_fixed_system_info()
+            process_info[key] = self.__robot_lnk.get(key).get_shell_process_detail_list()
         self.__mutex.release()
         #key:robot id
-        return shtime_info,version_info,process_list,system_info
+        return shtime_info,version_info,process_list,system_info,process_info
 
     def get_robots_configuration_info(self):
         robots_info = dict()
@@ -213,6 +215,7 @@ class shell_manager():
             return err_code
         except Exception as e:
             self.__mutex.release()
+            Logger().get_logger().error('modify_robot_file_lock :{}'.format(str(e)))
             return 1
 
     def update_robot_ntp_server(self,robot_id,ntp_server) ->int:
@@ -227,6 +230,34 @@ class shell_manager():
             self.__mutex.release()
             return err_code
         except Exception as e:
+            Logger().get_logger().error('update_robot_ntp_server :{}'.format(str(e)))
             self.__mutex.release()
             return 1
 
+    def Query_robots_progress_list(self)->dict:
+        progress_info = dict()
+
+        self.__mutex.acquire()
+        keys = list(self.__robot_lnk.keys())
+        for key in keys:
+            progress_info[key] ={'process_list':self.__robot_lnk.get(key).get_shell_process_list(),
+                                'progress_info':self.__robot_lnk.get(key).get_shell_process_detail_list()}
+        self.__mutex.release()
+        return progress_info
+
+    def setting_progress_state(self,robot_list,command)->list:
+        err_list = list()
+        try:
+            self.__mutex.acquire()
+            for robot_id in robot_list:
+                session = self.__robot_lnk.get(robot_id)
+                if session:
+                    session.operate_system_process(command)
+                else:
+                    err_list.append(robot_id)
+            self.__mutex.release()
+            return err_list
+        except Exception as e:
+            self.__mutex.release()
+            Logger().get_logger().error('setting_progress_state :{}'.format(str(e)))
+            return err_list

@@ -56,11 +56,17 @@ def start_connect_to_robot():
                     #新的客户端登录成功，则通知浏览器
                     if notify_client_function is not None:
                         fiex_system_info = shell_manager().get_fixed_sysytem_info(item.id)
+                        process_info = shell_manager().get_shell_process_detail_info(item.id)
+                        list_progress = []
+                        if process_info is not None:
+                            for item in process_info:
+                                list_progress.append({'process_name':item.get('process_name'),'status':(1 if (item.get('process_pid') > 0) else 0)})
                         notify_client_function({'msg_type':errtypes.TypeShell_NewArrival,'process_group':
                                                 shell_manager().get_shell_process_name_join(item.id),'robot_id':item.id,
                                                 'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00',
                                                 'shell_version':fiex_system_info.get('config_version'),'lock_status':fiex_system_info.get('lock_status'),
-                                                'ntp_server':fiex_system_info.get('ntp_server')})
+                                                'ntp_server':fiex_system_info.get('ntp_server'),
+                                                'process_list':list_progress})
                     global_mutex.acquire()
                     if item.id in unusual_collection.keys():
                         del unusual_collection[item.id]
@@ -201,13 +207,19 @@ def get_online_robot_list():
     group_robot_info = {}
     global global_mutex
     global_mutex.acquire()
-    (shelltime,versionifno,process_list,system_info) = shell_manager().get_all_robot_online_info()
+    (shelltime,versionifno,process_list,system_info,process_info) = shell_manager().get_all_robot_online_info()
     for mac_key,item in global_robot_info.items():
         process = process_list.get(item.id)
+        list_progress = []
+        if process_info is not None:
+            for item in progress_info.get(item.id):
+                list_progress.append({'process_name':item.get('process_name'),'status':(1 if (item.get('process_pid') > 0) else 0)})
+
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
                       'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
-                      'lock_status':system_info.get(item.id).get('lock_status'),
-                      'ntp_server':system_info.get(item.id).get('ntp_server')}
+                      'lock_status':system_info.get('lock_status'),
+                      'ntp_server':system_info.get('ntp_server'),
+                      'process_list':list_progress}
         if process not in group_robot_info.keys():
             group_list = list()
             group_list.append(robot_info)
@@ -354,7 +366,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
             global step_notify_callback
             print('pull', step_notify_callback,step)
             if step_notify_callback is not None:
-                step_notify_callback(user_id,robot_id, step, file_path, error_code,status)
+                step_notify_callback(user_id,robot_id, step, file_path, error_code)
         else:
             pass
 
@@ -395,3 +407,27 @@ def update_ntp_server(robot_list,ntp_host) ->list:
         if shell_manager().update_robot_ntp_server(robot_id,ntp_host) != 0:
             error_list.append(robot_id)
     return error_list
+
+def query_progress_list():
+    from copy import deepcopy
+    robots_progress_list = dict()
+    dict_progress_info = deepcopy(shell_manager().Query_robots_progress_list())
+    for (robot_id,robot_info) in dict_progress_info.items():
+        process_name = robot_info.get('process_list')
+        progress_info = robot_info.get('progress_info')
+
+        if process_name is None or progress_info is None:
+            continue
+
+        if process_name not in robots_progress_list:
+            robots_progress_list[process_name] = {'robot_list':[]}
+        list_progress = []
+        for item in progress_info:
+            list_progress.append({'process_name':item.get('process_name'),'status':(1 if (item.get('process_pid') > 0) else 0)})
+        robots_progress_list[process_name].get('robot_list').append({'robot_id':robot_id,
+                                                                    'progress_list':list_progress
+                                                                    })
+    return robots_progress_list
+
+def setting_progress_state(robot_list,command):
+    return shell_manager().setting_progress_state(robot_list,command)

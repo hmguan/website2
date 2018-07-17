@@ -186,3 +186,28 @@ def update_robots_ntp_server(robot_list,ntp_host):
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
     pass
+
+def query_robots_progress_info(user_id):
+    if type(user_id) != int:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        group_info = []
+        robots_info = query_progress_list()
+        for (process_name,info) in robots_info.items():
+            alias_name = users_center.group_alias(user_id,process_name)
+            item_info = {'process_group':process_name,'process_group_alias':alias_name if alias_name else''}
+            item_info.update(info)
+            group_info.append(item_info)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'data': group_info}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def operate_system_process(robot_list,command):
+    if type(robot_list)!= list or type(command) != int or command not in {0,1,2}:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        robot_list = [int(robot_id) for robot_id in robot_list]
+        error_list = setting_progress_state(robot_list,command)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

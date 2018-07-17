@@ -72,6 +72,8 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'query_ftp_port','args':[],'param':[],'function':'query_ftp_port','type':1},
     {'event':'get_file','args':[],'param':[],'function':'get_file','type':1},
     {'event':'update_ntp_server','args':['robot_id','ntp_host'],'param':[null,null],'function':'update_ntp_server','type':1},
+    {'event':'query_progress_info','args':['user_id'],'param':[null],'function':'query_progress_info','type':1},
+    {'event':'setting_process_state','args':['robot_id','command'],'param':[null,null],'function':'setting_process_state','type':1},
     ]
 
     $scope.submit = function( api_param ){
