@@ -97,7 +97,7 @@ class shell_session(tcp.obtcp):
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_TYPE_ACK == phead.type:
             self.recv_log_type(pkt_id, data)
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_FILE_NAME_ACK == phead.type:
-            self.recv_log_name(phead.id,data)
+            self.recv_log_name(data)
         elif typedef.PKTTYPE_AGV_SHELL_FILE_MUTEX_STATUS_ACK == phead.type:
             pass
         elif typedef.PKTTYPE_AGV_SHELL_MODIFY_FILE_MUTEX_ACK == phead.type:
@@ -121,6 +121,9 @@ class shell_session(tcp.obtcp):
             if self.__notify_closed is not None:
                 Logger().get_logger().warning('notify closed,robot id:{0}'.format(self.__robot_id))
                 self.__notify_closed(self.__robot_id)
+            global path_notify_callback
+            if path_notify_callback is not None:
+                path_notify_callback(self.__robot_id, -1, '')
         pass
 
     def on_connected(self):
@@ -362,7 +365,8 @@ class shell_session(tcp.obtcp):
 
     def get_log_data(self,task_id, start_time, end_time, types):
         pkt = log.proto_log_condition()
-        pkt.phead.id(task_id)
+        # pkt.phead.id(task_id)
+        pkt.task_id(task_id)
         pkt.start_time(start_time)
         pkt.end_time(end_time)
         if len(types)==0:
@@ -380,16 +384,16 @@ class shell_session(tcp.obtcp):
             global path_notify_callback
             path_notify_callback = notify_callback
 
-    def recv_log_name(self,task_id, data):
+    def recv_log_name(self, data):
         global path_notify_callback
         if path_notify_callback is not None:
-            path_notify_callback(self.__robot_id,task_id, data)
+            path_notify_callback(self.__robot_id,0, data)
         # load_log_path(self.__robot_id,data)
         pass
 
-    def cancle_log_data(self):
-        pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_CANCEL_GET_LOG)
-        pkt.set_pkt_size(24)
+    def cancle_log_data(self,task_id):
+        pkt = log.proto_cancle_log()
+        pkt.task_id(task_id)
         stream = pkt.serialize()
         ret = self.send(stream, pkt.length())
         return ret

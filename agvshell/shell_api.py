@@ -366,7 +366,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
             global step_notify_callback
             print('pull', step_notify_callback,step)
             if step_notify_callback is not None:
-                step_notify_callback(user_id,robot_id, step, file_path, error_code)
+                step_notify_callback(user_id,robot_id, step, file_path, error_code,status)
         else:
             pass
 
