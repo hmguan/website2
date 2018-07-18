@@ -161,7 +161,7 @@ class user_manager():
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':'用户不存在'}
         if (ret==-2):
             self.login_mutex_.release()
-            return {'code':errtypes.HttpResponseCode_InvaildUserAndPwd,'msg':'原密码不正确'}
+            return {'code':errtypes.HttpResponseCode_InvaildUserAndPwd,'msg':'旧密码与原密码不一致！'}
 
         u_uuid=''
         if user_id in self.login_user_.keys():
