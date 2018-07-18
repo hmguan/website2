@@ -32,11 +32,11 @@ class user_manager():
             if user.is_exist_id(user_id)<0:
                  return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':"用户不存在",'data':{'token':token}} 
         except SignatureExpired:
-            msg = "登陆信息已过期，请重新登陆！"
+            msg = "登录信息已过期，请重新登录！"
             logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid=user_uuid)
             return {'code':errtypes.HttpResponseCode_TimeoutToken,'msg':msg,'data':{'token':token}} 
         except BadSignature:
-            msg = "登陆信息有误，请重新登陆！"
+            msg = "登录信息有误，请重新登录！"
             logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid=user_uuid)
             return {'code':errtypes.HttpResponseCode_InvaildToken,'msg':msg,'data':{'token':token}} 
 
@@ -45,8 +45,8 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             if user_uuid != u_uuid:
-                msg = "该用户已在另一地点登陆，请重新登陆！"
-                socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':'token登陆，通知用户下线','uuid': u_uuid},room_identify=u_uuid)
+                msg = "该用户已在另一地点登录，请重新登录！"
+                socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':'token登录，通知用户下线','uuid': u_uuid},room_identify=u_uuid)
                 logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
             self.login_user_[user_id].u_uuid = user_uuid
 
@@ -59,8 +59,8 @@ class user_manager():
 
         self.login_mutex_.release()
 
-        logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg="登陆成功token",u_uuid=user_uuid)
-        return {'code':0,'msg':'登陆成功','data':{'token':token,'user_id':user_id}}
+        logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg="登录成功token",u_uuid=user_uuid)
+        return {'code':0,'msg':'登录成功','data':{'token':token,'user_id':user_id}}
 
 
     #添加用户
@@ -76,7 +76,7 @@ class user_manager():
         if(ret<0):
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':'用户不存在'}
 
-        #step 1: 验证登陆有效性
+        #step 1: 验证登录有效性
         self.login_mutex_.acquire()
         user_obj = user_cls(user_name,pwd)
         user_id = user_obj.login()
@@ -89,7 +89,7 @@ class user_manager():
         #step 2: 检查踢人
         if user_id in self.login_user_.keys():
             tmp = self.login_user_[user_id].u_uuid
-            msg = "该用户已在另一地点登陆，请重新登陆！"
+            msg = "该用户已在另一地点登录，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':tmp},room_identify=tmp)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=tmp)
        
@@ -103,17 +103,17 @@ class user_manager():
         #step 4：生成token
         token = self.generate_auth_token(user_id)
 
-        msg = "登陆成功"
+        msg = "登录成功"
         logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid=new_uuid)
         return {'code':0,'msg':msg,'data':{'uuid':new_uuid,'token':token.decode('utf-8'),'user_id':user_id}}
 
 
-    #注销登陆
+    #注销登录
     def user_logout(self,user_id)->dict:
         self.login_mutex_.acquire()
         u_uuid=''
         if user_id not in self.login_user_.keys():
-            msg = "用户未登陆"
+            msg = "用户未登录"
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid="")
             self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_UserNotLogined,'msg':msg}
@@ -123,7 +123,7 @@ class user_manager():
         self.login_mutex_.release()
 
 
-        msg = "注销登陆，通知用户下线"
+        msg = "注销登录，通知用户下线"
         socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
         logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
 
@@ -167,13 +167,13 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             del self.login_user_[user_id]
-            msg = "更新密码成功，请重新登陆！"
+            msg = "更新密码成功，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':-errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
         
 
-        msg = "更新密码成功，请重新登陆！"
+        msg = "更新密码成功，请重新登录！"
         logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret,'msg':msg}
 
@@ -190,7 +190,7 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             del self.login_user_[user_id]
-            msg = "该账号信息已被修改，请重新登陆！"
+            msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':-errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
@@ -213,7 +213,7 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             del self.login_user_[user_id]
-            msg = "该账号信息已被修改，请重新登陆！"
+            msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':-errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
