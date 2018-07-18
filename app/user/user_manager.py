@@ -46,7 +46,7 @@ class user_manager():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             if user_uuid != u_uuid:
                 msg = "该用户已在另一地点登陆，请重新登陆！"
-                socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'token登陆，通知用户下线'':msg,'uuid': u_uuid},room_identify=u_uuid)
+                socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':'token登陆，通知用户下线','uuid': u_uuid},room_identify=u_uuid)
                 logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
             self.login_user_[user_id].u_uuid = user_uuid
 
