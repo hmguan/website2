@@ -48,9 +48,25 @@ def recv_process_status(data,len,offset):
     test.build(data, len, offset)
     return test
 
+class proto_command_process(proto_interface):
+    def __init__(self):
+        super(proto_command_process,self).__init__()
+        self.head_ = proto_head.proto_head()
+        self.command_ = proto_int32()
+        self.process_id_all_ = proto_int32()
+        self.list_param_ = proto_vector(TYPE = proto_string)
 
+    def length(self)->int:
+        return self.head_.length() + self.command_.length() + self.process_id_all_.length() + self.list_param_.length()
 
+    def serialize(self)->bytes:
+        return self.head_.serialize() +self.command_.serialize() + self.process_id_all_.serialize() + self.list_param_.serialize()
 
+    def build(self,data,offset) ->int:
+        offset = self.head_.build(data,offset)
+        offset = self.command_.build(data,offset)
+        offset = self.process_id_all_.build(data,offset)
+        return self.list_param_.build(data,offset)
 
 
 
