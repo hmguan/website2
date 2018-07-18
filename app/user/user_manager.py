@@ -142,7 +142,7 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             del self.login_user_[user_id]
-            msg = "删除用户，通知用户下线"
+            msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
