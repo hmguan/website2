@@ -45,8 +45,8 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             if user_uuid != u_uuid:
-                msg = "通知用户下线（token）"
-                socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid': u_uuid},room_identify=u_uuid)
+                msg = "该用户已在另一地点登陆，请重新登陆！"
+                socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'token登陆，通知用户下线'':msg,'uuid': u_uuid},room_identify=u_uuid)
                 logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
             self.login_user_[user_id].u_uuid = user_uuid
 
@@ -89,7 +89,7 @@ class user_manager():
         #step 2: 检查踢人
         if user_id in self.login_user_.keys():
             tmp = self.login_user_[user_id].u_uuid
-            msg = "通知用户下线"
+            msg = "该用户已在另一地点登陆，请重新登陆！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':tmp},room_identify=tmp)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=tmp)
        
@@ -167,13 +167,13 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             del self.login_user_[user_id]
-            msg = "更新密码，通知用户下线"
+            msg = "更新密码成功，请重新登陆！"
             socketio_agent_center.post_msg_to_room({'code':-errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
         
 
-        msg = "更新密码成功"
+        msg = "更新密码成功，请重新登陆！"
         logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret,'msg':msg}
 
@@ -190,7 +190,7 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             del self.login_user_[user_id]
-            msg = "重置密码，通知用户下线"
+            msg = "该账号信息已被修改，请重新登陆！"
             socketio_agent_center.post_msg_to_room({'code':-errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
@@ -213,7 +213,7 @@ class user_manager():
         if user_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
             del self.login_user_[user_id]
-            msg = "重置权限，通知用户下线"
+            msg = "该账号信息已被修改，请重新登陆！"
             socketio_agent_center.post_msg_to_room({'code':-errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
             logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
