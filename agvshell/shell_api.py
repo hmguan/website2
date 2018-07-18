@@ -212,7 +212,7 @@ def get_online_robot_list():
         process = process_list.get(item.id)
         list_progress = []
         if process_info is not None:
-            for item in progress_info.get(item.id):
+            for item in process_info.get(item.id):
                 list_progress.append({'process_name':item.get('process_name'),'status':(1 if (item.get('process_pid') > 0) else 0)})
 
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
