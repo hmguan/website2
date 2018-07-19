@@ -84,7 +84,7 @@ class proto_logs_file_path(proto_interface):
 class proto_cancle_log(proto_interface):
     def __init__(self):
         super(proto_cancle_log, self).__init__()
-        self.phead = phead.proto_head()
+        self.phead = phead.proto_head(_type=proto_typedef.PKTTYPE_AGV_SHELL_CANCEL_GET_LOG)
         self.task_id=proto_int()
 
     def length(self):
