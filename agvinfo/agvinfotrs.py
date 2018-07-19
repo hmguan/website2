@@ -217,7 +217,7 @@ class agvinfo_tcptrs(obtcp.obtcp):
         
         ack = mthead.proto_head(_id = 0, _type=agvinfoproto.kAgvInfoProto_update_notify, _size=24)
         for tcp_object in tcp_list:
-            ack.head.id(getPktId())
+            ack.id(getPktId())
             tcp_object.send(ack.serialize(),ack.length())
 
 trs = None
