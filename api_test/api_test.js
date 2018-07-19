@@ -51,7 +51,7 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     $scope.api_list = [
     {'event':'event_login','args':['user','name'],'param':[null,null],'function':'Login','type':1},
     {'event':'event_logout','args':['uid'],'param':[null],'function':'LoginOut','type':1},
-    {'event':'get_online_robot_list','args':[],'param':[],'function':'QueryRobotList','type':1},
+    {'event':'get_online_robot_list','args':['user_id'],'param':[null],'function':'QueryRobotList','type':1},
     {'event':'get_robot_detail_info','args':['robot_id'],'param':[null],'function':'RequestRobotDetailInfo','type':1},
     {'event':'get_robot_system_info','args':['robot_id'],'param':[null],'function':'RequestRobotSystemInfo','type':1},
     {'event':'load_navigation','args':['robot_id'],'param':[null],'function':'load_navigation','type':0},

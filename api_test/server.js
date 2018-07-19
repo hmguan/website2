@@ -45,8 +45,8 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		return RequestJsonData(JSON.stringify({'event': 'event_logout', 'user_id': uid}))
 	}
 
-	function QueryRobotList () {
-		return RequestJsonData(JSON.stringify({'event': 'get_online_robot_list'}))
+	function QueryRobotList (user_id) {
+		return RequestJsonData(JSON.stringify({'event': 'get_online_robot_list','user_id':parseInt(user_id)}))
 	}
 
 	function load_navigation (robot_id) {
