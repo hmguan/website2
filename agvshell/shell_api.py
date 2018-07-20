@@ -64,7 +64,7 @@ def start_connect_to_robot():
                         notify_client_function({'msg_type':errtypes.TypeShell_NewArrival,'process_group':
                                                 shell_manager().get_shell_process_name_join(item.id),'robot_id':item.id,
                                                 'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00',
-                                                'shell_version':fiex_system_info.get('config_version'),'lock_status':fiex_system_info.get('lock_status'),
+                                                'shell_version':fiex_system_info.get('software_version'),'lock_status':fiex_system_info.get('lock_status'),
                                                 'ntp_server':fiex_system_info.get('ntp_server'),
                                                 'process_list':list_progress})
                     global_mutex.acquire()
