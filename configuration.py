@@ -28,6 +28,7 @@ class config:
     PATCHFOLDER = '/patch/'
     BLACKBOXFOLDER = '/blackbox/'
     BINFOLDER = '/bin/'
+    BACKUPFILEDER='/backup/'
     TRANSMIT_BLOCK_SIZE = 32*1024
     SOCKET_PORT=5008
     HTTP_PORT=5010
@@ -49,11 +50,11 @@ class produce_config(config):
     sqlite_database = ''
 
 system_config = {
-    #ÎÄ¼þ±£ÁôÊ±¼ä
+    #ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
     'retention_time_min':10*24*60,
-    #¼ì²âÎÄ¼þ¼ä¸ô
+    #ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½
     'time_intervel_sec':10*60,
-    #ÎÄ¼þ¼ì²âÂ·¾¶
+    #ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½
     'path_element':[
         {
             'path_root':config.ROOTDIR,

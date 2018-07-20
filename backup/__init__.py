@@ -1,4 +1,4 @@
-from .black_box import *
+from .backup_api import *
 
 def start_black_box():
     init_black_box()
@@ -10,5 +10,5 @@ def register_blackbox_step_notify_function(notify_call=None):
     :param notify_call:
     :return:
     '''
-    from .black_box import register_blackbox_step_notify
+    from .backup_api import register_blackbox_step_notify
     register_blackbox_step_notify(notify_call)
