@@ -84,23 +84,23 @@ class shell_manager():
         :return:
         '''
         while self.__is_exist_th == False:
-            current_timestamp = int(round(time.time() * 1000))
-
             # 文件传输超时检测
             #Logger().get_logger().info('start file manager check timeout,current timestamp:{0}'.format(current_timestamp))
-            file_rw.file_manager().check_file_timeout(current_timestamp)
+            file_rw.file_manager().check_file_timeout(int(round(time.time() * 1000)))
             #Logger().get_logger().info('end file manager check timeout')
 
             self.__mutex.acquire()
             keys = list(self.__robot_lnk.keys())
             for key_item in keys:
                 # if self.__robot_lnk[key_item] is not None:
+                current_timestamp = int(round(time.time() * 1000))
                 host = self.__robot_lnk[key_item].get_host_ipv4()
-                if (current_timestamp - self.__robot_lnk[key_item].get_timestamp()) > CHECK_ALIVE_TIMESTAMP_OUT:
+                session_time = self.__robot_lnk[key_item].get_timestamp()
+                if (current_timestamp - session_time) > CHECK_ALIVE_TIMESTAMP_OUT:
                     #超时，则直接关闭连接
-                    Logger().get_logger().error('the target endpoint {0} check timeout,current timestamp:{1},session timestamp:{2}.'.format(host,
+                    Logger().get_logger().error('the target endpoint {0} check timeout,current timestamp:{1},session timestamp:{2},the interval timestamp:{3}'.format(host,
                                                                                                                                             current_timestamp,
-                                                                                                                                            self.__robot_lnk[key_item].get_timestamp()))
+                                                                                                                                            session_time,current_timestamp-session_time))
                     print("shell manager check timeout thread id:",threading.current_thread().ident," thread name:",threading.current_thread().name)
                     self.__robot_lnk[key_item].close()
                 else:
