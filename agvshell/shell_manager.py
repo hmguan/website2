@@ -55,16 +55,19 @@ class shell_manager():
                 if session_link.try_login() < 0:
                     Logger().get_logger().error('failed to login target endpoint:{0} robot id:{1}'.format(ipv4,robot_id))
                     return -1
-                else:
-                    #请求获取车辆基本信息,此处同步等待接口
-                    pkt_id = session_link.post_sysinfo_fixed_request()
-                    if pkt_id < 0:
-                        Logger().get_logger().error("failed post sysinfo fixed request to agvshell.")
-                        break
-                    #同步等待
-                    if wait_handler().wait_simulate(pkt_id,3000) >= 0:
-                        wait_handler().wait_destory(pkt_id)
+            elif session_link.get_network_status() == typedef.NetworkStatus_Established:
+                # 请求获取车辆基本信息,此处同步等待接口
+                pkt_id = session_link.post_sysinfo_fixed_request()
+                if pkt_id < 0:
+                    Logger().get_logger().error("failed post sysinfo fixed request to agvshell.")
                     break
+                # 同步等待
+                if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
+                    wait_handler().wait_destory(pkt_id)
+                break
+            elif session_link.get_network_status() == typedef.NetworkStatus_Connected:
+                Logger().get_logger().warning("wait for login package result ack.")
+                sleep(0.1)
             else:
                 Logger().get_logger().warning("wait for pre login pakcage.")
                 sleep(0.1)

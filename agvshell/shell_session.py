@@ -182,6 +182,10 @@ class shell_session(tcp.obtcp):
             Logger().get_logger().warning('current session of target:{0} is closed'.format(self.__target_host))
             return
 
+        if self.__net_status != typedef.NetworkStatus_Established:
+            Logger().get_logger().warning('current session of {0} status is not eastablished!'.format(self.__target_host))
+            return
+
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_KEEPALIVE, _id=self.__net_manager.allocate_pkt())
         pkt.set_pkt_size(24)
         stream = pkt.serialize()
@@ -192,6 +196,10 @@ class shell_session(tcp.obtcp):
         if self.__net_status == typedef.NetworkStatus_Closed:
             Logger().get_logger().warning('current session of target:{0} is closed'.format(self.__target_host))
             return -1
+
+        if self.__net_status != typedef.NetworkStatus_Established:
+            Logger().get_logger().warning('current session of {0} status is not eastablished!'.format(self.__target_host))
+            return
 
         pkt_id = wait_handler().allocat_pkt_id()
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_GET_FIXED_SYSINFO, _id=pkt_id)
