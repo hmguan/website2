@@ -89,4 +89,12 @@ def download_file(filepath):
         return response
     except Exception as e:
         raise e
-    
+
+@http_main.route("/download_path/<path:filename>", methods=['GET'])
+def download(filename):
+    [dirname,name]=os.path.split(filename)
+    if dirname.startswith('/') is False:
+        dirname = '/' + dirname
+    response = make_response(send_from_directory(dirname, name, as_attachment=True))
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(name.encode().decode('latin-1'))
+    return response
