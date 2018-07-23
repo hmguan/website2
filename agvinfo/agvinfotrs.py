@@ -79,7 +79,6 @@ class agvinfo_tcptrs(obtcp.obtcp):
         ack.head.type(_head.type)
         ack.head.size(ack.length())
         # make packet stream
-        # pdb.set_trace()
         stream = ack.serialize()
         self.send(stream, ack.length())
 
@@ -88,34 +87,38 @@ class agvinfo_tcptrs(obtcp.obtcp):
         # pdb.set_trace()
         if 0 >= req.build(_data, 0):
             self.__ack_agvinfo_packet(req.head.id,agvinfoproto.kAgvInfoProto_set_agvinfo,agvinfoproto.KAgvInfo_Errno_Failed)
-            return 
-
-        list_agvinfo=[]
-        for item in req.info :
-            agvinfos = agvinfodata.agvinfo_t()
-            agvinfos.vhid = item.vhid
-            agvinfos.vhtype = item.vhtype
-            agvinfos.inet = item.inet.value
-            agvinfos.mtport = item.mtport
-            agvinfos.shport = item.shport
-            agvinfos.ftsport = item.ftsport
-            agvinfos.hwaddr = item.hwaddr.value
-
-            # append attribute
-            for a in item.attrs :
-                attr = agvinfodata.proto_agvattribute_t()
-                attr.describe = a.describe.value
-                attr.name = a.name.value
-                agvinfos.attrs.append(attr)
-
-            list_agvinfo.append(agvinfos)
-
-        # pdb.set_trace()
-        # agvinfodata.set_agvinfo(list_agvinfo)
+            return
 
         self.__ack_agvinfo_packet(req.head.id,agvinfoproto.kAgvInfoProto_set_agvinfo,agvinfoproto.KAgvInfo_Errno_Ok)
-        update_status(True)
         return
+
+        #设置功能直接返回成功  暂不设置结构体
+        # list_agvinfo=[]
+        # for item in req.info :
+        #     agvinfos = agvinfodata.agvinfo_t()
+        #     agvinfos.vhid = item.vhid
+        #     agvinfos.vhtype = item.vhtype
+        #     agvinfos.inet = item.inet.value
+        #     agvinfos.mtport = item.mtport
+        #     agvinfos.shport = item.shport
+        #     agvinfos.ftsport = item.ftsport
+        #     agvinfos.hwaddr = item.hwaddr.value
+
+        #     # append attribute
+        #     for a in item.attrs :
+        #         attr = agvinfodata.proto_agvattribute_t()
+        #         attr.describe = a.describe.value
+        #         attr.name = a.name.value
+        #         agvinfos.attrs.append(attr)
+
+        #     list_agvinfo.append(agvinfos)
+
+        # # pdb.set_trace()
+        # # agvinfodata.set_agvinfo(list_agvinfo)
+
+        # self.__ack_agvinfo_packet(req.head.id,agvinfoproto.kAgvInfoProto_set_agvinfo,agvinfoproto.KAgvInfo_Errno_Ok)
+        # update_status(True)
+        # return
 
     def __on_keepalive(self, _head):
         ack = mthead.proto_head(_id=_head.id, _type=agvinfoproto.kAgvInfoProto_heart_beat_ack, _size=24)
@@ -180,6 +183,7 @@ class agvinfo_tcptrs(obtcp.obtcp):
 
     def thread_check_notify(self):
         global SESSION_TIMEOUT_TIMESTAMP
+        TIME_KEEP_ALIVE = 4000
         while self.__thread_exit is False:
             if is_need_update() is True:
                 # pdb.set_trace()
@@ -196,7 +200,7 @@ class agvinfo_tcptrs(obtcp.obtcp):
                     if dec_timestamp > SESSION_TIMEOUT_TIMESTAMP:
                         Logger().get_logger().info('agvinfotrs session timeout lnk{} ip{}:{}'.format(link,self.__map_tcp_session[link].rhost,self.__map_tcp_session[link].rport))
                         close_list.append(self.__map_tcp_session[link])
-                    elif dec_timestamp > 4000:
+                    elif dec_timestamp > TIME_KEEP_ALIVE:
                         if self.__map_tcp_session[link].__keepalive() < 0:
                             close_list.append(self.__map_tcp_session[link])
             self.__map_mutex.release()
