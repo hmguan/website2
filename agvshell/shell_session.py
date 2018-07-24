@@ -12,6 +12,7 @@ import copy
 import errtypes
 from pynsp.logger import *
 from pynsp.waite_handler import *
+from copy import deepcopy
 
 DAY_SECONDS=86400
 HOUR_SECONDS=3600
@@ -235,24 +236,27 @@ class shell_session(tcp.obtcp):
             self.__current_netio_t=info.net_io_tra.value
             self.__previous_timestamp=self.__timestamp
             shell_process_name = self.get_shell_process_list()
-            shell_process_status = list()
-            update_process_status = list()
-            for item in self.__shell_process_info:
-                shell_process_status.append({'process_name':item.get('process_name'),'status':(1 if (item.get('process_pid') > 0) else 0)})
-            
+
+            process_list = self.__shell_systeminfo.get('process_list')
+            last_process_info = deepcopy(process_list)
+            # notify_data = list()
+
+            process_name_list = [item.get('process_name') for item in process_list]
             self.__shell_process_info.clear()
             for item in info.process_list:
                 if shell_process_name.find(item.name.value) != -1:
-                    update_process_status.append({'process_name':item.name.value,'status':(1 if (item.pid.value > 0) else 0)})
+                    process_status = (1 if (item.pid.value > 0) else 0)
+                    process_list[process_name_list.index(item.name.value)]['status'] = process_status
+                    # notify_data.append({'process_name':item.name.value,'status':process_status})
                     self.__shell_process_info.append({'process_name':item.name.value,'process_pid':item.pid.value,
                                                       'run_time':item.run_time.value,'vir_mm':item.vir_mm.value,
                                                       'rss':item.rss.value,'average_cpu':item.average_cpu.value,
                                                       'average_mem':item.average_mem.value})
             self.__mutex.release()
             import operator 
-            if operator.eq(shell_process_status,update_process_status) is False:
+            if operator.eq(process_list,last_process_info) is False:
                 if self.__push_notify_cb:
-                    self.__push_notify_cb(errtypes.TypeShell_UpdateProcessStatus,{"robot_id":self.__robot_id,"process_list":update_process_status})
+                    self.__push_notify_cb(errtypes.TypeShell_UpdateProcessStatus,{"robot_id":self.__robot_id,"robot_host":self.__target_host,"process_list":process_list})
 
     def recv_fixed_systeminfo(self,pkt_id,data,cb):
         (ret, info) = sysinfo.recv_sysinfo_fixed(data, cb, 0)
@@ -281,6 +285,7 @@ class shell_session(tcp.obtcp):
                 process_info['process_path']=item.process_path_.value
                 process_info['process_cmd']=item.process_cmd_.value
                 process_info['process_delay']=item.process_delay_.value
+                process_info['status'] = 0
                 process_l.append(process_info)
             self.__shell_systeminfo['process_list']=process_l
         wait_handler().wait_singal(pkt_id)
@@ -461,7 +466,7 @@ class shell_session(tcp.obtcp):
             self.__shell_systeminfo['ntp_server'] = packet_ntp_ack.msg_str_.value
 
         if self.__push_notify_cb:
-            self.__push_notify_cb(errtypes.TypeShell_UpdateNtpServer,{"robot_id":self.__robot_id,"err_code":packet_ntp_ack.head_.err.value,"ntp_server":packet_ntp_ack.msg_str_.value})
+            self.__push_notify_cb(errtypes.TypeShell_UpdateNtpServer,{"robot_id":self.__robot_id,"error_code":packet_ntp_ack.head_.err.value,"ntp_server":packet_ntp_ack.msg_str_.value})
 
         pass
 

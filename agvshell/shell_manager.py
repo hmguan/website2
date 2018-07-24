@@ -143,7 +143,6 @@ class shell_manager():
         version_info = dict()
         process_list = dict()
         system_info = dict()
-        process_info = dict()
         self.__mutex.acquire()
         keys = list(self.__robot_lnk.keys())
         for key in keys:
@@ -151,10 +150,9 @@ class shell_manager():
             version_info[key] = self.__robot_lnk.get(key).get_shell_version()
             process_list[key] =self.__robot_lnk.get(key).get_shell_process_list()
             system_info[key] = self.__robot_lnk.get(key).get_fixed_system_info()
-            process_info[key] = self.__robot_lnk.get(key).get_shell_process_detail_list()
         self.__mutex.release()
         #key:robot id
-        return shtime_info,version_info,process_list,system_info,process_info
+        return shtime_info,version_info,process_list,system_info
 
     def get_robots_configuration_info(self):
         robots_info = dict()
@@ -243,8 +241,10 @@ class shell_manager():
         self.__mutex.acquire()
         keys = list(self.__robot_lnk.keys())
         for key in keys:
-            progress_info[key] ={'process_list':self.__robot_lnk.get(key).get_shell_process_list(),
-                                'progress_info':self.__robot_lnk.get(key).get_shell_process_detail_list()}
+            progress_info[key] ={
+                                'group_name':self.__robot_lnk.get(key).get_shell_process_list(),
+                                'process_list':self.__robot_lnk.get(key).get_fixed_system_info().get('process_list'),
+                                'robot_host':self.__robot_lnk.get(key).get_host_ipv4()}
         self.__mutex.release()
         return progress_info
 
@@ -264,3 +264,12 @@ class shell_manager():
             self.__mutex.release()
             Logger().get_logger().error('setting_progress_state :{}'.format(str(e)))
             return err_list
+
+    def Query_robot_process_info(self,robot_id)->dict:
+        process_list = dict()
+        self.__mutex.acquire()
+        session = self.__robot_lnk.get(robot_id)
+        if session:
+            process_list = {'robot_host':session.get_host_ipv4(),'process_list':session.get_fixed_system_info()}
+        self.__mutex.release()
+        return process_list
