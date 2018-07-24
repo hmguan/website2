@@ -50,10 +50,13 @@ def upload_file():
 from flask import send_file, send_from_directory
 from flask import make_response
 
-@http_main.route("/download/<path:filepath>", methods=['GET'])
-def download_file(filepath):
-    [dirname,fileinfo]=os.path.split(filepath)
-    data = fileinfo.split(',',1)
+@http_main.route("/download/<path:url_fileinfo>", methods=['GET'])
+def download_file(url_fileinfo):
+    #取出url中的扩展信息 user_id=，type= 
+    [extern_info,filepath]=url_fileinfo.split('/',1)
+    #取出文件名和路径
+    [dirname,filename]=os.path.split(filepath)
+    data = extern_info.split(',',1)
     if len(data) <2:
         Logger().get_logger().error('Incorrectly formatting')
         return '',404
@@ -77,7 +80,6 @@ def download_file(filepath):
         if directory.startswith('./'):
             directory = os.path.abspath(directory)
         
-        [dirname,filename]=os.path.split(dirname)
         file_path = os.path.join(directory, dirname)
 
         if os.path.exists(file_path+'/'+filename) is False :

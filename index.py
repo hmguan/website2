@@ -7,11 +7,11 @@ import traceback
 import sys
 # from black_box import start_black_box,register_blackbox_step_notify_function
 from backup import start_black_box,register_blackbox_step_notify_function
-import ptvsd
+# import ptvsd
 from configuration import config
  
-ptvsd.settrace(None, ('0.0.0.0', 12345))
-ptvsd.wait_for_attach()
+# ptvsd.settrace(None, ('0.0.0.0', 12345))
+# ptvsd.wait_for_attach()
 
 
 app=create_app('default')
