@@ -42,7 +42,7 @@ class backup_manage():
         self.task_id_ = self.task_id_ + 1
         return self.task_id_
 
-    # 对外接口：获取日志类型
+    # 获取日志类型
     def get_agv_types(self,robot_list):
         log_type = dict()
         ret_list = []
@@ -66,7 +66,7 @@ class backup_manage():
             ret_list.append(index)
         return ret_list
 
-    # 对外接口：下发获取日志的筛选条件
+    # 下发获取日志的筛选条件
     def send_log_condition(self,robot_list, user_id, start_time, end_time, types, name):
         task_id = self.get_task_id()
         lists=list()
@@ -143,16 +143,16 @@ class backup_manage():
             attr = dict()
             print('path', index)
             if os.path.isfile(path + index) and os.path.splitext(index)[1] == ".tar":
-                pastTime = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y/%m/%d %H:%M:%S')
+                #pastTime = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y/%m/%d %H:%M:%S')
                 timestamp = os.path.getmtime(path + index)
                 filetime = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(timestamp))
-                size = os.path.getsize(path + index)
-                if filetime < pastTime or size == 0:  # 删除超过15天的
-                    os.remove(path + index)
-                else:
-                    attr['time'] = filetime
-                    attr['path'] = index
-                    attr['size'] = os.path.getsize(path + index)
+                #size = os.path.getsize(path + index)
+                #if filetime < pastTime or size == 0:  # 删除超过15天的
+                    #os.remove(path + index)
+                #else:
+                attr['time'] = filetime
+                attr['path'] = index
+                attr['size'] = os.path.getsize(path + index)
                 file_list.append(attr)
         return file_list
 
@@ -162,16 +162,21 @@ class backup_manage():
         global notify_step_function
         if stat == -1 and data == '':  # shell此时断连的话
             for user in self.user_task_data.keys():
+                print('parht',user,self.user_task_data[user]['path'][id])
                 if self.user_task_data[user]['path'].__contains__(id) and self.user_task_data[user]['path'][id]=='':#==''表示车上没有压完文件，就断开了
                     if self.task_user_.__contains__(self.user_task_data[user]['task']):
+                        if self.user_task_data[user]['path'][id] == 'null':
+                            return
                         self.task_id_count_[user] -= 1
                         if self.task_id_count_[user] == 0:
                             if notify_step_function is not None:
                                 notify_step_function({'msg_type': errtypes.TypeShell_Blackbox_None, 'user_id': user,'task_id':self.user_task_data[user]['task']})
+                            self.user_task_data[user]['handle'].close()
                             del self.task_user_[self.user_task_data[user]['task']]
                             del self.user_task_data[user]
                             return
                         elif self.task_id_count_[user] == self.task_recv_count_[user] - 1:
+                            self.user_task_data[user]['handle'].close()
                             self.pull_log_step_notify(user, id, 100, '', 0, 1)  # 最后一个断线
                 else:
                     return
@@ -185,18 +190,21 @@ class backup_manage():
         user = self.task_user_[int(path.task_id)]
         print('user', user, len(path.vct_log_file_name), self.task_id_count_[user])
         if len(path.vct_log_file_name) == 0:  # 没有文件返回
+            self.user_task_data[user]['path'][id] = 'null'
             if self.task_user_.__contains__(self.user_task_data[user]['task']):
                 self.task_id_count_[user] -= 1
+                print('user1',self.task_id_count_[user],self.task_recv_count_[user])
                 if self.task_id_count_[user] == 0:
                     if notify_step_function is not None:
                         notify_step_function({'msg_type': errtypes.TypeShell_Blackbox_None, 'user_id': user,'task_id':self.user_task_data[user]['task']})
+                    self.user_task_data[user]['handle'].close()
                     del self.task_user_[self.user_task_data[user]['task']]
                     del self.user_task_data[user]
                     return
-                elif self.task_id_count_[user] == self.task_recv_count_[user]-1:
+                elif self.task_id_count_[user] == self.task_recv_count_[user]:
                     self.pull_log_step_notify(user,id,100,'',0,1)#最后一个没有文件，
         self.mutex.acquire()
-        if len(path.vct_log_file_name) != 0:  # and user_task_data[user]['path'] is not None:
+        if len(path.vct_log_file_name) != 0 and path.task_id==self.user_task_data[user]['task']:  # and user_task_data[user]['path'] is not None:
             print('id_log_path', id, path.vct_log_file_name[0])
             # fts去取压缩好的文件
             strpath = path.vct_log_file_name[0].value
@@ -228,12 +236,13 @@ class backup_manage():
                     handle.add(filefullpath, arcname=file_path)
                 del self.tar_list[0]
                 # handle.write(filefullpath,file_path)
-                if self.user_task_data[int(user_id)]['step'] == 100 and notify_step_function is not None:
+                if self.user_task_data[int(user_id)]['step'] == 100 :
                     handle.close()
                     print('close task')
                     if os.path.exists(open_path):
                         shutil.rmtree(open_path)
-                    notify_step_function({'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log, 'user_id': user_id,
+                    if notify_step_function is not None:
+                        notify_step_function({'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log, 'user_id': user_id,
                                           'task_id': self.user_task_data[user_id]['task']})
                 # os.remove(filefullpath)
                 Logger().get_logger().info('tar log over')
@@ -251,6 +260,9 @@ class backup_manage():
         notify_dic['msg_type'] = errtypes.TypeShell_Blackbox_Log
         notify_dic['user_id'] = user_id
 
+        # if not self.user_task_data[int(user_id)]['pull_list'].__contains__({'task_id': task_id, 'robot_id': robot_id, 'file_path': file_path}):
+        #     return
+
         if step == 100 and status == 1:
             self.task_recv_count_[int(user_id)] += 1
             tmp = str(robot_id) + '_' + file_path[file_path.rfind(
@@ -260,6 +272,7 @@ class backup_manage():
             self.tar_list.append({'path': tmp, 'user': int(user_id)})
             thread_wait.sig()
         if error_code != 0:
+            self.user_task_data[user_id]['path'][id] = 'null'
             self.task_recv_count_[int(user_id)] += 1
             if self.task_recv_count_[int(user_id)] == self.task_id_count_[int(user_id)]:
                 if self.task_recv_count_[int(user_id)] != 0:
@@ -274,7 +287,6 @@ class backup_manage():
                 sch = 100 * self.task_recv_count_[int(user_id)] // self.task_id_count_[int(user_id)]  # 总进度
             else:
                 sch = (100 * self.task_recv_count_[int(user_id)] + step) // self.task_id_count_[int(user_id)]  # 总进度
-            print('data', self.user_task_data)
             self.user_task_data[int(user_id)]['step'] = sch
             notify_dic['step'] = sch
             notify_dic['task_id'] = self.user_task_data[user_id]['task']
@@ -298,7 +310,7 @@ class backup_manage():
 
         return folder_path
 
-    # 后台的文件下到用户电脑上
+    # 获取后台要下载文件的全路径
     def download_log(self,user_id, log_name):
         path = self.get_user_path(user_id)
         list = os.listdir(path)
