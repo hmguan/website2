@@ -99,7 +99,7 @@ def get_var_data(var_id,type_id,var_data):
             var_dict=[{'candev_head_canbus':elmo_data.candev_head_.canbus_.value},{'candev_head_canport':elmo_data.candev_head_.canport_.value},{'candev_head_cannode':elmo_data.candev_head_.cannode_.value},
                       { 'candev_head_latency': elmo_data.candev_head_.latency_.value},{'candev_head_merge':elmo_data.candev_head_.merge_.value},{'candev_head_self_rw64':elmo_data.candev_head_.self_rw64_.value},
                       {'candev_head_pdocnt': elmo_data.candev_head_.pdocnt_.value},{'profile_speed':elmo_data.profile_speed_.value},{'profile_acc':elmo_data.profile_acc_.value},
-                      {'profile_dec':elmo_data.profile_dec_.value},{'status_command':elmo_data.status_.command_.value},{'status_maiddle':elmo_data.status_.maiddle_.value},
+                      {'profile_dec':elmo_data.profile_dec_.value},{'status_command':elmo_data.status_.command_.value},{'status_middle':elmo_data.status_.maiddle_.value},
                       {'status_response': elmo_data.status_.response_.value},{'control_mode':elmo_data.control_mode_.value},{'command_velocity':elmo_data.command_velocity_.value},
                       {'command_position':elmo_data.command_position_.value},{'command_current':elmo_data.command_current_.value},{'enable':elmo_data.enable_.value},
                       {'node_state':elmo_data.node_state_.value},{'error_code':elmo_data.error_code_.value},{'time_stamp':elmo_data.time_stamp_.value},
@@ -118,7 +118,7 @@ def get_var_data(var_id,type_id,var_data):
             var_dict=[{'candev_head_canbus':dio_data.candev_head_.canbus_.value},{'candev_head_canport':dio_data.candev_head_.canport_.value},{'candev_head_cannode':dio_data.candev_head_.cannode_.value},
                     {'candev_head_latency': dio_data.candev_head_.latency_.value},{'candev_head_merge':dio_data.candev_head_.merge_.value},{'candev_head_self_rw64':dio_data.candev_head_.self_rw64_.value},
                     {'candev_head_pdocnt': dio_data.candev_head_.pdocnt_.value},{'di_channel_num':dio_data.di_channel_num_.value},{'do_channel_num':dio_data.do_channel_num_.value},
-                    {'status_command':dio_data.status_.command_.value},{'status_maiddle':dio_data.status_.maiddle_.value},{'status_response':dio_data.status_.response_.value},
+                    {'status_command':dio_data.status_.command_.value},{'status_middle':dio_data.status_.maiddle_.value},{'status_response':dio_data.status_.response_.value},
                     {'do':dio_data.do_.value},{'bus_state':dio_data.bus_state_.value},{'error_code':dio_data.error_code_.value},{'time_stamp':dio_data.time_stamp_.value},{'enabled':dio_data.enabled_.value},
                     {'di':dio_data.di_.value},{'do2':dio_data.do2_.value}]
             for i in range(0,10):
@@ -176,7 +176,7 @@ def get_var_data(var_id,type_id,var_data):
             var_dict=[{'candev_head_canbus':moons_data.candev_head_.canbus_.value},{'candev_head_canport':moons_data.candev_head_.canport_.value},{'candev_head_cannode':moons_data.candev_head_.cannode_.value},
                     {'candev_head_latency': moons_data.candev_head_.latency_.value},{'candev_head_merge':moons_data.candev_head_.merge_.value},{'candev_head_self_rw64':moons_data.candev_head_.self_rw64_.value},
                     {'candev_head_pdocnt': moons_data.candev_head_.pdocnt_.value},{'profile_speed':moons_data.profile_speed_.value},{'profile_acc':moons_data.profile_acc_.value},
-                    {'profile_dec_':moons_data.profile_dec_.value},{'status_command':moons_data.status_.command_.value},{'status_maiddle':moons_data.status_.maiddle_.value},
+                    {'profile_dec_':moons_data.profile_dec_.value},{'status_command':moons_data.status_.command_.value},{'status_middle':moons_data.status_.maiddle_.value},
                     {'status_response': moons_data.status_.response_.value},{'control_mode':moons_data.control_mode_.value},{'command_velocity':moons_data.command_velocity_.value},
                     {'command_position':moons_data.command_position_.value},{'command_current':moons_data.command_current_.value},{'enable':moons_data.enable_.value},
                     {'state_command':moons_data.status_.command_.value},{'state_maiddle':moons_data.status_.maiddle_.value},{'state_response':moons_data.status_.response_.value},
@@ -246,7 +246,7 @@ def get_var_data(var_id,type_id,var_data):
                 {'aim_dist':nav_view.aim_dist_.value},{'predict_time':nav_view.predict_time_.value},{'is_traj_whole':nav_view.is_traj_whole_.value},{'aim_angle_p_':nav_view.aim_angle_p_.value},
                 {'aim_angle_i':nav_view.aim_angle_i_.value},{'aim_angle_d':nav_view.aim_angle_d_.value},{'stop_tolerance':nav_view.stop_tolerance_.value},{'stop_tolerance_angle':nav_view.stop_tolerance_angle_.value},
                 {'stop_point_trim':nav_view.stop_point_trim_.value},{'aim_ey_p':nav_view.aim_ey_p_.value},{'aim_ey_i':nav_view.aim_ey_i_.value},{'aim_ey_d':nav_view.aim_ey_d_.value},
-                {'track_status_command':nav_view.track_status_.command_.value},{ 'track_status_maiddle': nav_view.track_status_.maiddle_.value},{'track_status_response':nav_view.track_status_.response_.value},
+                {'track_status_command':nav_view.track_status_.command_.value},{ 'track_status_middle': nav_view.track_status_.maiddle_.value},{'track_status_response':nav_view.track_status_.response_.value},
                 {'user_task_id':nav_view.user_task_id_.value},{'ato_task_id':nav_view.ato_task_id_.value},{'dest_upl_edge_id':nav_view.dest_upl_.edge_id_.value},
                       {'dest_upl_percentage':nav_view.dest_upl_.percentage_.value},{'dest_upl_angle':nav_view.dest_upl_.angle_.value},
                 {'dest_pos_x':nav_view.dest_pos_.x_.value},{ 'dest_pos_y': nav_view.dest_pos_.y_.value},{ 'dest_pos_angle': nav_view.dest_pos_.angle_.value},
@@ -269,7 +269,7 @@ def get_var_data(var_id,type_id,var_data):
         oper_data = view_data.operation_t()
         if oper_data.length()==len(var_data):
             oper_data.build(var_data, 0)
-            var_dict=[{'status_command':oper_data.status_.command_.value},{'status_maiddle':oper_data.status_.maiddle_.value},{'status_response':oper_data.status_.response_.value},
+            var_dict=[{'status_command':oper_data.status_.command_.value},{'status_middle':oper_data.status_.maiddle_.value},{'status_response':oper_data.status_.response_.value},
                 {'user_task_id_':oper_data.user_task_id_.value},{'ato_task_id':oper_data.ato_task_id_.value},{'code':oper_data.code_.value},{'param0_':oper_data.param0_.value},{'param1':oper_data.param1_.value},
                 {'param2_': oper_data.param2_.value},{'param3_':oper_data.param3_.value},{'param4_':oper_data.param4_.value},{'param5_':oper_data.param5_.value},{'param6_':oper_data.param6_.value},
                 {'param7_': oper_data.param0_.value},{'param8_':oper_data.param0_.value},{'param9_':oper_data.param0_.value},{'param10_':oper_data.param0_.value},{'param11_':oper_data.param11_.value},
