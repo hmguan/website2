@@ -13,8 +13,8 @@ def send_log_condition(robot_list, user_id, start_time, end_time, types, name):
     return backup_manage().send_log_condition(robot_list, user_id, start_time, end_time, types, name)
 
 # 取消任务
-def cancle_get_log(task_id):
-    return backup_manage().cancle_get_log(task_id)
+def cancel_get_log(task_id):
+    return backup_manage().cancel_get_log(task_id)
 
 # 正在执行的任务
 def get_executing_log(user_id):
