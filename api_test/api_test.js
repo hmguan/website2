@@ -74,6 +74,7 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'update_ntp_server','args':['robot_id','ntp_host'],'param':[null,null],'function':'update_ntp_server','type':1},
     {'event':'query_progress_info','args':['user_id'],'param':[null],'function':'query_progress_info','type':1},
     {'event':'setting_process_state','args':['robot_id','command'],'param':[null,null],'function':'setting_process_state','type':1},
+    {'event':'query_robot_process_info','args':['robot_id'],'param':[null],'function':'query_robot_process_info','type':1},
     ]
 
     $scope.submit = function( api_param ){

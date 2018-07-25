@@ -48,9 +48,11 @@ HttpResponseCode_NOFILE=51
 HttpResponseCode_EXISTFILE=51
 HttpResponseCode_InvaildPath = 52
 
+#不在线
+HttpResponseCode_RobotOffLine = 70
+
 HttpResponseCode_NotFound=404
 HttpResponseCode_ServerError=500
-
 
 
 #############################以下定义http响应消息###############################
@@ -59,3 +61,4 @@ HttpResponseMsg_InvaildParament='invalid input parament'
 HttpResponseMsg_InvaildPath='File Not Found'
 HttpResponseMsg_Failed='failed'
 HttpResponseMsg_FileNotExist = 'Cannot find file'
+HttpResponseMsg_RobotOffLine = 'Robot Not OnLine'

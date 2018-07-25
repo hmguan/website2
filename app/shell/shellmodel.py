@@ -211,3 +211,14 @@ def operate_system_process(robot_list,command):
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def query_robot_process_param_info(robot_id):
+    if type(robot_id) != int:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        process_info = query_robot_process_info(robot_id)
+        if process_info:
+            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'process_list': process_info}
+        return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

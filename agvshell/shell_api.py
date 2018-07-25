@@ -55,13 +55,14 @@ def start_connect_to_robot():
                 if result == 0:
                     #新的客户端登录成功，则通知浏览器
                     if notify_client_function is not None:
-                        fiex_system_info = shell_manager().get_fixed_sysytem_info(item.id)                
+                        fiex_system_info = shell_manager().get_fixed_sysytem_info(item.id)
+                        process_list =[{"process_name":item.get('process_name'),"status":item.get('status')} for item in fiex_system_info.get('process_list')]             
                         notify_client_function({'msg_type':errtypes.TypeShell_NewArrival,'process_group':
                                                 shell_manager().get_shell_process_name_join(item.id),'robot_id':item.id,
                                                 'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00',
                                                 'shell_version':fiex_system_info.get('software_version'),'lock_status':fiex_system_info.get('lock_status'),
                                                 'ntp_server':fiex_system_info.get('ntp_server'),
-                                                'process_list':fiex_system_info.get('process_list')})
+                                                'process_list':process_list})
                     global_mutex.acquire()
                     if item.id in unusual_collection.keys():
                         del unusual_collection[item.id]
@@ -419,3 +420,6 @@ def query_progress_list():
 
 def setting_progress_state(robot_list,command):
     return shell_manager().setting_progress_state(robot_list,command)
+
+def query_robot_process_info(robot_id):
+    return shell_manager().query_robot_process_info(robot_id)

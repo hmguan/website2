@@ -241,10 +241,20 @@ class shell_manager():
         self.__mutex.acquire()
         keys = list(self.__robot_lnk.keys())
         for key in keys:
+            session = self.__robot_lnk.get(key)
+            if session is None:
+                continue
+
+            fiex_system_info = session.get_fixed_system_info()
+            process_list = list()
+            if fiex_system_info :
+                process_list = [{"process_name":item.get('process_name'),"status":item.get('status')} for item in fiex_system_info.get('process_list')]
+            
             progress_info[key] ={
-                                'group_name':self.__robot_lnk.get(key).get_shell_process_list(),
-                                'process_list':self.__robot_lnk.get(key).get_fixed_system_info().get('process_list'),
-                                'robot_host':self.__robot_lnk.get(key).get_host_ipv4()}
+                                'group_name':session.get_shell_process_list(),
+                                'process_list':process_list,
+                                'robot_host':session.get_host_ipv4()
+                                }
         self.__mutex.release()
         return progress_info
 
@@ -265,11 +275,11 @@ class shell_manager():
             Logger().get_logger().error('setting_progress_state :{}'.format(str(e)))
             return err_list
 
-    def Query_robot_process_info(self,robot_id)->dict:
+    def query_robot_process_info(self,robot_id)->dict:
         process_list = dict()
         self.__mutex.acquire()
         session = self.__robot_lnk.get(robot_id)
         if session:
-            process_list = {'robot_host':session.get_host_ipv4(),'process_list':session.get_fixed_system_info()}
+            process_list = {'process_list':session.get_fixed_system_info().get('process_list')}
         self.__mutex.release()
         return process_list
