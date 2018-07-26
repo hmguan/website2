@@ -111,20 +111,15 @@ class backup_manage():
             for id in self.user_task_data[user]['path'].keys():
                 shell_info = shell_manager().get_session_by_id(int(id))
                 if shell_info is not None:
-                    ret = shell_info.cancle_log_data(task_id)
+                    shell_info.cancle_log_data(task_id)
                     cancle_file_transform(user, id, self.user_task_data[user]['pull_list'])
-                    if ret >= 0:
-                        self.user_task_data[user]['handle'].close()
-                        file = self.get_user_tmp_path(user)
-                        tarfile = os.path.join(self.get_user_path(user), self.user_task_data[user]['name'])
-                        if os.path.exists(file):
-                            shutil.rmtree(file)
-                        if os.path.isfile(tarfile):
-                            os.remove(tarfile)
-                        del self.user_task_data[user]
-                        del self.task_user_[task_id]
-                        Logger().get_logger().info('cancel get log task:{0}'.format(task_id))
-                        return 0
+            self.user_task_data[user]['handle'].close()
+            self.delete_tmp_file(user)
+            self.delete_log(user,self.user_task_data[user]['name'])
+            del self.user_task_data[user]
+            del self.task_user_[task_id]
+            Logger().get_logger().info('cancel get log task:{0}'.format(task_id))
+            return 0
         return -1
 
     # 正在执行的任务
