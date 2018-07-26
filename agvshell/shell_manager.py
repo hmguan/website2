@@ -54,6 +54,7 @@ class shell_manager():
             if session_link.get_network_status() == typedef.NetworkStatus_Ready:
                 if session_link.try_login() < 0:
                     Logger().get_logger().error('failed to login target endpoint:{0} robot id:{1}'.format(ipv4,robot_id))
+                    session_link.close()
                     return -1
             elif session_link.get_network_status() == typedef.NetworkStatus_Established:
                 # 请求获取车辆基本信息,此处同步等待接口
@@ -71,6 +72,11 @@ class shell_manager():
             else:
                 Logger().get_logger().warning("wait for pre login pakcage.")
                 sleep(0.1)
+
+        if session_link.get_network_status() != typedef.NetworkStatus_Established:
+            Logger().get_logger().error('failed to login target endpoint:{0} robot id:{1},then close the session'.format(ipv4,robot_id))
+            session_link.close()
+            return -1
 
         self.__mutex.acquire()
         self.__robot_lnk[robot_id] = session_link
