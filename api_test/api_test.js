@@ -75,6 +75,7 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'query_progress_info','args':['user_id'],'param':[null],'function':'query_progress_info','type':1},
     {'event':'setting_process_state','args':['robot_id','command'],'param':[null,null],'function':'setting_process_state','type':1},
     {'event':'query_robot_process_info','args':['robot_id'],'param':[null],'function':'query_robot_process_info','type':1},
+    {'event':'update_robot_process_info','args':['robot_id','process_name','process_cmd','process_delay','process_path'],'param':[null,null,null,null,null],'function':'update_robot_process_info','type':1},
     ]
 
     $scope.submit = function( api_param ){

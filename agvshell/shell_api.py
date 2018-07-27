@@ -56,7 +56,10 @@ def start_connect_to_robot():
                     #新的客户端登录成功，则通知浏览器
                     if notify_client_function is not None:
                         fiex_system_info = shell_manager().get_fixed_sysytem_info(item.id)
-                        process_list =[{"process_name":item.get('process_name'),"status":item.get('status')} for item in fiex_system_info.get('process_list')]             
+                        process_list = []
+                        # print(fiex_system_info)
+                        if 'process_list' in fiex_system_info:
+                            process_list =[{"process_name":process_info.get('process_name'),"status":process_info.get('status')} for process_info in fiex_system_info.get('process_list')]             
                         notify_client_function({'msg_type':errtypes.TypeShell_NewArrival,'process_group':
                                                 shell_manager().get_shell_process_name_join(item.id),'robot_id':item.id,
                                                 'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00',
@@ -423,3 +426,6 @@ def setting_progress_state(robot_list,command):
 
 def query_robot_process_info(robot_id):
     return shell_manager().query_robot_process_info(robot_id)
+
+def update_process_list(robot_id,process_list):
+    return shell_manager().update_process_list(robot_id,process_list)

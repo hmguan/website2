@@ -222,3 +222,14 @@ def query_robot_process_param_info(robot_id):
         return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def update_robot_process_list(robot_id,process_list):
+    if type(robot_id) != int or type(process_list) != list:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        error_code = update_process_list(robot_id,process_list)
+        if error_code == 0:
+            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal }
+        return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

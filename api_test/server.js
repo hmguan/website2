@@ -25,7 +25,8 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		'update_ntp_server':update_ntp_server,
 		'query_progress_info':query_progress_info,
 		'setting_process_state':setting_process_state,
-		'query_robot_process_info':query_robot_process_info
+		'query_robot_process_info':query_robot_process_info,
+		'update_robot_process_info':update_robot_process_info
 	}
 
 	function RequestRobotDetailInfo (RobotId) {
@@ -132,6 +133,24 @@ app.service('$http_services',['$http','$q',function($http,$q){
 	function query_robot_process_info(robot_id){
 		return RequestJsonData(JSON.stringify({'event': 'event_query_robot_process_list','robot_id':parseInt(robot_id)}))
 	}
+
+	function update_robot_process_info(robot_id,process_name,process_cmd,process_delay,process_path){
+		if(process_name == null) {
+			process_name = "";
+		}
+
+		if (!process_cmd){
+			process_cmd = "";
+		}
+
+		if (!process_path){
+			process_path = "";
+		}
+
+		process_list = [{'process_name':process_name,'process_path':process_path,'process_delay':parseInt(process_delay),"process_cmd":process_cmd}]
+		return RequestJsonData(JSON.stringify({'event': 'event_update_robot_process_list','robot_id':parseInt(robot_id),"process_list":process_list}))
+	}
+
 
 	function get_file(){
 		

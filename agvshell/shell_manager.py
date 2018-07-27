@@ -253,7 +253,7 @@ class shell_manager():
 
             fiex_system_info = session.get_fixed_system_info()
             process_list = list()
-            if fiex_system_info :
+            if 'process_list' in fiex_system_info:
                 process_list = [{"process_name":item.get('process_name'),"status":item.get('status')} for item in fiex_system_info.get('process_list')]
             
             progress_info[key] ={
@@ -289,3 +289,13 @@ class shell_manager():
             process_list = {'process_list':session.get_fixed_system_info().get('process_list')}
         self.__mutex.release()
         return process_list
+
+    def update_process_list(self,robot_id,process_list):
+        error_code = -1
+        self.__mutex.acquire()
+        session = self.__robot_lnk.get(robot_id)
+        if session:
+            error_code = session.update_process_list(process_list)
+        self.__mutex.release()
+        return error_code
+        

@@ -2,6 +2,7 @@
 
 from pynsp import obtcp as tcp
 from .shproto import proto_head as head,proto_typedef as typedef,login,proto_file,proto_upgrade,proto_sysinfo as sysinfo,proto_log as log
+from .shproto import proto_common,proto_process_list
 from agvshell import net_manager as nm
 from pynsp.encrypt import *
 import random
@@ -107,6 +108,8 @@ class shell_session(tcp.obtcp):
             self.on_update_ntp_server(data,cb)
         elif typedef.PKTTYPE_AGV_SHELL_PROCESS_COMMAND_ACK == phead.type:
             self.on_recv_process_cmd_ack(data,cb)
+        elif typedef.PKTTYPE_AGV_SHELL_SET_PROCESS_LIST_ACK:
+            self.on_recv_update_process_list_ack(data,cb)
         else:
             Logger().get_logger().warning("not support type:%8x" % phead.type)
 
@@ -500,6 +503,62 @@ class shell_session(tcp.obtcp):
             Logger().get_logger().error("on_recv_process_cmd_ack build  proto_head packet error.")
             return
         pass
+
+    def update_process_list(self,process_list):
+        process_list = {}
+        import pdb
+        pdb.set_trace()
+        # process_list =[{"process_name":process_info.get('process_name'),"status":process_info.get('status')} for process_info in fiex_system_info.get('process_list')]
+        for item in process_list.get('process_list'):
+            process = 4
+
+        request = proto_process_list.proto_process_list_t()
+        request.phead.type(typedef.PKTTYPE_AGV_SHELL_SET_PROCESS_LIST)
+        pkt_id = wait_handler().allocat_pkt_id()
+        request.phead.id(pkt_id)
+        for process_info in process_list:
+            process_data = proto_process_list.proto_process_obj_t()
+            process_data.process_name_(process_info.get('process_name'))
+            process_data.process_path_(process_info.get('process_path'))
+            process_data.process_cmd_(process_info.get('process_cmd'))
+            process_data.process_delay_(int(process_info.get('process_delay')))
+            request.process_list_.append(process_data)
+        request.phead.size(request.length())
+        return 0
+        return self.send(request.serialize(),request.phead.size.value)
+
+    def on_recv_update_process_list_ack(self,data,cb):
+        import operator 
+        if cb < 0:
+            Logger().get_logger().error("on_recv_update_process_list_ack error.")
+            return
+        
+        ack = proto_process_list.proto_process_list_ack()
+        if (ack.build(data, 0) < 0):
+            Logger().get_logger().error("on_recv_update_process_list_ack build  proto_process_list_ack packet error.")
+            return
+
+        if ack.common_stream_.value == "0":
+            last_process_info = self.__shell_systeminfo.get('process_list')
+            # if last_process_info:
+            #     process_status = [{item.get('process_name'):item.get('status')} for item in last_process_info]
+            process_l=list()
+            for item in info.process_info:
+                process_info = dict()
+                process_info['process_name']=item.process_name_.value
+                process_info['process_path']=item.process_path_.value
+                process_info['process_cmd']=item.process_cmd_.value
+                process_info['process_delay']=item.process_delay_.value
+                # status = process_status.get(process_info['process_name'])
+                # process_info['status'] = status if status else 0
+                process_info['status'] = 0
+                process_l.append(process_info)
+            self.__shell_systeminfo['process_list']=process_l
+            self.__shell_process_info.clear()
+            if operator.eq(process_l,last_process_info) is False and self.__push_notify_cb:
+                self.__push_notify_cb(errtypes.TypeShell_UpdateProcessStatus,{"robot_id":self.__robot_id,"robot_host":self.__target_host,"process_list":process_l})
+                
+
 ##################################################以下为fts文件传输协议代码#######################################################
 
 
