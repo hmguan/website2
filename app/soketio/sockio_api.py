@@ -4,7 +4,7 @@ from flask_socketio import SocketIO, emit,join_room,leave_room
 import json
 import errtypes
 from pynsp.logger import *
-
+from time import sleep
 from threading import RLock
 
 thread = None
@@ -46,6 +46,9 @@ def socketio_connect():
     global thread
     with thread_lock:
         if thread is None:
+            #清空socketio 未连接时 推送的消息
+            post_msg_list.clear()
+            post_room_list.clear()
             thread = local_socketio.start_background_task(target=background_thread)
     response_to_client_data({'msg_type':errtypes.TypeShell_SokcetIOConnect,'data':'connect success'})
 
