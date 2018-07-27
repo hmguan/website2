@@ -45,7 +45,7 @@ class proto_process_list_t(proto_interface):
         self.process_list_=proto_vector(proto_process_obj_t)
 
     def length(self)->int:
-        return self.pkt_id_.length()+self.phead.length()+self.process_list_.length()
+        return self.phead.length()+self.pkt_id_.length()+self.process_list_.length()
 
     def serialize(self)->bytes:
         return self.phead.serialize()+self.pkt_id_.serialize()+self.process_list_.serialize()
@@ -84,27 +84,6 @@ def recv_process_list(data,len,offset=0):
     process_list_obj.build(data,offset)
     return process_list_obj.process_list_
 
-
-class proto_process_list_ack(proto_interface):
-    """docstring for proto_common_stream"""
-    def __init__(self):
-        super(proto_common_stream, self).__init__()
-        self.head_ = proto_head.proto_head()
-        self.pkt_id_ = proto_int32(0)
-        self.common_stream_ = proto_string()
-        self.process_list_=proto_vector(TYPE=proto_process_obj_t)
-
-    def length(self):
-        return self.head_.length() + self.pkt_id.length() + self.common_stream.length() + self.process_list_.length()
-
-    def serialize(self)->bytes:
-        return self.head_.serialize() + self.pkt_id.serialize() + self.common_stream.serialize()+ self.process_list_.serialize()
-
-    def build(self,data,offset) -> int:
-        offset = self.head_.build(data,offset)
-        offset = self.pkt_id.build(data,offset)
-        offset = self.common_stream.build(data,offset)
-        return self.process_list_.build(data,offset)
 
 
 

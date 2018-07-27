@@ -26,7 +26,7 @@ class proto_process_info(proto_interface):
         super(proto_process_info,self).__init__()
         self.name = proto_string()
         self.pid = proto_uint32()
-        self.run_time = proto_uint64()
+        self.run_time = proto_string()
         self.vir_mm = proto_uint64()
         self.rss = proto_uint64()
         self.average_cpu = proto_uint64()

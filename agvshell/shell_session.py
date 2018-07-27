@@ -373,7 +373,6 @@ class shell_session(tcp.obtcp):
 
     def recv_log_type(self, pkt_id, data):
         self.__log_type = data
-        print('data0',data)
         wait_handler().wait_singal(pkt_id)
 
     def get_log_types(self):
@@ -505,13 +504,6 @@ class shell_session(tcp.obtcp):
         pass
 
     def update_process_list(self,process_list):
-        process_list = {}
-        import pdb
-        pdb.set_trace()
-        # process_list =[{"process_name":process_info.get('process_name'),"status":process_info.get('status')} for process_info in fiex_system_info.get('process_list')]
-        for item in process_list.get('process_list'):
-            process = 4
-
         request = proto_process_list.proto_process_list_t()
         request.phead.type(typedef.PKTTYPE_AGV_SHELL_SET_PROCESS_LIST)
         pkt_id = wait_handler().allocat_pkt_id()
@@ -524,7 +516,6 @@ class shell_session(tcp.obtcp):
             process_data.process_delay_(int(process_info.get('process_delay')))
             request.process_list_.append(process_data)
         request.phead.size(request.length())
-        return 0
         return self.send(request.serialize(),request.phead.size.value)
 
     def on_recv_update_process_list_ack(self,data,cb):
@@ -533,17 +524,17 @@ class shell_session(tcp.obtcp):
             Logger().get_logger().error("on_recv_update_process_list_ack error.")
             return
         
-        ack = proto_process_list.proto_process_list_ack()
+        ack = proto_process_list.proto_process_list_t()
         if (ack.build(data, 0) < 0):
             Logger().get_logger().error("on_recv_update_process_list_ack build  proto_process_list_ack packet error.")
             return
 
-        if ack.common_stream_.value == "0":
-            last_process_info = self.__shell_systeminfo.get('process_list')
+        if ack.phead.err.value == 0:
+            last_process_info = deepcopy(self.__shell_systeminfo.get('process_list'))
             # if last_process_info:
             #     process_status = [{item.get('process_name'):item.get('status')} for item in last_process_info]
             process_l=list()
-            for item in info.process_info:
+            for item in ack.process_list_:
                 process_info = dict()
                 process_info['process_name']=item.process_name_.value
                 process_info['process_path']=item.process_path_.value
