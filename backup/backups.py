@@ -137,6 +137,7 @@ class backup_manage():
             return 0
         return -1
 
+    #删除零时文件夹
     def delete_tmp_file(self,user):
         file = self.get_user_tmp_path(user)
         if os.path.exists(file):
@@ -168,7 +169,7 @@ class backup_manage():
 
     # 收到车上shell压缩的文件，返回的车上路径
     def load_log_path(self,id, stat, data):
-        print('back----', stat,data,self.user_task_data)
+        print('back----', stat,id,data,self.user_task_data)
         global notify_step_function
         if stat == -1 and data == '':  # shell此时断连的话
             for user in self.user_task_data.keys():
@@ -177,53 +178,32 @@ class backup_manage():
                         if self.user_task_data[user]['path'][id] == 'null':
                             return
                         self.task_id_count_[user] -= 1
-                        if self.task_id_count_[user] == 0:
-                            if notify_step_function is not None:
-                                notify_step_function({'msg_type': errtypes.TypeShell_Blackbox_None, 'user_id': user,'task_id':self.user_task_data[user]['task']})
-                            self.user_task_data[user]['handle'].close()
-                            self.delete_log(user, self.user_task_data[user]['name'])
-                            self.delete_tmp_file(user)
-                            del self.task_user_[self.user_task_data[user]['task']]
-                            del self.user_task_data[user]
+                        if self.failed_get_log(user)<0:
                             return
-                        elif self.task_id_count_[user] == self.task_recv_count_[user] - 1:
-                            self.user_task_data[user]['handle'].close()
-                            self.pull_log_step_notify(user, id, 100, '', 0, 1)  # 最后一个断线
                 else:
                     return
 
         Logger().get_logger().info('shell back')
         path = log.proto_logs_file_path()
         path.build(data, 0)
-        print('path', path, path.task_id)
         if not self.task_user_.__contains__(int(path.task_id)):
             return
         user = self.task_user_[int(path.task_id)]
-        print('user', user, len(path.vct_log_file_name), self.task_id_count_[user])
         if len(path.vct_log_file_name) == 0:  # 没有文件返回
             Logger().get_logger().warning('not find any log files :by user {0} robot id:{1}'.format(user, id))
             self.user_task_data[user]['path'][id] = 'null'
             if self.task_user_.__contains__(self.user_task_data[user]['task']):
                 self.task_id_count_[user] -= 1
-                if self.task_id_count_[user] == 0:
-                    if notify_step_function is not None:
-                        notify_step_function({'msg_type': errtypes.TypeShell_Blackbox_None, 'user_id': user,'task_id':self.user_task_data[user]['task']})
-                    self.user_task_data[user]['handle'].close()
-                    self.delete_log(user, self.user_task_data[user]['name'])
-                    self.delete_tmp_file(user)
-                    del self.task_user_[self.user_task_data[user]['task']]
-                    del self.user_task_data[user]
+                if self.failed_get_log(user) < 0:
                     return
-                elif self.task_id_count_[user] == self.task_recv_count_[user]:
-                    self.pull_log_step_notify(user,id,100,'',0,1)#最后一个没有文件，
         self.mutex.acquire()
-        if len(path.vct_log_file_name) != 0 and path.task_id==self.user_task_data[user]['task']:  # and user_task_data[user]['path'] is not None:
+        if len(path.vct_log_file_name) != 0 and path.task_id==self.user_task_data[user]['task']:
             print('id_log_path', id, path.vct_log_file_name[0])
             # fts去取压缩好的文件
             strpath = path.vct_log_file_name[0].value
             local_path = self.get_user_tmp_path(user) + str(id) + '_' + strpath[strpath.rfind('/') + 1:]
             self.user_task_data[user]['path'][id] = local_path
-            print('local_path--', local_path)
+            print('local_tmp_path', local_path)
             route_path_list = [{'robot_id': id, 'file_path': path.vct_log_file_name[0].value, 'local_path': local_path}]
             task,err = pull_file_from_remote(user, FILE_TYPE_BLACKBOX_PULL_FILES, route_path_list)
             if len(task) > 0:
@@ -257,7 +237,6 @@ class backup_manage():
                     if notify_step_function is not None:
                         notify_step_function({'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log, 'user_id': user_id,
                                           'task_id': self.user_task_data[user_id]['task']})
-                # os.remove(filefullpath)
                 Logger().get_logger().info('tar log over')
 
     # pull文件时，回调进度
@@ -303,6 +282,27 @@ class backup_manage():
     def register_blackbox_step_notify(self,log_notify=None):
         global notify_step_function
         notify_step_function = log_notify
+
+    #获取失败or断连
+    def failed_get_log(self,user):
+        global notify_step_function
+        self.mutex.acquire()
+        if self.task_id_count_[user] == 0:
+            if notify_step_function is not None:
+                notify_step_function({'msg_type': errtypes.TypeShell_Blackbox_None, 'user_id': user,'task_id':self.user_task_data[user]['task']})
+            self.user_task_data[user]['handle'].close()
+            self.delete_log(user, self.user_task_data[user]['name'])
+            self.delete_tmp_file(user)
+            del self.task_user_[self.user_task_data[user]['task']]
+            del self.user_task_data[user]
+            self.mutex.release()
+            return -1
+        elif self.task_id_count_[user] == self.task_recv_count_[user]:
+            self.pull_log_step_notify(user, id, 100, '', 0, 1)  # 最后一个断线
+            self.mutex.release()
+            return 0
+        self.mutex.release()
+
 
     # 获取存后台的路径
     def get_user_path(self,user_id):
