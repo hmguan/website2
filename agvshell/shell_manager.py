@@ -65,6 +65,7 @@ class shell_manager():
                 # 同步等待
                 if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
                     wait_handler().wait_destory(pkt_id)
+                    session_link.post_request_process_config_list()
                 break
             elif session_link.get_network_status() == typedef.NetworkStatus_Connected:
                 Logger().get_logger().warning("wait for login package result ack.")
@@ -281,21 +282,21 @@ class shell_manager():
             Logger().get_logger().error('setting_progress_state :{}'.format(str(e)))
             return err_list
 
-    def query_robot_process_info(self,robot_id)->dict:
+    def query_robot_process_config_info(self,robot_id)->dict:
         process_list = dict()
         self.__mutex.acquire()
         session = self.__robot_lnk.get(robot_id)
         if session:
-            process_list = {'process_list':session.get_fixed_system_info().get('process_list')}
+            process_list = {'process_list':session.get_shell_process_config_list()}
         self.__mutex.release()
         return process_list
 
-    def update_process_list(self,robot_id,process_list):
+    def update_process_config_info(self,robot_id,process_list):
         error_code = -1
         self.__mutex.acquire()
         session = self.__robot_lnk.get(robot_id)
         if session:
-            error_code = session.update_process_list(process_list)
+            error_code = session.update_process_config_info(process_list)
         self.__mutex.release()
         return error_code
         

@@ -113,6 +113,11 @@ class user:
     @staticmethod
     def group_alias(user_id,group_name):
         ret = session_obj.query(group_alias_info).filter_by(user_id=user_id).filter_by(name=group_name).first()
+        
+        # user_obj = user.query_name_by_id(user_id)
+        # if user_obj is None:
+        #     return -1
+        
         if not ret:
             alias_obj = group_alias_info(user_id = user_id,name=group_name)
             session_obj.add(alias_obj)
