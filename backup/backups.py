@@ -80,7 +80,6 @@ class backup_manage():
         zip_file = self.get_user_path(user_id) + name
         self.get_user_tmp_path(user_id)
         hzip = tarfile.open(zip_file, "w:tar")
-        # hzip = zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED)
         self.mutex.acquire()
         self.user_task_data[user_id] = {'task': task_id, 'filepath': zip_file, 'name': name, 'handle': hzip, 'path': {},
                                    'step': 0, 'pull_list':lists}
@@ -126,7 +125,6 @@ class backup_manage():
     def get_executing_log(self,user_id):
         if self.user_task_data.__contains__(user_id):
             return self.user_task_data[user_id]['name'], self.user_task_data[user_id]['task'], self.user_task_data[user_id]['step']
-
         return '', -1, -1
 
     # 删除日志文件
@@ -154,13 +152,8 @@ class backup_manage():
             attr = dict()
             print('path', index)
             if os.path.isfile(path + index) and os.path.splitext(index)[1] == ".tar":
-                #pastTime = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y/%m/%d %H:%M:%S')
                 timestamp = os.path.getmtime(path + index)
                 filetime = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(timestamp))
-                #size = os.path.getsize(path + index)
-                #if filetime < pastTime or size == 0:  # 删除超过15天的
-                    #os.remove(path + index)
-                #else:
                 attr['time'] = filetime
                 attr['path'] = index
                 attr['size'] = os.path.getsize(path + index)
@@ -178,8 +171,8 @@ class backup_manage():
                         if self.user_task_data[user]['path'][id] == 'null':
                             return
                         self.task_id_count_[user] -= 1
-                        if self.failed_get_log(user)<0:
-                            return
+                        self.failed_get_log(user)
+                        return
                 else:
                     return
 
@@ -194,8 +187,8 @@ class backup_manage():
             self.user_task_data[user]['path'][id] = 'null'
             if self.task_user_.__contains__(self.user_task_data[user]['task']):
                 self.task_id_count_[user] -= 1
-                if self.failed_get_log(user) < 0:
-                    return
+                self.failed_get_log(user)
+                return
         self.mutex.acquire()
         if len(path.vct_log_file_name) != 0 and path.task_id==self.user_task_data[user]['task']:
             print('id_log_path', id, path.vct_log_file_name[0])
@@ -228,7 +221,6 @@ class backup_manage():
                 if os.path.isfile(filefullpath):
                     handle.add(filefullpath, arcname=file_path)
                 del self.tar_list[0]
-                # handle.write(filefullpath,file_path)
                 if self.user_task_data[int(user_id)]['step'] == 100 :
                     handle.close()
                     print('close task')
@@ -251,8 +243,7 @@ class backup_manage():
 
         if step == 100 and status == 1:
             self.task_recv_count_[int(user_id)] += 1
-            tmp = str(robot_id) + '_' + file_path[file_path.rfind(
-                '/') + 1:]  # get_user_path(user_id) + str(robot_id) + '_' + file_path[file_path.rfind('/') + 1:]
+            tmp = str(robot_id) + '_' + file_path[file_path.rfind('/') + 1:]
             if self.task_recv_count_[int(user_id)] == self.task_id_count_[int(user_id)]:
                 self.user_task_data[int(user_id)]['step'] = 100
             self.tar_list.append({'path': tmp, 'user': int(user_id)})
@@ -329,21 +320,6 @@ class backup_manage():
                 filepath = os.path.join(path + log_name)
                 return filepath[1:len(filepath)]
         return ''
-
-
-
-# #task_data_=dict()
-# user_task_data=dict()
-# #{user1:{task:1,name:1.zip,log_path:{id1:1.log,id2:2.log,id3:3.log}}
-# # user2:{task:2,name:2.zip,log_path:{id1:1.log,id2:2.log,id3:3.log}}}
-# task_id_count_=dict()#一个任务总robot数
-# task_recv_count_=dict()#一个任务回的robot数
-# #task_id--user_id
-# task_user_=dict()
-# task_id_=0
-# mutex = threading.RLock()
-# notify_step_function=None
-# tar_list=[]
 
 
 
