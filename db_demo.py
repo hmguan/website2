@@ -1,14 +1,13 @@
 
-#from hdfs import Client
-
-from db.db_blackbox import blackbox_manager
+from hdfs import Client
 from datetime import datetime
+from mrjob.job import MRJob
+
 
 def main():
-
-
-
-   blackbox_manager.remove_temps(5)
+    pass
 
 if __name__ == "__main__":
     main()
+
+
