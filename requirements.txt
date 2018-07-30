@@ -11,4 +11,3 @@ Flask-Cors==3.0.4
 virtualenv==15.2.0
 Werkzeug==0.14.1
 
-test
