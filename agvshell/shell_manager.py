@@ -54,20 +54,29 @@ class shell_manager():
             if session_link.get_network_status() == typedef.NetworkStatus_Ready:
                 if session_link.try_login() < 0:
                     Logger().get_logger().error('failed to login target endpoint:{0} robot id:{1}'.format(ipv4,robot_id))
+                    session_link.close()
                     return -1
-                else:
-                    #请求获取车辆基本信息,此处同步等待接口
-                    pkt_id = session_link.post_sysinfo_fixed_request()
-                    if pkt_id < 0:
-                        Logger().get_logger().error("failed post sysinfo fixed request to agvshell.")
-                        break
-                    #同步等待
-                    if wait_handler().wait_simulate(pkt_id,3000) >= 0:
-                        wait_handler().wait_destory(pkt_id)
+            elif session_link.get_network_status() == typedef.NetworkStatus_Established:
+                # 请求获取车辆基本信息,此处同步等待接口
+                pkt_id = session_link.post_sysinfo_fixed_request()
+                if pkt_id < 0:
+                    Logger().get_logger().error("failed post sysinfo fixed request to agvshell.")
                     break
+                # 同步等待
+                if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
+                    wait_handler().wait_destory(pkt_id)
+                break
+            elif session_link.get_network_status() == typedef.NetworkStatus_Connected:
+                Logger().get_logger().warning("wait for login package result ack.")
+                sleep(0.1)
             else:
                 Logger().get_logger().warning("wait for pre login pakcage.")
                 sleep(0.1)
+
+        if session_link.get_network_status() != typedef.NetworkStatus_Established:
+            Logger().get_logger().error('failed to login target endpoint:{0} robot id:{1},then close the session'.format(ipv4,robot_id))
+            session_link.close()
+            return -1
 
         self.__mutex.acquire()
         self.__robot_lnk[robot_id] = session_link
@@ -81,26 +90,27 @@ class shell_manager():
         :return:
         '''
         while self.__is_exist_th == False:
-            self.__mutex.acquire()
-            keys = list(self.__robot_lnk.keys())
-            current_timestamp = int(round(time.time() * 1000))
-
             # 文件传输超时检测
             #Logger().get_logger().info('start file manager check timeout,current timestamp:{0}'.format(current_timestamp))
-            file_rw.file_manager().check_file_timeout(current_timestamp)
+            file_rw.file_manager().check_file_timeout(int(round(time.time() * 1000)))
             #Logger().get_logger().info('end file manager check timeout')
 
+            self.__mutex.acquire()
+            keys = list(self.__robot_lnk.keys())
             for key_item in keys:
                 # if self.__robot_lnk[key_item] is not None:
+                current_timestamp = int(round(time.time() * 1000))
                 host = self.__robot_lnk[key_item].get_host_ipv4()
-                if (current_timestamp - self.__robot_lnk[key_item].get_timestamp()) > CHECK_ALIVE_TIMESTAMP_OUT:
+                session_time = self.__robot_lnk[key_item].get_timestamp()
+                if (current_timestamp - session_time) > CHECK_ALIVE_TIMESTAMP_OUT:
                     #超时，则直接关闭连接
-                    Logger().get_logger().error('the target endpoint {0} check timeout,current timestamp:{1},session timestamp:{2}.'.format(host,
+                    Logger().get_logger().error('the target endpoint {0} check timeout,current timestamp:{1},session timestamp:{2},the interval timestamp:{3}'.format(host,
                                                                                                                                             current_timestamp,
-                                                                                                                                            self.__robot_lnk[key_item].get_timestamp()))
+                                                                                                                                            session_time,current_timestamp-session_time))
                     print("shell manager check timeout thread id:",threading.current_thread().ident," thread name:",threading.current_thread().name)
                     self.__robot_lnk[key_item].close()
                 else:
+                    # print('post_alive_pkt')
                     if self.__robot_lnk[key_item].post_alive_pkt() < 0:
                         self.__robot_lnk[key_item].close()
 
@@ -138,16 +148,17 @@ class shell_manager():
         shtime_info = dict()
         version_info = dict()
         process_list = dict()
-
+        system_info = dict()
         self.__mutex.acquire()
         keys = list(self.__robot_lnk.keys())
         for key in keys:
             shtime_info[key] = self.__robot_lnk.get(key).get_connectedtime_value()
             version_info[key] = self.__robot_lnk.get(key).get_shell_version()
             process_list[key] =self.__robot_lnk.get(key).get_shell_process_list()
+            system_info[key] = self.__robot_lnk.get(key).get_fixed_system_info()
         self.__mutex.release()
         #key:robot id
-        return shtime_info,version_info,process_list
+        return shtime_info,version_info,process_list,system_info
 
     def get_robots_configuration_info(self):
         robots_info = dict()
@@ -200,11 +211,91 @@ class shell_manager():
 
     def modify_robot_file_lock(self,robotid,opecode) ->int:
         err_code = 0
+        try:
+            self.__mutex.acquire()
+            session = self.__robot_lnk.get(robotid)
+            if session:
+                session.post_modify_file_mutex(opecode)
+            else:
+                err_code = 1
+            self.__mutex.release()
+            return err_code
+        except Exception as e:
+            self.__mutex.release()
+            Logger().get_logger().error('modify_robot_file_lock :{}'.format(str(e)))
+            return 1
+
+    def update_robot_ntp_server(self,robot_id,ntp_server) ->int:
+        err_code = 0
+        try:
+            self.__mutex.acquire()
+            session = self.__robot_lnk.get(robot_id)
+            if session:
+                session.update_ntp_server(ntp_server)
+            else:
+                err_code = 1
+            self.__mutex.release()
+            return err_code
+        except Exception as e:
+            Logger().get_logger().error('update_robot_ntp_server :{}'.format(str(e)))
+            self.__mutex.release()
+            return 1
+
+    def Query_robots_progress_list(self)->dict:
+        progress_info = dict()
+
         self.__mutex.acquire()
-        session = self.__robot_lnk.get(robotid)
-        if session:
-            session.post_modify_file_mutex(opecode)
-        else:
-            err_code = 1
+        keys = list(self.__robot_lnk.keys())
+        for key in keys:
+            session = self.__robot_lnk.get(key)
+            if session is None:
+                continue
+
+            fiex_system_info = session.get_fixed_system_info()
+            process_list = list()
+            if 'process_list' in fiex_system_info:
+                process_list = [{"process_name":item.get('process_name'),"status":item.get('status')} for item in fiex_system_info.get('process_list')]
+            
+            progress_info[key] ={
+                                'group_name':session.get_shell_process_list(),
+                                'process_list':process_list,
+                                'robot_host':session.get_host_ipv4()
+                                }
         self.__mutex.release()
-        return err_code
+        return progress_info
+
+    def setting_progress_state(self,robot_list,command)->list:
+        err_list = list()
+        try:
+            self.__mutex.acquire()
+            for robot_id in robot_list:
+                session = self.__robot_lnk.get(robot_id)
+                if session:
+                    session.operate_system_process(command)
+                else:
+                    err_list.append(robot_id)
+            self.__mutex.release()
+            return err_list
+        except Exception as e:
+            self.__mutex.release()
+            Logger().get_logger().error('setting_progress_state :{}'.format(str(e)))
+            return err_list
+
+    def query_robot_process_info(self,robot_id)->dict:
+        process_list = dict()
+        self.__mutex.acquire()
+        session = self.__robot_lnk.get(robot_id)
+        if session:
+            process_list = {'process_list':session.get_fixed_system_info().get('process_list')}
+        self.__mutex.release()
+        return process_list
+
+    def update_process_list(self,robot_id,process_list):
+        error_code = -1
+        self.__mutex.acquire()
+        session = self.__robot_lnk.get(robot_id)
+        if session:
+            error_code = session.update_process_list(process_list)
+        self.__mutex.release()
+        return error_code
+        

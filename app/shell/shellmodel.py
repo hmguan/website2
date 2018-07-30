@@ -3,7 +3,6 @@ from pynsp.logger import *
 from ..user.userview import users_center
 from agvshell.transfer_file_types import *
 import errtypes
-from configuration import config
 
 set_push_file_type = {FILE_TYPE_A_UPGRADE,FILE_TYPE_VCU_UPGRADE}
 set_pull_file_type = {FILE_TYPE_BLACKBOX_PULL_FILES}
@@ -170,7 +169,67 @@ def modify_file_lock(opcode, robot_list):
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
 def query_ftp_port():
+    from configuration import config
+
     try:
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'ftp_port': config.HTTP_PORT}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def update_robots_ntp_server(robot_list,ntp_host):
+    if type(robot_list) != list or type(ntp_host) !=str:
+        return {'code':errtypes.HttpResponseCode_InvaildParament,'msg':errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        robot_list = [int(robot_id) for robot_id in robot_list]
+        error_list = update_ntp_server(robot_list,ntp_host)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+    pass
+
+def query_robots_progress_info(user_id):
+    if type(user_id) != int:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        group_info = []
+        robots_info = query_progress_list()
+        for (process_name,info) in robots_info.items():
+            alias_name = users_center.group_alias(user_id,process_name)
+            item_info = {'process_group':process_name,'process_group_alias':alias_name if alias_name else''}
+            item_info.update(info)
+            group_info.append(item_info)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'data': group_info}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def operate_system_process(robot_list,command):
+    if type(robot_list)!= list or type(command) != int or command not in {0,1,2}:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        robot_list = [int(robot_id) for robot_id in robot_list]
+        error_list = setting_progress_state(robot_list,command)
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def query_robot_process_param_info(robot_id):
+    if type(robot_id) != int:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        process_info = query_robot_process_info(robot_id)
+        if process_info:
+            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'process_list': process_info}
+        return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def update_robot_process_list(robot_id,process_list):
+    if type(robot_id) != int or type(process_list) != list:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        error_code = update_process_list(robot_id,process_list)
+        if error_code == 0:
+            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal }
+        return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

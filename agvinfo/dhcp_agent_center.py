@@ -59,6 +59,6 @@ def start_agvinfo_service():
     start agvinfo server,the server will report online robot collection information
     :return:
     '''
-    #regist_agvinfo_notify(notify = dhcp_online_change)
+    regist_agvinfo_notify(notify = dhcp_online_change)
     agvinfoser_startup(_notify_changed=dhcp_notify_change)
-    #agvinfotrs_startup()
+    agvinfotrs_startup()

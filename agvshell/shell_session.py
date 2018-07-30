@@ -2,6 +2,7 @@
 
 from pynsp import obtcp as tcp
 from .shproto import proto_head as head,proto_typedef as typedef,login,proto_file,proto_upgrade,proto_sysinfo as sysinfo,proto_log as log
+from .shproto import proto_common,proto_process_list
 from agvshell import net_manager as nm
 from pynsp.encrypt import *
 import random
@@ -9,8 +10,10 @@ import hashlib
 import threading
 import time
 import copy
+import errtypes
 from pynsp.logger import *
 from pynsp.waite_handler import *
+from copy import deepcopy
 
 DAY_SECONDS=86400
 HOUR_SECONDS=3600
@@ -96,11 +99,17 @@ class shell_session(tcp.obtcp):
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_TYPE_ACK == phead.type:
             self.recv_log_type(pkt_id, data)
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_FILE_NAME_ACK == phead.type:
-            self.recv_log_name(phead.id,data)
+            self.recv_log_name(data)
         elif typedef.PKTTYPE_AGV_SHELL_FILE_MUTEX_STATUS_ACK == phead.type:
             pass
         elif typedef.PKTTYPE_AGV_SHELL_MODIFY_FILE_MUTEX_ACK == phead.type:
             self.recv_modify_file_mutex(data,cb)
+        elif typedef.PKTTYPE_AGV_SHELL_UPDATE_NTP_ACK == phead.type:
+            self.on_update_ntp_server(data,cb)
+        elif typedef.PKTTYPE_AGV_SHELL_PROCESS_COMMAND_ACK == phead.type:
+            self.on_recv_process_cmd_ack(data,cb)
+        elif typedef.PKTTYPE_AGV_SHELL_SET_PROCESS_LIST_ACK:
+            self.on_recv_update_process_list_ack(data,cb)
         else:
             Logger().get_logger().warning("not support type:%8x" % phead.type)
 
@@ -109,12 +118,16 @@ class shell_session(tcp.obtcp):
 
     def on_closed(self, previous):
         self.__net_status=typedef.NetworkStatus_Closed
-        Logger().get_logger().warning("close the session {0} ,lnk is {1}".format(self.__target_host,self.link))
-        if self.__notify_fm is not None:
-            self.__notify_fm.close_robot_file(self.__robot_id)
-        if self.__notify_closed is not None:
-            Logger().get_logger().warning('notify closed,robot id:{0}'.format(self.__robot_id))
-            self.__notify_closed(self.__robot_id)
+        if previous >= 0:
+            Logger().get_logger().warning("close the session {0} ,lnk is {1}".format(self.__target_host,previous))
+            if self.__notify_fm is not None:
+                self.__notify_fm.close_robot_file(self.__robot_id)
+            if self.__notify_closed is not None:
+                Logger().get_logger().warning('notify closed,robot id:{0}'.format(self.__robot_id))
+                self.__notify_closed(self.__robot_id)
+            global path_notify_callback
+            if path_notify_callback is not None:
+                path_notify_callback(self.__robot_id, -1, '')
         pass
 
     def on_connected(self):
@@ -173,6 +186,10 @@ class shell_session(tcp.obtcp):
             Logger().get_logger().warning('current session of target:{0} is closed'.format(self.__target_host))
             return
 
+        if self.__net_status != typedef.NetworkStatus_Established:
+            Logger().get_logger().warning('current session of {0} status is not eastablished!'.format(self.__target_host))
+            return
+
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_KEEPALIVE, _id=self.__net_manager.allocate_pkt())
         pkt.set_pkt_size(24)
         stream = pkt.serialize()
@@ -183,6 +200,10 @@ class shell_session(tcp.obtcp):
         if self.__net_status == typedef.NetworkStatus_Closed:
             Logger().get_logger().warning('current session of target:{0} is closed'.format(self.__target_host))
             return -1
+
+        if self.__net_status != typedef.NetworkStatus_Established:
+            Logger().get_logger().warning('current session of {0} status is not eastablished!'.format(self.__target_host))
+            return
 
         pkt_id = wait_handler().allocat_pkt_id()
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_GET_FIXED_SYSINFO, _id=pkt_id)
@@ -207,22 +228,38 @@ class shell_session(tcp.obtcp):
             self.__shell_serviceinfo['host_time'] = info.host_time.value
             #print('netio:',info.net_io_rec.value - self.__current_netio_r)
             #print('time_stamp:',self.__timestamp-self.__previous_timestamp)
-            self.__shell_serviceinfo['net_io_rec'] = int((info.net_io_rec.value - self.__current_netio_r)/float((self.__timestamp-self.__previous_timestamp)/1000))
-            self.__shell_serviceinfo['net_io_tra'] = int((info.net_io_tra.value - self.__current_netio_t)/float((self.__timestamp-self.__previous_timestamp)/1000))
+            
+            dec_timestamp = (self.__timestamp-self.__previous_timestamp)/1000
+            if dec_timestamp > 0:
+                self.__shell_serviceinfo['net_io_rec'] = int((info.net_io_rec.value - self.__current_netio_r)/float(dec_timestamp))
+                self.__shell_serviceinfo['net_io_tra'] = int((info.net_io_tra.value - self.__current_netio_t)/float(dec_timestamp))
             #print('net_io_rec',self.__shell_serviceinfo['net_io_rec'])
             #print('net_io_tra',self.__shell_serviceinfo['net_io_tra'])
             self.__current_netio_r=info.net_io_rec.value
             self.__current_netio_t=info.net_io_tra.value
             self.__previous_timestamp=self.__timestamp
             shell_process_name = self.get_shell_process_list()
+
+            process_list = self.__shell_systeminfo.get('process_list')
+            last_process_info = deepcopy(process_list)
+            # notify_data = list()
+
+            process_name_list = [item.get('process_name') for item in process_list]
             self.__shell_process_info.clear()
             for item in info.process_list:
                 if shell_process_name.find(item.name.value) != -1:
+                    process_status = (1 if (item.pid.value > 0) else 0)
+                    process_list[process_name_list.index(item.name.value)]['status'] = process_status
+                    # notify_data.append({'process_name':item.name.value,'status':process_status})
                     self.__shell_process_info.append({'process_name':item.name.value,'process_pid':item.pid.value,
                                                       'run_time':item.run_time.value,'vir_mm':item.vir_mm.value,
                                                       'rss':item.rss.value,'average_cpu':item.average_cpu.value,
                                                       'average_mem':item.average_mem.value})
             self.__mutex.release()
+            import operator 
+            if operator.eq(process_list,last_process_info) is False:
+                if self.__push_notify_cb:
+                    self.__push_notify_cb(errtypes.TypeShell_UpdateProcessStatus,{"robot_id":self.__robot_id,"robot_host":self.__target_host,"process_list":process_list})
 
     def recv_fixed_systeminfo(self,pkt_id,data,cb):
         (ret, info) = sysinfo.recv_sysinfo_fixed(data, cb, 0)
@@ -236,6 +273,7 @@ class shell_session(tcp.obtcp):
             self.__shell_systeminfo['software_version'] =info.soft_version.value
             self.__shell_systeminfo['config_version'] =info.config_version.value
             self.__shell_systeminfo['lock_status'] =info.status.value
+            self.__shell_systeminfo['ntp_server']  = info.ntp_server.value
             cpu_l = list()
             for item in info.cpu_list:
                 cpu_info = dict()
@@ -250,6 +288,7 @@ class shell_session(tcp.obtcp):
                 process_info['process_path']=item.process_path_.value
                 process_info['process_cmd']=item.process_cmd_.value
                 process_info['process_delay']=item.process_delay_.value
+                process_info['status'] = 0
                 process_l.append(process_info)
             self.__shell_systeminfo['process_list']=process_l
         wait_handler().wait_singal(pkt_id)
@@ -334,7 +373,6 @@ class shell_session(tcp.obtcp):
 
     def recv_log_type(self, pkt_id, data):
         self.__log_type = data
-        print('data0',data)
         wait_handler().wait_singal(pkt_id)
 
     def get_log_types(self):
@@ -342,12 +380,14 @@ class shell_session(tcp.obtcp):
 
     def get_log_data(self,task_id, start_time, end_time, types):
         pkt = log.proto_log_condition()
-        pkt.phead.id(task_id)
+        # pkt.phead.id(task_id)
+        pkt.task_id(task_id)
         pkt.start_time(start_time)
         pkt.end_time(end_time)
+        if len(types)==0:
+            return -1
         for it_type in types:
             pkt_item = log.proto_log_type_item()
-            print('type',it_type)
             pkt_item.log_type(it_type)
             pkt.vct_log_type.append(pkt_item)
         stream = pkt.serialize()
@@ -359,17 +399,16 @@ class shell_session(tcp.obtcp):
             global path_notify_callback
             path_notify_callback = notify_callback
 
-    def recv_log_name(self,task_id, data):
-        print('recv_log_name')
+    def recv_log_name(self, data):
         global path_notify_callback
         if path_notify_callback is not None:
-            path_notify_callback(self.__robot_id,task_id, data)
+            path_notify_callback(self.__robot_id,0, data)
         # load_log_path(self.__robot_id,data)
         pass
 
-    def cancle_log_data(self):
-        pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_CANCEL_GET_LOG)
-        pkt.set_pkt_size(24)
+    def cancle_log_data(self,task_id):
+        pkt = log.proto_cancle_log()
+        pkt.task_id(task_id)
         stream = pkt.serialize()
         ret = self.send(stream, pkt.length())
         return ret
@@ -385,7 +424,6 @@ class shell_session(tcp.obtcp):
         return self.send(packet_modify_file_mutex.serialize(),packet_modify_file_mutex.head_.size.value)
 
     def recv_modify_file_mutex(self,data,cb):
-        import errtypes
         if cb < 0:
             Logger().get_logger().error("recv modify_file_mutex packet error.")
             return
@@ -402,9 +440,115 @@ class shell_session(tcp.obtcp):
                 self.__shell_systeminfo['lock_status'] = 0
 
         if self.__push_notify_cb:
-            self.__push_notify_cb(errtypes.TypeShell_ModifyFileMutex,{"robot_id":self.__robot_id,"opecode":packet_file_mutex.msg_int.value,"error_code":packet_file_mutex.head_.err.value})
+            self.__push_notify_cb(errtypes.TypeShell_ModifyFileMutex,{"robot_id":self.__robot_id,"opcode":packet_file_mutex.msg_int.value,"error_code":packet_file_mutex.head_.err.value})
 
         pass
+
+    def update_ntp_server(self,ntp_host):
+        packet_ntp_server = sysinfo.proto_msg()
+        pkt_id = wait_handler().allocat_pkt_id()
+        packet_ntp_server.head_.type(typedef.PKTTYPE_AGV_SHELL_UPDATE_NTP)
+        packet_ntp_server.head_.id(pkt_id)
+        packet_ntp_server.msg_str_(ntp_host)
+        packet_ntp_server.head_.size(packet_ntp_server.length())
+        return self.send(packet_ntp_server.serialize(),packet_ntp_server.head_.size.value)
+
+
+    def on_update_ntp_server(self,data,cb):
+        if cb < 0:
+            Logger().get_logger().error("update_ntp_server error.")
+            return
+
+        packet_ntp_ack = sysinfo.proto_msg()
+        if (packet_ntp_ack.build(data, 0) < 0):
+            Logger().get_logger().error("update_ntp_server build  proto_msg packet error.")
+            return
+
+        if 0 == packet_ntp_ack.head_.err.value:
+            self.__shell_systeminfo['ntp_server'] = packet_ntp_ack.msg_str_.value
+
+        if self.__push_notify_cb:
+            self.__push_notify_cb(errtypes.TypeShell_UpdateNtpServer,{"robot_id":self.__robot_id,"error_code":packet_ntp_ack.head_.err.value,"ntp_server":packet_ntp_ack.msg_str_.value})
+
+        pass
+
+    def operate_system_process(self,command):
+        from .shproto import proto_process_status
+        process_count = len(self.__shell_process_info)
+        if process_count <= 0:
+            Logger().get_logger().error("Process state anomaly")
+            return -1
+
+        process_id = int(0)
+        for index in range(process_count):
+            process_id = (process_id << 1) + 0x01
+        packet_command_process = proto_process_status.proto_command_process()
+        pkt_id = wait_handler().allocat_pkt_id()
+        packet_command_process.head_.type(typedef.PKTTYPE_AGV_SHELL_PROCESS_COMMAND)
+        packet_command_process.head_.id(pkt_id)
+        packet_command_process.command_(command)
+        packet_command_process.process_id_all_(int(process_id))
+
+        packet_command_process.head_.size(packet_command_process.length())
+        return self.send(packet_command_process.serialize(),packet_command_process.head_.size.value)
+
+    def on_recv_process_cmd_ack(self,data,cb):
+        if cb < 0:
+            Logger().get_logger().error("on_recv_process_cmd_ack error.")
+            return
+
+        ack = head.proto_head()
+        if (ack.build(data, 0) < 0):
+            Logger().get_logger().error("on_recv_process_cmd_ack build  proto_head packet error.")
+            return
+        pass
+
+    def update_process_list(self,process_list):
+        request = proto_process_list.proto_process_list_t()
+        request.phead.type(typedef.PKTTYPE_AGV_SHELL_SET_PROCESS_LIST)
+        pkt_id = wait_handler().allocat_pkt_id()
+        request.phead.id(pkt_id)
+        for process_info in process_list:
+            process_data = proto_process_list.proto_process_obj_t()
+            process_data.process_name_(process_info.get('process_name'))
+            process_data.process_path_(process_info.get('process_path'))
+            process_data.process_cmd_(process_info.get('process_cmd'))
+            process_data.process_delay_(int(process_info.get('process_delay')))
+            request.process_list_.append(process_data)
+        request.phead.size(request.length())
+        return self.send(request.serialize(),request.phead.size.value)
+
+    def on_recv_update_process_list_ack(self,data,cb):
+        import operator 
+        if cb < 0:
+            Logger().get_logger().error("on_recv_update_process_list_ack error.")
+            return
+        
+        ack = proto_process_list.proto_process_list_t()
+        if (ack.build(data, 0) < 0):
+            Logger().get_logger().error("on_recv_update_process_list_ack build  proto_process_list_ack packet error.")
+            return
+
+        if ack.phead.err.value == 0:
+            last_process_info = deepcopy(self.__shell_systeminfo.get('process_list'))
+            # if last_process_info:
+            #     process_status = [{item.get('process_name'):item.get('status')} for item in last_process_info]
+            process_l=list()
+            for item in ack.process_list_:
+                process_info = dict()
+                process_info['process_name']=item.process_name_.value
+                process_info['process_path']=item.process_path_.value
+                process_info['process_cmd']=item.process_cmd_.value
+                process_info['process_delay']=item.process_delay_.value
+                # status = process_status.get(process_info['process_name'])
+                # process_info['status'] = status if status else 0
+                process_info['status'] = 0
+                process_l.append(process_info)
+            self.__shell_systeminfo['process_list']=process_l
+            self.__shell_process_info.clear()
+            if operator.eq(process_l,last_process_info) is False and self.__push_notify_cb:
+                self.__push_notify_cb(errtypes.TypeShell_UpdateProcessStatus,{"robot_id":self.__robot_id,"robot_host":self.__target_host,"process_list":process_l})
+                
 
 ##################################################以下为fts文件传输协议代码#######################################################
 

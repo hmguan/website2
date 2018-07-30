@@ -40,12 +40,12 @@ class proto_process_list_t(proto_interface):
     def __init__(self):
         super(proto_process_list_t, self).__init__()
 
-        self.phead = proto_head.proto_head(_type=typedef.PKTTYPE_PROCESSLIST_ACK)
+        self.phead = proto_head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_SET_PROCESS_LIST)
         self.pkt_id_ = proto_int32(0)
         self.process_list_=proto_vector(proto_process_obj_t)
 
     def length(self)->int:
-        return self.pkt_id_.length()+self.phead.length()+self.process_list_.length()
+        return self.phead.length()+self.pkt_id_.length()+self.process_list_.length()
 
     def serialize(self)->bytes:
         return self.phead.serialize()+self.pkt_id_.serialize()+self.process_list_.serialize()
@@ -72,6 +72,7 @@ class proto_process_list_request_t(proto_interface):
         offset = self.phead.build(data, offset)
         return self.pkt_id_.build(data, offset)
 
+
 #发送列表请求
 def post_process_list_request():
     request = proto_process_list_request_t()
@@ -82,8 +83,6 @@ def recv_process_list(data,len,offset=0):
     process_list_obj = proto_process_list_t()
     process_list_obj.build(data,offset)
     return process_list_obj.process_list_
-
-
 
 
 

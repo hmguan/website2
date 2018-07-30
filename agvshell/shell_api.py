@@ -4,6 +4,7 @@ from .shell_manager import shell_manager
 from agvinfo.dhcp_agent_center import agvinfoserver_online_robot,agvinfoserver_sh_closed,agvinfoserver_offline_robot
 from .file_rw import *
 import copy
+import os
 
 #全局在线机器人信息
 global_robot_info=dict()
@@ -55,16 +56,24 @@ def start_connect_to_robot():
                     #新的客户端登录成功，则通知浏览器
                     if notify_client_function is not None:
                         fiex_system_info = shell_manager().get_fixed_sysytem_info(item.id)
+                        process_list = []
+                        # print(fiex_system_info)
+                        if 'process_list' in fiex_system_info:
+                            process_list =[{"process_name":process_info.get('process_name'),"status":process_info.get('status')} for process_info in fiex_system_info.get('process_list')]             
                         notify_client_function({'msg_type':errtypes.TypeShell_NewArrival,'process_group':
                                                 shell_manager().get_shell_process_name_join(item.id),'robot_id':item.id,
                                                 'robot_host':item.host,'robot_mac':item.mac,'shell_time':'00:00:00',
-                                                'shell_version':fiex_system_info.get('config_version'),'lock_status':fiex_system_info.get('lock_status')})
+                                                'shell_version':fiex_system_info.get('software_version'),'lock_status':fiex_system_info.get('lock_status'),
+                                                'ntp_server':fiex_system_info.get('ntp_server'),
+                                                'process_list':process_list})
                     global_mutex.acquire()
                     if item.id in unusual_collection.keys():
                         del unusual_collection[item.id]
                     global_mutex.release()
                 elif result < 0:
                     #记录连接不成功的异常
+                    #连接异常时，直接从在线信息中删除
+                    del_robot(item.id)
                     global_mutex.acquire()
                     if item.id not in unusual_collection.keys():
                         unusual_collection[item.id]={'robot_mac':item.mac,'robot_host':item.host}
@@ -73,6 +82,66 @@ def start_connect_to_robot():
                     if notify_client_function is not None:
                         notify_client_function({'msg_type':errtypes.TypeShell_ConnectException,'robot_id':item.id,
                                                 'robot_mac':item.mac,'robot_host':item.host})
+
+
+#检测文件是否过期
+def thread_check_file_expired():
+    from time import sleep
+    from configuration import system_config
+    default_retention_time_min = 24*60
+    default_time_intervel_sec = 10*60
+
+    while is_exit_thread == False:
+        retention_time_min = system_config.get('retention_time_min')
+        if retention_time_min is None:
+            retention_time_min = default_retention_time_min
+
+        time_intervel_sec = system_config.get('time_intervel_sec')
+        if time_intervel_sec is None:
+            time_intervel_sec = default_time_intervel_sec
+
+        path_config = system_config.get('path_element')
+
+        if path_config is None:
+            Logger().get_logger().error('No path_element configuration item was found')
+            return
+
+        for folder_path in path_config:
+            walk_file(folder_path.get('path_root'),retention_time_min *60,folder_path.get('path_model'))
+
+        sleep(time_intervel_sec)
+
+
+def walk_file(root_path,retention_time,model=None):
+    #文件夹不存在 或者 非文件夹路径
+    if os.path.isdir(root_path) == False:
+        return
+
+    current_timestamp = int(round(time.time() * 1000))
+    # files = os.listdir(filepath)
+    # for file_name in files:
+    #     fi_d = os.path.join(filepath,file_name)
+    #     if os.path.isdir(fi_d):
+    #         walk_file(fi_d)
+    #     else:
+    #         print os.path.join(filepath,fi_d)
+
+    for root,dirs,files in os.walk(root_path,True):
+        if root != root_path and model is not None:
+            dirs[:] = list(set(dirs).intersection(set(model)))
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            last_update_file = os.path.getmtime(file_path)
+            if last_update_file >= current_timestamp :
+                continue
+            elif (current_timestamp - last_update_file) > retention_time:
+                if skip_file(file_name) is not False:
+                    Logger().get_logger().info('remove file:filename{}'.format(file_path))
+                    os.remove(file_path)
+
+
+def skip_file(filename) ->bool:
+    return False
 
 
 #切换线程进行登录，不适用回调函数上来的线程，在调试过程中发现不切换线程时，容易造成登录agv_shell超时
@@ -103,19 +172,9 @@ def remote_robot(robot_id):
     if notify_client_function is not None:
         notify_client_function({'msg_type':errtypes.TypeShell_Offline,'robot_id':robot_id})
     #删除global_robot_info中对应机器人信息
-    mac_addr = ''
+    
     print('start remove global robot info')
-    global global_mutex
-    global_mutex.acquire()
-    print('global_robot_info:',global_robot_info)
-    for key,item in global_robot_info.items():
-        if item.id == robot_id:
-            mac_addr = key
-            del (global_robot_info[key])
-            print('success delete global robot info of key:',key)
-            break
-
-    global_mutex.release()
+    mac_addr = del_robot(robot_id)
     if len(mac_addr) == 0:
         print('-----remote robot mac address is empty-----')
         return
@@ -123,6 +182,17 @@ def remote_robot(robot_id):
     print('offline robot mac:',mac_addr)
     agvinfoserver_sh_closed(mac_addr)
 
+def del_robot(robot_id):
+    global global_mutex
+    global_mutex.acquire()
+    for key,item in global_robot_info.items():
+        if item.id == robot_id:
+            del (global_robot_info[key])
+            global_mutex.release()
+            print('success delete global robot info of key:',key)
+            return key
+    global_mutex.release()
+    return ''
 
 ###############################################对外接口层，用户提供外部调用#############################################
 
@@ -136,11 +206,14 @@ def get_online_robot_list():
     group_robot_info = {}
     global global_mutex
     global_mutex.acquire()
-    (shelltime,versionifno,process_list) = shell_manager().get_all_robot_online_info()
+    (shelltime,versionifno,process_list,system_info) = shell_manager().get_all_robot_online_info()
     for mac_key,item in global_robot_info.items():
         process = process_list.get(item.id)
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
-                      'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id)}
+                      'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
+                      'lock_status':system_info.get(item.id).get('lock_status'),
+                      'ntp_server':system_info.get(item.id).get('ntp_server')
+                    }
         if process not in group_robot_info.keys():
             group_list = list()
             group_list.append(robot_info)
@@ -270,7 +343,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     if u_uuid is not None:
         if FILE_TYPE_A_UPGRADE == file_type :
             notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
-            if 100 == step:
+            if 100 == step and status == 1:
                 print("a begin upgrade")
                 f_name = file_path[file_path.rfind('/') + 1:]
                 shell_info = shell_manager().get_session_by_id(robot_id)
@@ -287,7 +360,7 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
             global step_notify_callback
             print('pull', step_notify_callback,step)
             if step_notify_callback is not None:
-                step_notify_callback(user_id,robot_id, step, file_path, error_code)
+                step_notify_callback(user_id,robot_id, step, file_path, error_code,status)
         else:
             pass
 
@@ -310,7 +383,8 @@ def get_robot_list_basic_info():
             group_robot_info[process_name] = {'robot_list':[]}
         group_robot_info[process_name].get('robot_list').append({'robot_id':robot_id,
                                                                 'robot_host':robot_info.get('robot_host'),
-                                                                'mutex_lock_status':system_info.get('lock_status')
+                                                                'lock_status':system_info.get('lock_status'),
+                                                                'ntp_server':system_info.get('ntp_server')
                                                                 })
     return group_robot_info
 
@@ -321,3 +395,37 @@ def modify_robot_file_lock(robot_list,opecode) ->list:
             error_list.append(robot_id)
     return error_list
 
+def update_ntp_server(robot_list,ntp_host) ->list:
+    error_list = list()
+    for robot_id in robot_list:
+        if shell_manager().update_robot_ntp_server(robot_id,ntp_host) != 0:
+            error_list.append(robot_id)
+    return error_list
+
+def query_progress_list():
+    robots_progress_list = dict()
+    dict_progress_info = shell_manager().Query_robots_progress_list()
+    for (robot_id,robot_info) in dict_progress_info.items():
+        process_name = robot_info.get('group_name')
+        robot_host = robot_info.get('robot_host')
+        process_list = robot_info.get('process_list')
+
+        if process_name is None or robot_host is None or process_list is None:
+            continue
+
+        if process_name not in robots_progress_list:
+            robots_progress_list[process_name] = {'robot_list':[]}
+        robots_progress_list[process_name].get('robot_list').append({'robot_id':robot_id,
+                                                                    'robot_host':robot_host,
+                                                                    'progress_list':process_list
+                                                                    })
+    return robots_progress_list
+
+def setting_progress_state(robot_list,command):
+    return shell_manager().setting_progress_state(robot_list,command)
+
+def query_robot_process_info(robot_id):
+    return shell_manager().query_robot_process_info(robot_id)
+
+def update_process_list(robot_id,process_list):
+    return shell_manager().update_process_list(robot_id,process_list)

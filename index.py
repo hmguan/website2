@@ -5,12 +5,13 @@ from agvmt import start_mt_manager,register_mt_notify_function
 from pynsp.logger import *
 import traceback
 import sys
-from black_box.black_box import init_black_box
-import ptvsd
+# from black_box import start_black_box,register_blackbox_step_notify_function
+from backup import start_black_box,register_blackbox_step_notify_function
+# import ptvsd
 from configuration import config
  
-ptvsd.settrace(None, ('0.0.0.0', 12345))
-#ptvsd.wait_for_attach()
+# ptvsd.settrace(None, ('0.0.0.0', 12345))
+# ptvsd.wait_for_attach()
 
 
 app=create_app('default')
@@ -32,7 +33,8 @@ if __name__ == '__main__':
 
     #初始化日志文件
     init_logger()
-    init_black_box()
+    start_black_box()
+    register_blackbox_step_notify_function(notify_call = soket_center.response_to_client_data)
     #启动agvinfo server服务
     start_agvinfo_service()
     #启动agvshell manager管理服务

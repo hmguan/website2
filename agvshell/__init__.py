@@ -11,10 +11,15 @@ def start_agvshell_manager():
     '''
     #注册给agvinfo(dhcp)模块有上下线通知
     from agvinfo.dhcp_agent_center import regist_agvinfo_notify
-    from .shell_api import agvinfo_notify_change, start_connect_to_robot, file_tansfer_notify
+    from .shell_api import agvinfo_notify_change, start_connect_to_robot, file_tansfer_notify,thread_check_file_expired
     regist_agvinfo_notify(notify = agvinfo_notify_change)
     st = threading.Thread(target = start_connect_to_robot)
     st.start()
+
+    detection_thread = threading.Thread(target=thread_check_file_expired)
+    detection_thread.setDaemon(True)
+    detection_thread.start()
+
     #注册文件传输至shell端回调例程
     file_rw.file_manager().register_shell_manager(shell_manager())
     file_rw.file_manager().register_notify_changed(file_tansfer_notify)

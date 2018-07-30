@@ -13,11 +13,20 @@ TypeShell_UpdateSoftware=0x00000103
 TypeShell_ConnectException=0x00000104
 TypeShell_ModifyFileMutex =0x00000105
 TypeShell_Blackbox_Log=0x00000106
+TypeShell_Blackbox_None=0x00000107
+TypeShell_UpdateNtpServer=0x00000108
+TypeShell_UpdateProcessStatus = 0x00000109
+TypeShell_UpdateProcessList = 0x0000010a
 
 #mt与前端交互类型定义
 TypeMT_Error=0x00000601
 TypeMT_Offline=0x00000602
 
+
+#前端下载文件类型
+HttpRequestFileType_Patch = 0x00000001
+HttpRequestFileType_BlackBox = 0x00000002
+HttpRequestFileType_Bin = 0x00000003
 
 ###############################以下定义http状态响应码############################
 HttpResponseCode_Failed=-1
@@ -40,9 +49,11 @@ HttpResponseCode_NOFILE=51
 HttpResponseCode_EXISTFILE=51
 HttpResponseCode_InvaildPath = 52
 
+#不在线
+HttpResponseCode_RobotOffLine = 70
+
 HttpResponseCode_NotFound=404
 HttpResponseCode_ServerError=500
-
 
 
 #############################以下定义http响应消息###############################
@@ -50,3 +61,5 @@ HttpResponseMsg_Normal='success'
 HttpResponseMsg_InvaildParament='invalid input parament'
 HttpResponseMsg_InvaildPath='File Not Found'
 HttpResponseMsg_Failed='failed'
+HttpResponseMsg_FileNotExist = 'Cannot find file'
+HttpResponseMsg_RobotOffLine = 'Robot Not OnLine'

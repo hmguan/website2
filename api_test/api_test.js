@@ -51,7 +51,7 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     $scope.api_list = [
     {'event':'event_login','args':['user','name'],'param':[null,null],'function':'Login','type':1},
     {'event':'event_logout','args':['uid'],'param':[null],'function':'LoginOut','type':1},
-    {'event':'get_online_robot_list','args':[],'param':[],'function':'QueryRobotList','type':1},
+    {'event':'get_online_robot_list','args':['user_id'],'param':[null],'function':'QueryRobotList','type':1},
     {'event':'get_robot_detail_info','args':['robot_id'],'param':[null],'function':'RequestRobotDetailInfo','type':1},
     {'event':'get_robot_system_info','args':['robot_id'],'param':[null],'function':'RequestRobotSystemInfo','type':1},
     {'event':'load_navigation','args':['robot_id'],'param':[null],'function':'load_navigation','type':0},
@@ -69,6 +69,13 @@ app.controller('Api_controller', function($scope,$http_services,$interval) {
     {'event':'cancle_task','args':['userId','robot_id','task_id'],'param':[null,null,null],'function':'cancle_task','type':1},
     {'event':'query_robots_configuration_info','args':['userId'],'param':[null],'function':'query_robots_configuration','type':1},
     {'event':'event_modify_file_lock','args':['opcode','robot1'],'param':[null,null],'function':'modify_file_lock','type':1},
+    {'event':'query_ftp_port','args':[],'param':[],'function':'query_ftp_port','type':1},
+    {'event':'get_file','args':[],'param':[],'function':'get_file','type':1},
+    {'event':'update_ntp_server','args':['robot_id','ntp_host'],'param':[null,null],'function':'update_ntp_server','type':1},
+    {'event':'query_progress_info','args':['user_id'],'param':[null],'function':'query_progress_info','type':1},
+    {'event':'setting_process_state','args':['robot_id','command'],'param':[null,null],'function':'setting_process_state','type':1},
+    {'event':'query_robot_process_info','args':['robot_id'],'param':[null],'function':'query_robot_process_info','type':1},
+    {'event':'update_robot_process_info','args':['robot_id','process_name','process_cmd','process_delay','process_path'],'param':[null,null,null,null,null],'function':'update_robot_process_info','type':1},
     ]
 
     $scope.submit = function( api_param ){

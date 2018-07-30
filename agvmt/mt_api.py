@@ -78,10 +78,10 @@ def start_connect_to_mt_th():
             for key in all_keys:
                 global_mt_mutex.acquire()
                 item = mt_collection[key]
+                print('mt-ready', item.mtready)
                 del mt_collection[key]
                 global_mt_mutex.release()
                 if item.mtready:
-                    print('mt-ready',item.mtready)
                     mt_manage().login_to_mt(item.id, item.host, item.shport,remote_robot,)
 
 #agvinfoser下线通知

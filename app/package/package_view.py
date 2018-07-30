@@ -9,16 +9,16 @@ from flask import jsonify
 from flask import Flask, request
 from db.db_users import user
 from db.db_package import package_manager
-from configuration import config
+from configuration import get_config_path
 from agvshell.shell_api import push_file_to_remote
 from agvshell.transfer_file_types import *
 import errtypes
-
+import os
 
 class package_view(base_event):
     def __init__(self):
         super(package_view,self).__init__()
-        self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages','event_robot_upgrade')
+        self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages','event_robot_upgrade','event_download_files')
         
     def flask_recvdata(self,requst_obj):
         data = requst_obj.get_data()
@@ -53,12 +53,12 @@ class package_view(base_event):
                 tmp['user_name']= value.user.username
                 tmp['version']= value.version
                 tmp['package_name'] = value.package_name
-                tmp['time']= value.time
+                tmp['time']= value.time.strftime("%Y/%m/%d %H:%M:%S") 
                 tmp['remarks'] = value.remarks
                 list_package.append(tmp)
             ret = {'code':0,'msg':'查询成功','data':{'users':list_package}}
         elif 'event_robot_upgrade' == event:
-            import os
+            
             package_id = json_data.get('package_id')
             robot_list = json_data.get('robot_list')
             user_id = json_data.get('user_id')
@@ -67,11 +67,11 @@ class package_view(base_event):
             try:
                 retval = package_manager.query_packages(package_id)
                 if retval is None:
-                    return jsonify({'code': errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed })
+                    return jsonify({'code': errtypes.HttpResponseCode_NOFILE, 'msg': errtypes.HttpResponseMsg_FileNotExist })
 
                 user_name = retval.user.username
                 package_name = retval.package_name
-                file_path = config.ROOTDIR +user_name +config.PATCHFOLDER + package_name
+                file_path = get_config_path(user_name,errtypes.HttpRequestFileType_Patch) + package_name
                 if os.path.exists(file_path) == False:
                     return jsonify({'code': errtypes.HttpResponseCode_InvaildPath, 'msg': errtypes.HttpResponseMsg_InvaildPath })
                 
@@ -81,4 +81,16 @@ class package_view(base_event):
                 ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'transfer_list':task_list,'error_robots':err_robots}
             except Exception as e:
                 ret = {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+        elif 'event_download_files' == event:
+            user_id = json_data.get('user_id')
+            package_name = json_data.get('package_name')
+            user_name = user.query_name_by_id(user_id)
+            if user_name is None:
+                return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'用户不存在'})
+            file_path = config.ROOTDIR +user_name +config.PATCHFOLDER + package_name
+            if os.path.exists(file_path) == False:
+                return jsonify({'code': errtypes.HttpResponseCode_NOFILE,'msg':'文件不存在'''})
+            if file_path[0] == '.':
+                file_path = file_path[1:]
+            ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'file_path':file_path}
         return jsonify(ret)

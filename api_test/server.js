@@ -19,7 +19,14 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		'query_transfer_queue':query_transfer_queue,
 		'cancle_task':cancle_task,
 		'query_robots_configuration':query_robots_configuration,
-		'modify_file_lock':modify_file_lock
+		'modify_file_lock':modify_file_lock,
+		'query_ftp_port':query_ftp_port,
+		'get_file':get_file,
+		'update_ntp_server':update_ntp_server,
+		'query_progress_info':query_progress_info,
+		'setting_process_state':setting_process_state,
+		'query_robot_process_info':query_robot_process_info,
+		'update_robot_process_info':update_robot_process_info
 	}
 
 	function RequestRobotDetailInfo (RobotId) {
@@ -40,8 +47,8 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		return RequestJsonData(JSON.stringify({'event': 'event_logout', 'user_id': uid}))
 	}
 
-	function QueryRobotList () {
-		return RequestJsonData(JSON.stringify({'event': 'get_online_robot_list'}))
+	function QueryRobotList (user_id) {
+		return RequestJsonData(JSON.stringify({'event': 'get_online_robot_list','user_id':parseInt(user_id)}))
 	}
 
 	function load_navigation (robot_id) {
@@ -107,12 +114,73 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		return RequestJsonData(JSON.stringify({'event': 'event_modify_file_lock', 'opcode': parseInt(opecode),'robot_list':[parseInt(robot1)]}))
 	}
 
+	function query_ftp_port(){
+		return RequestJsonData(JSON.stringify({'event': 'event_query_ftp_port'}))
+	}
+
+	function update_ntp_server(robot1,ntp_server){
+		return RequestJsonData(JSON.stringify({'event': 'event_update_ntp_server','robot_list':[parseInt(robot1)],'ntp_host':ntp_server}))
+	}
+
+	function query_progress_info(user_id){
+		return RequestJsonData(JSON.stringify({'event': 'event_query_progress_info','user_id':parseInt(user_id)}))
+	}
+
+	function setting_process_state(robot_id,command){
+		return RequestJsonData(JSON.stringify({'event': 'event_operate_system_process','robot_list':[parseInt(robot_id)],'command':parseInt(command)}))
+	}
+
+	function query_robot_process_info(robot_id){
+		return RequestJsonData(JSON.stringify({'event': 'event_query_robot_process_list','robot_id':parseInt(robot_id)}))
+	}
+
+	function update_robot_process_info(robot_id,process_name,process_cmd,process_delay,process_path){
+		if(process_name == null) {
+			process_name = "";
+		}
+
+		if (!process_cmd){
+			process_cmd = "";
+		}
+
+		if (!process_path){
+			process_path = "";
+		}
+
+		process_list = [{'process_name':process_name,'process_path':process_path,'process_delay':parseInt(process_delay),"process_cmd":process_cmd}]
+		return RequestJsonData(JSON.stringify({'event': 'event_update_robot_process_list','robot_id':parseInt(robot_id),"process_list":process_list}))
+	}
+
+
+	function get_file(){
+		
+		return Downer(url+'/download/jquery-3.3.2.zip/user_id=2,type=1')
+
+		// return Downer(url+'/download/jquery-3.3.1.zip')
+		// return GetData(url+'/download/jquery-3.3.1.zip')
+	}
+		http://192.168.5.121:5010/download/jquery-3.3.3.zip/user_id=2,type=1
+
 	function 	RequestJsonData(data){
 		var defer = $q.defer();
 		$http({
 			method:'POST',
 			url:url,
 			data:data,
+			dataType: "json"
+		}).then(function successCallback(response) {
+			defer.resolve(response.data);
+		}, function errorCallback(error) {
+			defer.reject(error);
+		});
+		return defer.promise;
+	}
+
+	function GetData(request_url,data){
+		var defer = $q.defer();
+		$http({
+			method:'GET',
+			url:request_url,
 			dataType: "json"
 		}).then(function successCallback(response) {
 			defer.resolve(response.data);
