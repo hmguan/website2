@@ -20,3 +20,20 @@ class proto_common_stream(proto_interface):
         offset = self.head_.build(data,offset)
         offset = self.pkt_id.build(data,offset)
         return self.common_stream.build(data,offset)
+
+class proto_msg_int(proto_interface):
+    """docstring for proto_msg_int"""
+    def __init__(self):
+        super(proto_msg_int, self).__init__()
+        self.head_ = proto_head.proto_head()
+        self.msg_int_ = proto_int32(0)
+
+    def length(self):
+        return self.head_.length() + self.msg_int_.length()
+
+    def serialize(self):
+        return self.head_.serialize() + self.msg_int_.serialize()
+
+    def build(self,data,offset):
+        offset = self.head_.build(data,offset)
+        return self.msg_int_.build(data,offset)

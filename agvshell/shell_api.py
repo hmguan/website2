@@ -424,8 +424,8 @@ def query_progress_list():
 def setting_progress_state(robot_list,command):
     return shell_manager().setting_progress_state(robot_list,command)
 
-def query_robot_process_info(robot_id):
-    return shell_manager().query_robot_process_info(robot_id)
+def query_robot_process_config_info(robot_id):
+    return shell_manager().query_robot_process_config_info(robot_id)
 
-def update_process_list(robot_id,process_list):
-    return shell_manager().update_process_list(robot_id,process_list)
+def update_process_config_info(robot_id,process_list):
+    return shell_manager().update_process_config_info(robot_id,process_list)

@@ -212,22 +212,22 @@ def operate_system_process(robot_list,command):
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
-def query_robot_process_param_info(robot_id):
+def query_robot_process_config_list(robot_id):
     if type(robot_id) != int:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
     try:
-        process_info = query_robot_process_info(robot_id)
+        process_info = query_robot_process_config_info(robot_id)
         if process_info:
             return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'process_list': process_info}
         return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
-def update_robot_process_list(robot_id,process_list):
+def update_robot_process_config_list(robot_id,process_list):
     if type(robot_id) != int or type(process_list) != list:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
     try:
-        error_code = update_process_list(robot_id,process_list)
+        error_code = update_process_config_info(robot_id,process_list)
         if error_code == 0:
             return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal }
         return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}

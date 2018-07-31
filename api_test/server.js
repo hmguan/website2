@@ -131,7 +131,7 @@ app.service('$http_services',['$http','$q',function($http,$q){
 	}
 
 	function query_robot_process_info(robot_id){
-		return RequestJsonData(JSON.stringify({'event': 'event_query_robot_process_list','robot_id':parseInt(robot_id)}))
+		return RequestJsonData(JSON.stringify({'event': 'event_query_robot_process_config_list','robot_id':parseInt(robot_id)}))
 	}
 
 	function update_robot_process_info(robot_id,process_name,process_cmd,process_delay,process_path){
@@ -148,7 +148,7 @@ app.service('$http_services',['$http','$q',function($http,$q){
 		}
 
 		process_list = [{'process_name':process_name,'process_path':process_path,'process_delay':parseInt(process_delay),"process_cmd":process_cmd}]
-		return RequestJsonData(JSON.stringify({'event': 'event_update_robot_process_list','robot_id':parseInt(robot_id),"process_list":process_list}))
+		return RequestJsonData(JSON.stringify({'event': 'event_update_robot_process_config_list','robot_id':parseInt(robot_id),"process_list":process_list}))
 	}
 
 
