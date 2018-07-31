@@ -71,6 +71,13 @@ class backup_manage():
 
     # 下发获取日志的筛选条件
     def send_log_condition(self,robot_list, user_id, start_time, end_time, types, name):
+        global notify_step_function
+        if self.user_task_data.__contains__(user_id):
+            if self.user_task_data[user_id]['step']!=100:
+                if notify_step_function is not None:
+                    notify_step_function({'msg_type': errtypes.TypeShell_Blackbox_None, 'user_id': int(user_id),'task_id': self.user_task_data[int(user_id)]['task']})
+                self.cancel_get_log(self.user_task_data[user_id]['task'])
+
         task_id = self.get_task_id()
         lists=list()
         self.task_user_[task_id] = user_id
@@ -218,8 +225,14 @@ class backup_manage():
                 print('write------', file_path, open_path, self.tar_list)
                 Logger().get_logger().info('tar log')
                 filefullpath = os.path.join(open_path, file_path)
+                zip_file = self.get_user_path(user_id) + self.user_task_data[int(user_id)]['name']
                 if os.path.isfile(filefullpath):
-                    handle.add(filefullpath, arcname=file_path)
+                    if os.path.isfile(zip_file):#防止文件被删除
+                        handle.add(filefullpath, arcname=file_path)
+                    else:
+                        hzip = tarfile.open(zip_file, "w:tar")
+                        self.user_task_data[int(user_id)]['handle']=hzip
+                        hzip.add(filefullpath, arcname=file_path)
                 del self.tar_list[0]
                 if self.user_task_data[int(user_id)]['step'] == 100 :
                     handle.close()

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from pynsp import singleton as slt
 from agvmt import mt_session
 from agvmt.mtproto import view_data,viewtype,mthead
@@ -10,6 +12,7 @@ from pynsp.wait import *
 import copy
 from agvmt import mt_var_info
 import errtypes
+from pynsp.logger import *
 
 #监测心跳超时时间戳差
 CHECK_ALIVE_TIMESTAMP_OUT=6000
@@ -34,29 +37,26 @@ class mt_manage():
 
 
     def login_to_mt(self,robot_id,ipv4,port,notify_callback = None):
-        self.__mutex.acquire()
         if robot_id in self.__robot_lnk.keys():
             print('the mt target:',ipv4,' is already exits.')
-            self.__mutex.release()
             return
 
         session_link=mt_session.mt_session(notify_closed = notify_callback)
         print('mt try to connect to ipv4:',ipv4)
         if session_link.try_connect(ipv4, 4409, robot_id) < 0:
             print('mt_connect',ipv4,'failed')
-            self.__mutex.release()
             return
 
         for index in range(0,50):
             if session_link.get_network_status()==1:
+                self.__mutex.acquire()
                 self.__robot_lnk[robot_id] = session_link
+                self.__mutex.release()
                 print('__robot_lnk', robot_id, '=', session_link)
                 self.__agv_status[robot_id] = 0
                 break
             else:
                 sleep(0.1)
-
-        self.__mutex.release()
 
     def dis_connect(self,id):
         if self.__robot_lnk.__contains__(id) == False:
@@ -104,9 +104,10 @@ class mt_manage():
         return veh_data
 
     def get_operation_data(self,id):
-        self.__mutex.acquire()
+
         if self.__robot_lnk.__contains__(id) == False:
             return {}
+        self.__mutex.acquire()
         session_link = self.__robot_lnk[id]
         self.__mutex.release()
 
@@ -137,11 +138,6 @@ class mt_manage():
             if int(robot_id) in self.__robot_lnk.keys():
                 self.__robot_lnk[int(robot_id)].set_stop_emergency()
         self.__mutex.release()
-        # if self.__robot_lnk.__contains__(id) == False:
-        #     return {}
-        # self.__mutex.acquire()
-        # self.__robot_lnk[id].set_stop_emergency()
-        # self.__mutex.release()
 
     def check_session_timeout(self):
         while self.__is_exist_th == False:
@@ -150,33 +146,35 @@ class mt_manage():
             self.__mutex.release()
             for key_item in keys:
                 self.__mutex.acquire()
-                if self.__robot_lnk[key_item] is not None:
-                    current_timestamp = int(round(time.time()*1000))
-                    if (current_timestamp - self.__robot_lnk[key_item].get_timestamp()) > CHECK_ALIVE_TIMESTAMP_OUT:
-                        #超时，则直接关闭连接
-                        print('the target endpoint {0} check timeout.'.format(self.__robot_lnk[key_item].get_target_host()))
-                        self.__robot_lnk[key_item].close()
-                        #删除超时机器人缓存
-                        del(self.__robot_lnk[key_item])
-                        del(self.__agv_status[key_item])
-                    else:
-                        self.__robot_lnk[key_item].post_alive_pkt()#心跳
-                        self.__robot_lnk[key_item].get_status()#错误状态
-                        #获取状态
-                        ret = self.__robot_lnk[key_item].agv_status()
-                        if ret < 0:
-                            print('mt---get robot ', key_item, 'error failed')
-                        else:
-                            if self.__agv_status[key_item] == ret:
-                                pass
-                                # print('mt---status no change')
-                            else:
-                                self.__agv_status[key_item] = ret
-                                # print('status change:',self.__agv_status[key_item])
-                                global mt_status_notify
-                                if mt_status_notify is not None:
-                                    mt_status_notify(key_item,self.__agv_status[key_item])
+                session_link = self.__robot_lnk.get(key_item)
                 self.__mutex.release()
+                if session_link is None:
+                    continue
+
+                host = session_link.get_target_host()
+                current_timestamp = int(round(time.time()*1000))
+                session_time = session_link.get_timestamp()
+                if (current_timestamp - session_time) > CHECK_ALIVE_TIMESTAMP_OUT:
+                    #超时，则直接关闭连接
+                    Logger().get_logger().error('the target endpoint {0} check timeout,current timestamp:{1}'.format(host,current_timestamp))
+                    print('the target endpoint {0} check timeout.'.format(host))
+                    session_link.close()
+
+                else:
+                    session_link.post_alive_pkt()#心跳
+                    session_link.get_status()#错误状态
+                    #获取状态
+                    ret = session_link.agv_status()
+                    if ret < 0:
+                        print('mt---get robot ', key_item, 'error failed')
+                    else:
+                        if self.__agv_status[key_item] == ret:
+                            pass
+                        else:
+                            self.__agv_status[key_item] = ret
+                            global mt_status_notify
+                            if mt_status_notify is not None:
+                                mt_status_notify(key_item,self.__agv_status[key_item])
             sleep(2)
 
     def remove_robot_id(self,robot_id):
@@ -203,10 +201,10 @@ class mt_manage():
 
     def robots_status(self):
         status_list=dict()
-        self.__mutex.acquire()
+        # self.__mutex.acquire()
         for robot_id in self.__robot_lnk.keys():
             status_list[int(robot_id)] = self.__agv_status[int(robot_id)]
-        self.__mutex.release()
+        # self.__mutex.release()
         return status_list
 
 
