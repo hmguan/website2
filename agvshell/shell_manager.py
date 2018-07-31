@@ -98,24 +98,31 @@ class shell_manager():
 
             self.__mutex.acquire()
             keys = list(self.__robot_lnk.keys())
-            for key_item in keys:
-                # if self.__robot_lnk[key_item] is not None:
-                current_timestamp = int(round(time.time() * 1000))
-                host = self.__robot_lnk[key_item].get_host_ipv4()
-                session_time = self.__robot_lnk[key_item].get_timestamp()
-                if (current_timestamp - session_time) > CHECK_ALIVE_TIMESTAMP_OUT:
-                    #超时，则直接关闭连接
-                    Logger().get_logger().error('the target endpoint {0} check timeout,current timestamp:{1},session timestamp:{2},the interval timestamp:{3}'.format(host,
-                                                                                                                                            current_timestamp,
-                                                                                                                                            session_time,current_timestamp-session_time))
-                    print("shell manager check timeout thread id:",threading.current_thread().ident," thread name:",threading.current_thread().name)
-                    self.__robot_lnk[key_item].close()
-                else:
-                    # print('post_alive_pkt')
-                    if self.__robot_lnk[key_item].post_alive_pkt() < 0:
-                        self.__robot_lnk[key_item].close()
-
             self.__mutex.release()
+            
+            for key_item in keys:
+                if self.__mutex.acquire() == True:
+                    session_link = self.__robot_lnk.get(key_item)
+                    self.__mutex.release()
+
+                    if session_link is None:
+                        continue
+
+                    current_timestamp = int(round(time.time() * 1000))
+                    host = session_link.get_host_ipv4()
+                    session_time = session_link.get_timestamp()
+                    if (current_timestamp - session_time) > CHECK_ALIVE_TIMESTAMP_OUT:
+                        #超时，则直接关闭连接
+                        Logger().get_logger().error('the target endpoint {0} check timeout,current timestamp:{1},session timestamp:{2},the interval timestamp:{3}'.format(host,
+                                                                                                                                                current_timestamp,
+                                                                                                                                                session_time,current_timestamp-session_time))
+                        print("shell manager check timeout thread id:",threading.current_thread().ident," thread name:",threading.current_thread().name)
+                        session_link.close()
+                    else:
+                        if session_link.post_alive_pkt() < 0:
+                            Logger().get_logger().error('failed to post alive pkt to target endpoint:{0}'.format(host))
+                            session_link.close()
+
             sleep(2)
 
     def get_online_robot(self):

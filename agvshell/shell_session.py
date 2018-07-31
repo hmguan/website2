@@ -176,7 +176,7 @@ class shell_session(tcp.obtcp):
     def recv_pre_login(self,data):
         if self.__net_status == typedef.NetworkStatus_Closed:
             Logger().get_logger().warning('current session of target:{0} is closed'.format(self.__target_host))
-            return
+            return -1
 
         pre_login = login.proto_pre_login()
         pre_login.build(data, 0)
@@ -187,16 +187,16 @@ class shell_session(tcp.obtcp):
     def post_alive_pkt(self):
         if self.__net_status == typedef.NetworkStatus_Closed:
             Logger().get_logger().warning('current session of target:{0} is closed'.format(self.__target_host))
-            return
+            return -1
 
         if self.__net_status != typedef.NetworkStatus_Established:
             Logger().get_logger().warning('current session of {0} status is not eastablished!'.format(self.__target_host))
-            return
+            return -1
 
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_KEEPALIVE, _id=self.__net_manager.allocate_pkt())
         pkt.set_pkt_size(24)
         stream = pkt.serialize()
-        #Logger().get_logger().info('post alive pkt to target {0}'.format(self.__target_host))
+        Logger().get_logger().info('post alive pkt to target {0}'.format(self.__target_host))
         return self.send(stream, pkt.length())
 
     def post_sysinfo_fixed_request(self):
@@ -206,7 +206,7 @@ class shell_session(tcp.obtcp):
 
         if self.__net_status != typedef.NetworkStatus_Established:
             Logger().get_logger().warning('current session of {0} status is not eastablished!'.format(self.__target_host))
-            return
+            return -1
 
         pkt_id = wait_handler().allocat_pkt_id()
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_GET_FIXED_SYSINFO, _id=pkt_id)
@@ -296,7 +296,7 @@ class shell_session(tcp.obtcp):
                 process_l.append(process_info)
             self.__shell_systeminfo['process_list']=process_l
         wait_handler().wait_singal(pkt_id)
-        return
+        return 0
 
     def get_network_status(self):
         return self.__net_status
@@ -433,12 +433,12 @@ class shell_session(tcp.obtcp):
     def recv_modify_file_mutex(self,data,cb):
         if cb < 0:
             Logger().get_logger().error("recv modify_file_mutex packet error.")
-            return
+            return -1
 
         packet_file_mutex = sysinfo.proto_msg_int_sync()
         if (packet_file_mutex.build(data, 0) < 0):
             Logger().get_logger().error("recv_modify_file_mutex build  proto_msg_int_sync packet error.")
-            return
+            return -1
 
         if 0 == packet_file_mutex.head_.err.value:
             if packet_file_mutex.msg_int.value == 1:
@@ -449,7 +449,7 @@ class shell_session(tcp.obtcp):
         if self.__push_notify_cb:
             self.__push_notify_cb(errtypes.TypeShell_ModifyFileMutex,{"robot_id":self.__robot_id,"opcode":packet_file_mutex.msg_int.value,"error_code":packet_file_mutex.head_.err.value})
 
-        pass
+        return 0
 
     def update_ntp_server(self,ntp_host):
         packet_ntp_server = sysinfo.proto_msg()
@@ -464,12 +464,12 @@ class shell_session(tcp.obtcp):
     def on_update_ntp_server(self,data,cb):
         if cb < 0:
             Logger().get_logger().error("update_ntp_server error.")
-            return
+            return -1
 
         packet_ntp_ack = sysinfo.proto_msg()
         if (packet_ntp_ack.build(data, 0) < 0):
             Logger().get_logger().error("update_ntp_server build  proto_msg packet error.")
-            return
+            return -1
 
         if 0 == packet_ntp_ack.head_.err.value:
             self.__shell_systeminfo['ntp_server'] = packet_ntp_ack.msg_str_.value
@@ -477,7 +477,7 @@ class shell_session(tcp.obtcp):
         if self.__push_notify_cb:
             self.__push_notify_cb(errtypes.TypeShell_UpdateNtpServer,{"robot_id":self.__robot_id,"error_code":packet_ntp_ack.head_.err.value,"ntp_server":packet_ntp_ack.msg_str_.value})
 
-        pass
+        return 0
 
     def operate_system_process(self,command):
         from .shproto import proto_process_status
@@ -502,12 +502,12 @@ class shell_session(tcp.obtcp):
     def on_recv_process_cmd_ack(self,data,cb):
         if cb < 0:
             Logger().get_logger().error("on_recv_process_cmd_ack error.")
-            return
+            return -1
 
         ack = head.proto_head()
         if (ack.build(data, 0) < 0):
             Logger().get_logger().error("on_recv_process_cmd_ack build  proto_head packet error.")
-            return
+            return -1
         pass
 
     def update_process_config_info(self,process_list):
@@ -529,12 +529,12 @@ class shell_session(tcp.obtcp):
         import operator 
         if cb < 0:
             Logger().get_logger().error("on_recv_update_process_list_ack error.")
-            return
+            return -1
         
         ack = proto_process_list.proto_process_list_t()
         if (ack.build(data, 0) < 0):
             Logger().get_logger().error("on_recv_update_process_list_ack build  PKTTYPE_AGV_SHELL_SET_PROCESS_LIST_ACK packet error.")
-            return
+            return -1
 
         process_list = list()
         for item in ack.process_list_:
@@ -562,11 +562,11 @@ class shell_session(tcp.obtcp):
         import operator 
         if cb < 0:
             Logger().get_logger().error("on_recv_process_list error.")
-            return
+            return -1
         ack = proto_process_list.proto_process_list_t()
         if (ack.build(data,0) < 0):
             Logger().get_logger().error("on_recv_process_list build  PKTTYPE_AGV_SHELL_GET_PROCESS_LIST_ACK packet error.")
-            return
+            return -1
 
         if ack.phead.err.value == 0:
             process_list = list()

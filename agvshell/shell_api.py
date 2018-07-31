@@ -6,20 +6,28 @@ from .file_rw import *
 import copy
 import os
 
+TIMEOUT_MUTEX=3
+
+###############################################################
+#全局在线机器人数据锁
+global_mutex=threading.RLock()
 #全局在线机器人信息
 global_robot_info=dict()
-#全局数据锁
-global_mutex=threading.RLock()
+#新车上线字典，每次连接成功一个车会弹出一个
+robot_c_mutex = threading.RLock()
+robot_collection=dict()
+#未连接成功的车
+unusual_mutex = threading.RLock()
+unusual_collection=dict()   #key:robot id ,value:{mac_address:xxxxxxxx,host:xxxxxxxxx}
+#############################################################
+
 #全局通知函数,回调至用户层，由用户层分发至浏览器
 notify_client_function=None
 #全局线程退出标识
 is_exit_thread=False
 #线程等待新车上线信号
 thread_wait = waitable_handle(True)
-#新车上线字典，每次连接成功一个车会弹出一个
-robot_collection=dict()
-#未连接成功的车
-unusual_collection=dict()   #key:robot id ,value:{mac_address:xxxxxxxx,host:xxxxxxxxx}
+
 
 #循环连车线程
 def start_connect_to_robot():
@@ -42,12 +50,12 @@ def start_connect_to_robot():
                 break
             print('-----robot_collection:',robot_collection)
             all_keys = list(robot_collection.keys())
-            global global_mutex
+            global robot_c_mutex
             for key in all_keys:
-                global_mutex.acquire()
+                robot_c_mutex.acquire()
                 item = robot_collection.get(key)
                 del robot_collection[key]
-                global_mutex.release()
+                robot_c_mutex.release()
 
                 Logger().get_logger().info('get dhcp server notify,start to connect to {0}'.format(item.host))
                 result = shell_manager().login_to_shell(item.id, item.host, item.shport.value,remote_robot)
@@ -66,18 +74,18 @@ def start_connect_to_robot():
                                                 'shell_version':fiex_system_info.get('software_version'),'lock_status':fiex_system_info.get('lock_status'),
                                                 'ntp_server':fiex_system_info.get('ntp_server'),
                                                 'process_list':process_list})
-                    global_mutex.acquire()
-                    if item.id in unusual_collection.keys():
-                        del unusual_collection[item.id]
-                    global_mutex.release()
+                    if unusual_mutex.acquire() == True:
+                        if item.id in unusual_collection.keys():
+                            del unusual_collection[item.id]
+                        unusual_mutex.release()
                 elif result < 0:
                     #记录连接不成功的异常
                     #连接异常时，直接从在线信息中删除
                     del_robot(item.id)
-                    global_mutex.acquire()
-                    if item.id not in unusual_collection.keys():
-                        unusual_collection[item.id]={'robot_mac':item.mac,'robot_host':item.host}
-                    global_mutex.release()
+                    if unusual_mutex.acquire() == True:
+                        if item.id not in unusual_collection.keys():
+                            unusual_collection[item.id]={'robot_mac':item.mac,'robot_host':item.host}
+                        unusual_mutex.release()
                     #通知前端
                     if notify_client_function is not None:
                         notify_client_function({'msg_type':errtypes.TypeShell_ConnectException,'robot_id':item.id,
@@ -156,7 +164,9 @@ def agvinfo_notify_change():
     print('----------dhcp notify changed global_robot_info:',global_robot_info)
     for key,item in global_robot_info.items():
         if robot_collection.__contains__(key) == False:
-            robot_collection[key]=item
+            if robot_c_mutex.acquire() == True:
+                robot_collection[key]=item
+                robot_c_mutex.release()
 
     global_mutex.release()
     del info
@@ -204,10 +214,11 @@ def get_online_robot_list():
     'shell_time':'00:00:10','shell_version':'v1.1.0'},{......},{......}]}
     '''
     group_robot_info = {}
-    global global_mutex
-    global_mutex.acquire()
     (shelltime,versionifno,process_list,system_info) = shell_manager().get_all_robot_online_info()
-    for mac_key,item in global_robot_info.items():
+
+    global global_robot_info
+    robot_temp = copy.deepcopy(global_robot_info)
+    for mac_key,item in robot_temp.items():
         process = process_list.get(item.id)
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
                       'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
@@ -222,7 +233,8 @@ def get_online_robot_list():
             value = [group_item for group_item in group_robot_info[process] if mac_key == group_item.get('robot_mac') ]
             if len(value) == 0:
                 group_robot_info[process].append(robot_info)
-    global_mutex.release()
+
+    del robot_temp
     return group_robot_info
 
 def get_offline_robot_list():
@@ -243,12 +255,12 @@ def get_unusual_robot_list():
     it will return the robot which can not connected.
     :return: [{robot_id:1,robot_mac:xxxxxxxxxxxxxxx,robot_host:'192.168.0.1'},{......},{......}]
     '''
-    global global_mutex
-    global_mutex.acquire()
+    global unusual_mutex
+    unusual_mutex.acquire()
     info_list = list()
     for keys,item in unusual_collection.items():
         info_list.append({'robot_id':keys,'robot_mac': item.get('robot_mac'),'robot_host':item.get('robot_host')})
-    global_mutex.release()
+    unusual_mutex.release()
     return info_list
 
 def register_browser_notify(notify_call=None):
@@ -271,11 +283,13 @@ def get_robot_detail_info(robot_id):
     '''
     detail_info = shell_manager().get_fixed_sysytem_info(robot_id)
     global global_mutex
-    global_mutex.acquire()
-    global global_robot_info
-    mac_list = [item.mac for item in global_robot_info.values() if item.id == robot_id]
-    detail_info['robot_mac'] = mac_list[0] if len(mac_list) != 0 else ""
-    global_mutex.release()
+    if global_mutex.acquire(timeout=3) == False:
+        return None
+    else:
+        global global_robot_info
+        mac_list = [item.mac for item in global_robot_info.values() if item.id == robot_id]
+        detail_info['robot_mac'] = mac_list[0] if len(mac_list) != 0 else ""
+        global_mutex.release()
     return detail_info
 
 def get_robot_system_info(robot_id):
