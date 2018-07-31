@@ -3,7 +3,7 @@ import json
 from flask import jsonify
 from app.main.mainview import base_event
 from . import user_manager
-
+import errtypes
 users_center = user_manager.user_manager()
 
 class userview(base_event):
@@ -16,7 +16,12 @@ class userview(base_event):
         data = requst_obj.get_data()
         json_data = json.loads(data.decode('utf-8'))
         event = json_data['event']
-    
+        
+        if 'user_id' in json_data:
+            tmp_id = json_data['user_id']
+            if tmp_id is None:
+                return jsonify({'code':errtypes.HttpResponseCode_InvaildParament,'msg':"无效用户ID"})
+
         if 'event_register_user'==event:
             ret = users_center.register_user(json_data['user_name'], json_data['password'],json_data['permission'])
         if 'event_update_pwd'==event:
