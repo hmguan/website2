@@ -240,7 +240,7 @@ def agvinfoser_startup(_host = '0.0.0.0', _port = 9022, _notify_changed = None)-
         if (type(n.vhid) == int) and (n.vhid > current_max_agvid_config):
             current_max_agvid_config = n.vhid
 
-    Logger().get_logger().info('current maximum agvid={}'.format(current_max_agvid_config))
+    Logger().get_logger().info('current maximum agvid={0}'.format(current_max_agvid_config))
     # create udp service
     if ser == None:
         ser = agvinfo_shellser(_notify_changed)

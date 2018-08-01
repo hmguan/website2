@@ -38,7 +38,25 @@ def index():
         obj = map_event_obj[event]
         return obj.flask_recvdata(request)
     print('can not find event:', event)
-    return jsonify({'code':errtypes.HttpResponseCode_InvaildEvent,'msg':''})
+    return jsonify({'code':errtypes.HttpResponseCode_InvaildEvent,'msg': errtypes.HttpResponseMsg_InvaildEvent})
+
+@main.route('/logger',methods=['GET','POST'])
+def write_log():
+    print('logger route method:',request.method)
+
+    data = request.get_data()
+    print('data',data)
+    json_data = json.loads(data.decode('utf-8'))
+    event = json_data['event']
+
+    if event in map_event_obj.keys():
+        obj = map_event_obj.get(event)
+        if obj is not None:
+            return obj.flask_recvdata(request)
+        else:
+            print('the function object of event:{0} is null'.format(event))
+
+    return jsonify({'code': errtypes.HttpResponseCode_InvaildEvent, 'msg': errtypes.HttpResponseMsg_InvaildEvent})
 
 @main.route('/test')
 def test():

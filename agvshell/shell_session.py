@@ -196,7 +196,7 @@ class shell_session(tcp.obtcp):
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_KEEPALIVE, _id=self.__net_manager.allocate_pkt())
         pkt.set_pkt_size(24)
         stream = pkt.serialize()
-        Logger().get_logger().info('post alive pkt to target {0}'.format(self.__target_host))
+        print('post alive pkt to target {0}'.format(self.__target_host))
         return self.send(stream, pkt.length())
 
     def post_sysinfo_fixed_request(self):

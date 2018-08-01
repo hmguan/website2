@@ -14,12 +14,10 @@ post_msg_list=[]
 post_room_list=[]
 
 def response_to_client_data(data):
-    print('------------------send message to clien:',data)
+    print('----------------Flask-socketio send message to clien:{0}'.format(data))
     post_msg_list.append(data)
 
 def send_messge_to_room(data,room_identify):
-    # local_socketio.emit('room_response',{'data': data},namespace='/notify_call',
-    #                     room_identify=room_identify,broadcast=True)
     msg_dict=dict()
     msg_dict[room_identify] = data
     post_room_list.append(msg_dict)
@@ -30,7 +28,7 @@ def background_thread():
         local_socketio.sleep(1)
         while len(post_msg_list) != 0:
             obj = post_msg_list.pop(0)
-            print('----------obj:',obj)
+            Logger().get_logger().info('Flask-socketio send message to clien:{0}'.format(obj))
             local_socketio.emit('server_response',obj,
                                 namespace='/notify_call')
 
@@ -42,7 +40,7 @@ def background_thread():
 
 @local_socketio.on('connect', namespace='/notify_call')
 def socketio_connect():
-    print('----------------socketio connected------------------')
+    Logger().get_logger().info('Flask-Socketio connected,the sid is:{0}'.format(request.sid))
     global thread
     with thread_lock:
         if thread is None:
@@ -52,21 +50,18 @@ def socketio_connect():
             thread = local_socketio.start_background_task(target=background_thread)
     response_to_client_data({'msg_type':errtypes.TypeShell_SokcetIOConnect,'data':'connect success'})
 
-    print('--------------connected successfully---------------')
-
 @local_socketio.on('disconnect', namespace='/notify_call')
 def socketio_disconnect():
-    print('----------------socketio disconnect------------------')
-    print('sid:%s '%(request.sid))
+    Logger().get_logger().info('Flask-Socketio disconnect sid:{0}'.format(request.sid))
 
 @local_socketio.on('join', namespace='/notify_call')
 def socketio_join(room_identify):
-    print('-------------join room:',room_identify['uuid'])
+    Logger().get_logger().info('Flask-Socketio join room:{0}'.format(room_identify['uuid']))
     join_room(room_identify['uuid'])
 
 @local_socketio.on('leave', namespace='/notify_call')
 def socketio_leave(room_identify):
-    print('-------------leave room:',room_identify['uuid'])
+    Logger().get_logger().info('Flask-Socketio leave room:{0}'.format(room_identify['uuid']))
     leave_room(room_identify['uuid'])
 
 @local_socketio.on('client_ping', namespace='/notify_call')
