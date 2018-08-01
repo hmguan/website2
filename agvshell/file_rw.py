@@ -391,7 +391,7 @@ class user_transfer_queue(object):
         del_pull_task = list()
         if self.__task_thread_pool_push:
             del_push_task = self.__task_thread_pool_push.del_task(count,callback)
-        if self.__task_thread_pool_pull and count > len(del_push_taskl):
+        if self.__task_thread_pool_pull and count > len(del_push_task):
             del_pull_task = self.__task_thread_pool_pull.del_task(count - len(del_push_task),callback)
         return list(set(del_push_task).union(set(del_pull_task)))
 

@@ -219,6 +219,9 @@ def get_online_robot_list():
     global global_robot_info
     robot_temp = copy.deepcopy(global_robot_info)
     for mac_key,item in robot_temp.items():
+        if item.id not in process_list:
+            continue
+        
         process = process_list.get(item.id)
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
                       'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
