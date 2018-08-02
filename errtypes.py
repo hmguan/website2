@@ -58,6 +58,7 @@ HttpResponseCode_ServerError=500
 
 #############################以下定义http响应消息###############################
 HttpResponseMsg_Normal='success'
+HttpResponseMsg_InvaildEvent='invaild input event'
 HttpResponseMsg_InvaildParament='invalid input parament'
 HttpResponseMsg_InvaildPath='File Not Found'
 HttpResponseMsg_Failed='failed'

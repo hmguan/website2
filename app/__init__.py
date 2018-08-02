@@ -25,6 +25,7 @@ def create_app(config_name):
     from .package import packageflask
     # from .blackbox import logview
     from .backup import backupview
+    from .log_browser import logger_flask
     #加载主蓝图
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
@@ -57,6 +58,6 @@ def create_socketio(app):
     :return:the socketio object
     '''
     global local_socketio
-    local_socketio.init_app(app,async_mode = None)#, async_mode='eventlet', message_queue='redis://127.0.0.1:6700'
+    local_socketio.init_app(app,async_mode = 'eventlet')#, async_mode='eventlet', message_queue='redis://127.0.0.1:6700'
     # local_socketio = SocketIO(app, async_mode='eventlet', message_queue='redis://127.0.0.1:6379/10', logger=False) #,ping_timeout=3,ping_interval=1    , message_queue='redis://127.0.0.1:6379/10'
     return local_socketio
