@@ -43,7 +43,7 @@ class mt_manage():
 
         session_link=mt_session.mt_session(notify_closed = notify_callback)
         print('mt try to connect to ipv4:',ipv4)
-        if session_link.try_connect(ipv4, 4409, robot_id) < 0:
+        if session_link.try_connect(ipv4, port, robot_id) < 0:
             print('mt_connect',ipv4,'failed')
             return
 
