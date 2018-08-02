@@ -318,7 +318,9 @@ def change_pull_file_dir(path):
 def change_file_block_size(size):
     file_manager().change_block_size(size)
 
-
+#user_id  1
+#robot_id 1
+#task_id_list [1,2,3,4...]
 def cancle_file_transform(user_id, robot_id, task_id_list) ->list:
     return file_manager().cancle_file_transform(user_id,robot_id,task_id_list)
 
