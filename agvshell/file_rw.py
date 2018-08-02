@@ -646,8 +646,8 @@ class file_manager():
         if shell_info is None:
             #print("session cannot find, robot_id:%d" % robot_id)
             file_mutex.release()
-            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
-            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
+            # self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
+            # self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
             #在关闭/断链中处理移除正在传输的文件信息
             # self.remove_file_info(robot_id,file_id)  
             return ERRNO_ROBOT_CONNECT
@@ -710,8 +710,8 @@ class file_manager():
         if shell_info is None:
             print("session cannot find, robot_id:%d" % robot_id)
             file_mutex.release()
-            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
-            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
+            # self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
+            # self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
             return ERRNO_ROBOT_CONNECT
         
         if block_num < t_file_info.m_block_num:
@@ -778,7 +778,7 @@ class file_manager():
         
         #全局正在传输的字典中删除对应的文件信息
         self.remove_file_info(robot_id,file_id)
-        if t_file_info.m_oper_type == FILE_OPER_TYPE_PULL:
+        if t_file_info.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(t_file_info.m_name):
             os.remove(t_file_info.m_name)
         file_mutex.release()
 
@@ -816,8 +816,8 @@ class file_manager():
                 val = map_file_info[k]
                 val.m_hd.close()
                 #删除失败文件
-                if val.m_oper_type == FILE_OPER_TYPE_PULL:
-                    val.remove(val.m_name)
+                if val.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(val.m_name):
+                    os.remove(val.m_name)
                 self.notify(val.m_user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_SESSION_CLOSE,1,val.m_task_id,-1)
                 self.task_finish(val.m_user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
 
@@ -853,8 +853,9 @@ class file_manager():
                             shell_info = self.__shell_manager.get_session_by_id(robot_id)
                             if shell_info is None:
                                 print("session cannot find, robot_id:%d" % robot_id)
-                                self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_ROBOT_CONNECT,-1,task.m_task_id,-1)
-                                self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+                                # self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_ROBOT_CONNECT,-1,task.m_task_id,-1)
+                                # self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+                                #断链中处理
                                 continue
                             shell_info.file_complete(val.m_file_id,val.m_last_block_num,FILE_STATUS_CANCLE)
                             if FILE_TYPE_A_UPGRADE == val.m_type:
@@ -867,7 +868,7 @@ class file_manager():
                             map_file_info.pop(key)
                             val.m_hd.close()
                             #取消任务，删除文件
-                            if val.m_oper_type == FILE_OPER_TYPE_PULL:
+                            if val.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(val.m_name):
                                 os.remove(val.m_name)
                     file_mutex.release()
             self.__transfer_queue_mutex.release()
