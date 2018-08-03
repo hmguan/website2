@@ -391,7 +391,7 @@ class user_transfer_queue(object):
         del_pull_task = list()
         if self.__task_thread_pool_push:
             del_push_task = self.__task_thread_pool_push.del_task(count,callback)
-        if self.__task_thread_pool_pull and count > len(del_push_taskl):
+        if self.__task_thread_pool_pull and count > len(del_push_task):
             del_pull_task = self.__task_thread_pool_pull.del_task(count - len(del_push_task),callback)
         return list(set(del_push_task).union(set(del_pull_task)))
 
@@ -496,18 +496,9 @@ class file_manager():
             self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_ROBOT_CONNECT,-1,task_id)
             self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
             return ERRNO_ROBOT_CONNECT
-        
-        t_file_info = file_info()
-        t_file_info.m_hd = self.__file_rw.open_file(file_path)
-        if -1 == t_file_info.m_hd:
-            Logger().get_logger().error("open file[{}] failure".format(file_path))
-            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_OPEN,-1,task_id)
-            self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
-            return ERRNO_FILE_OPEN
-        
+
         # 正在升级的车辆进行拒绝
-        t_file_info.m_type = file_type
-        if FILE_TYPE_A_UPGRADE == t_file_info.m_type:
+        if FILE_TYPE_A_UPGRADE == file_type:
             self.__mutex_set.acquire()
             if FILE_TYPE_A_UPGRADE == shell_info.get_upgrade_flag():
                 print("upgrade exit, stop this time upgrade")
@@ -518,6 +509,15 @@ class file_manager():
             shell_info.set_upgrade(FILE_TYPE_A_UPGRADE)
             self.__mutex_set.release()
 
+        t_file_info = file_info()
+        t_file_info.m_hd = self.__file_rw.open_file(file_path)
+        if -1 == t_file_info.m_hd:
+            Logger().get_logger().error("open file[{}] failure".format(file_path))
+            self.notify(m_userid,robot_id,file_path,file_type,0,ERRNO_FILE_OPEN,-1,task_id)
+            self.task_finish(m_userid,threadID,task_id,FILE_OPER_TYPE_PUSH)
+            return ERRNO_FILE_OPEN
+           
+        t_file_info.m_type = file_type
         t_file_info.m_path = file_path
         t_file_info.m_name = file_path[file_path.rfind('/') + 1:]
         t_file_info.m_file_id = self.allocate_file_id()
@@ -646,8 +646,8 @@ class file_manager():
         if shell_info is None:
             #print("session cannot find, robot_id:%d" % robot_id)
             file_mutex.release()
-            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
-            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
+            # self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
+            # self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
             #在关闭/断链中处理移除正在传输的文件信息
             # self.remove_file_info(robot_id,file_id)  
             return ERRNO_ROBOT_CONNECT
@@ -677,6 +677,7 @@ class file_manager():
             #finish transform
             Logger().get_logger().info('file[{0}][{1}] data send finish'.format(t_file_info.m_name,t_file_info.m_file_id))
             shell_info.file_complete(t_file_info.m_file_id,block_num,FILE_STATUS_NORMAL)
+            t_file_info.m_hd.close()
             if FILE_TYPE_A_UPGRADE == t_file_info.m_type:
                 shell_info.set_upgrade(FILE_TYPE_NORMAL)
             #call back step
@@ -709,8 +710,8 @@ class file_manager():
         if shell_info is None:
             print("session cannot find, robot_id:%d" % robot_id)
             file_mutex.release()
-            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
-            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
+            # self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id)
+            # self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
             return ERRNO_ROBOT_CONNECT
         
         if block_num < t_file_info.m_block_num:
@@ -734,7 +735,7 @@ class file_manager():
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
             t_file_info.m_last_block_num += 1
             t_file_info.m_step,step = step,t_file_info.m_step
-            print(step,t_file_info.m_step)
+            # print(step,t_file_info.m_step)
             file_mutex.release()
             if step != t_file_info.m_step :
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,t_file_info.m_step,0,0,t_file_info.m_task_id,t_file_info.m_size)
@@ -745,10 +746,11 @@ class file_manager():
             shell_info.file_complete(t_file_info.m_file_id,block_num,FILE_STATUS_NORMAL)
             
             t_file_info.m_hd.close()
+            self.remove_file_info(robot_id,file_id)
+
             self.__file_rw.set_file_attr(t_file_info.m_name,t_file_info.m_atime,t_file_info.m_ctime,t_file_info.m_mtime)
             
             #call back step
-            self.remove_file_info(robot_id,file_id)
             file_mutex.release()
             self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,100,0,1,t_file_info.m_task_id,t_file_info.m_size)
             self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)       
@@ -769,7 +771,16 @@ class file_manager():
             file_mutex.release()
             print("file_err file[%d] doesnot exist in list" % file_id)
             return -1
+        #关闭句柄
+        t_file_info.m_hd.close()
+        #传输队列中删除
         self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
+        
+        #全局正在传输的字典中删除对应的文件信息
+        self.remove_file_info(robot_id,file_id)
+        if t_file_info.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(t_file_info.m_name):
+            os.remove(t_file_info.m_name)
+        file_mutex.release()
 
         if FILE_TYPE_A_UPGRADE == t_file_info.m_type:  
             if self.__shell_manager is not None:
@@ -777,8 +788,6 @@ class file_manager():
                 shell_info.set_upgrade(FILE_TYPE_NORMAL)
             else:
                 print("session cannot find, robot_id:%d" % robot_id)
-                self.remove_file_info(robot_id,file_id)
-                file_mutex.release()
                 self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_ROBOT_CONNECT,-1,t_file_info.m_task_id,-1)
                 return ERRNO_ROBOT_CONNECT
               
@@ -787,8 +796,6 @@ class file_manager():
         step = 0
         if t_file_info.m_block_num != 0:
             step = t_file_info.m_last_block_num * 100 // t_file_info.m_block_num
-        self.remove_file_info(robot_id,file_id)
-        file_mutex.release() 
         self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,step,ERRNO_FILE_TRANIMIT,-1,t_file_info.m_task_id,-1)
         
     def print_file_dic_list(self):
@@ -802,13 +809,18 @@ class file_manager():
         map_file_info = {}
         file_mutex.acquire()
 
-        #关闭连接/断链后 关于该车的 说有正在传输的任务进行取消
+        #关闭连接/断链后 关于该车的 所有正在传输的任务进行取消
         map_file_info = dict_file_info.get(robot_id)
         if map_file_info is not None:
             for k in list(map_file_info):
                 val = map_file_info[k]
+                val.m_hd.close()
+                #删除失败文件
+                if val.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(val.m_name):
+                    os.remove(val.m_name)
                 self.notify(val.m_user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_SESSION_CLOSE,1,val.m_task_id,-1)
                 self.task_finish(val.m_user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+
             del map_file_info
             del (dict_file_info[robot_id])
         file_mutex.release()
@@ -836,34 +848,34 @@ class file_manager():
                     file_mutex.acquire()
                     map_file_info = dict_file_info.get(robot_id)
                     if map_file_info is not None:
-                        for k in list(map_file_info):
-                            if len(task_id_list) <=0:
-                                break
-                            
-                            val = map_file_info[k]
-                            print("key:%d, val file name:%s" % (k, val.m_path))
-                            if val.m_task_id in task_id_list:
-                                task_id_list.remove(val.m_task_id)
-                                shell_info = self.__shell_manager.get_session_by_id(robot_id)
-                                if shell_info is None:
-                                    print("session cannot find, robot_id:%d" % robot_id)
-                                    self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_ROBOT_CONNECT,-1,task.m_task_id,-1)
-                                    self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
-                                    continue
-                                shell_info.file_complete(val.m_file_id,val.m_last_block_num,FILE_STATUS_CANCLE)
-                                if FILE_TYPE_A_UPGRADE == val.m_type:
-                                    shell_info.set_upgrade(FILE_TYPE_NORMAL)         
-                                Logger().get_logger().info('cancle file transform:{0}'.format(val.m_path))
-                                
-                                # self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_CANCLE,-1,task.m_task_id,-1)
-                                self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
-                                remove_list.append(val.m_task_id)
-                                map_file_info.pop(k)
+                        remove_id_list = {file_id:file_info for file_id,file_info in map_file_info.items() if file_info.m_task_id in task_id_list}
+                        for key,val in remove_id_list.items():
+                            shell_info = self.__shell_manager.get_session_by_id(robot_id)
+                            if shell_info is None:
+                                print("session cannot find, robot_id:%d" % robot_id)
+                                # self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_ROBOT_CONNECT,-1,task.m_task_id,-1)
+                                # self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+                                #断链中处理
+                                continue
+                            shell_info.file_complete(val.m_file_id,val.m_last_block_num,FILE_STATUS_CANCLE)
+                            if FILE_TYPE_A_UPGRADE == val.m_type:
+                                shell_info.set_upgrade(FILE_TYPE_NORMAL)         
+                            Logger().get_logger().info('cancle file transform:{0}'.format(val.m_path))
+                              
+                            # self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_CANCLE,-1,task.m_task_id,-1)
+                            self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
+                            remove_list.append(val.m_task_id)
+                            map_file_info.pop(key)
+                            val.m_hd.close()
+                            #取消任务，删除文件
+                            if val.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(val.m_name):
+                                os.remove(val.m_name)
                     file_mutex.release()
             self.__transfer_queue_mutex.release()
             return remove_list
         except Exception as e:
-            print("cancle exception:", str(e))
+            Logger().get_logger().error('cancle file transform error:{0}'.format(val.m_path))
+            return remove_list
         
     '''
     file_manager interface begin

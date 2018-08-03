@@ -219,6 +219,9 @@ def get_online_robot_list():
     global global_robot_info
     robot_temp = copy.deepcopy(global_robot_info)
     for mac_key,item in robot_temp.items():
+        if item.id not in process_list:
+            continue
+        
         process = process_list.get(item.id)
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
                       'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
@@ -315,7 +318,9 @@ def change_pull_file_dir(path):
 def change_file_block_size(size):
     file_manager().change_block_size(size)
 
-
+#user_id  1
+#robot_id 1
+#task_id_list [1,2,3,4...]
 def cancle_file_transform(user_id, robot_id, task_id_list) ->list:
     return file_manager().cancle_file_transform(user_id,robot_id,task_id_list)
 
