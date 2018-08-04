@@ -484,11 +484,10 @@ class file_manager():
         file_mutex.release()
         file_path_set = set()
         for item in list_file_path:
-            if FILE_OPER_TYPE_PUSH and item.m_path not in file_path_set:
+            if item.m_path not in file_path_set:
                 file_path_set.add(item.m_path)
         Logger().get_logger().info("file_path_set{} file is busy".format(file_path_set)) 
         return file_path_set
-    # def task_finish
 
     def push_file(self,threadID,m_userid,robot_id,file_path,file_type,task_id):
         if self.__shell_manager is None:

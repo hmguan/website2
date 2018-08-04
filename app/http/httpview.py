@@ -8,6 +8,36 @@ from configuration import get_config_path
 import os,datetime
 from db.db_package import package_manager
 from pynsp.logger import *
+import os
+
+def status(file_path):
+    open_fd_list = get_all_fd(file_path)
+    open_count = len(open_fd_list)
+    Logger().get_logger().info('file_path:{0}, open_count:{1}'.format(file_path,open_count))
+    is_opened = False
+    if open_count > 0:
+        is_opened = True
+    return is_opened
+
+def get_all_pid():
+    """获取当前所有进程"""
+    return [_i for _i in os.listdir('/proc') if _i.isdigit()]
+
+def get_all_fd(file_path):
+    """获取所有已经打开该文件的fd路径"""
+    all_fd = []
+    if file_path.startswith('./'):
+        file_path = os.path.abspath(file_path)
+    for pid in get_all_pid():
+        _fd_dir = '/proc/{pid}/fd'.format(pid = pid)
+        if os.access(_fd_dir, os.R_OK) == False:
+            continue
+
+        for fd in os.listdir(_fd_dir):
+            fd_path = os.path.join(_fd_dir, fd)
+            if os.path.exists(fd_path) and os.readlink(fd_path) == file_path:
+                all_fd.append(fd_path)
+    return all_fd
 
 @http_main.route('/upload' ,methods=['GET' ,'POST'])
 def upload_file():
@@ -36,7 +66,10 @@ def upload_file():
                     if os.path.exists(folder_path) == False:
                         os.makedirs(folder_path)
                     file_path = os.path.join(folder_path, filename)
-
+                    result = status(file_path)
+                    if result is True:
+                        return jsonify({'code': errtypes.HttpResponseCode_FileBusy, 'msg': errtypes.HttpResponseMsg_FileBusy})
+                    
                     file.save(file_path)
                     time = datetime.datetime.now()
                     ret = package_manager.upload(request.form['user_id'], filename, version, time, remark)
