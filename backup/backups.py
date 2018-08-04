@@ -53,10 +53,8 @@ class backup_manage():
                     Logger().get_logger().error("failed post get log type to agvshell.")
                     continue
                 # 同步等待
-                print('log type start wait time:',int(round(time.time() * 1000)))
                 if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
                     wait_handler().wait_destory(pkt_id)
-                    print('log type end wait time:', int(round(time.time() * 1000)))
                     data = shell_info.get_log_types()
                     type_list = log.proto_log_type_vct()
                     try:
@@ -68,7 +66,7 @@ class backup_manage():
                         log_type[index.log_type.value] = 0  # 取并集
                         print('log_type:', index.log_type.value)
                 else:
-                    print('failed get log type,it is timeout')
+                    Logger().get_logger().error('failed get log type,robot:{0} it is timeout',id)
         for index in log_type.keys():
             ret_list.append(index)
         return ret_list
