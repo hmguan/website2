@@ -11,7 +11,8 @@ class wait_handler():
     def wait_simulate(self,sid,timeout_time):
         if self.__wait_object.__contains__(sid) == False:
             return -1
-        self.__wait_object[sid].wait(timeout_time)
+        if self.__wait_object[sid].wait(timeout_time) == False:
+            return -1
         return 0
 
     def wait_singal(self,sid):

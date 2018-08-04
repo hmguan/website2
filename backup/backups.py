@@ -67,6 +67,8 @@ class backup_manage():
                     for index in type_list.log_type_vct:
                         log_type[index.log_type.value] = 0  # 取并集
                         print('log_type:', index.log_type.value)
+                else:
+                    print('failed get log type,it is timeout')
         for index in log_type.keys():
             ret_list.append(index)
         return ret_list

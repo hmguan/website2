@@ -383,8 +383,8 @@ class shell_session(tcp.obtcp):
         wait_handler().wait_singal(pkt_id)
 
     def get_log_types(self):
-        data = copy.deepcopy(self.__log_type)
-        return data
+
+        return self.__log_type
 
     def get_log_data(self,task_id, start_time, end_time, types):
         pkt = log.proto_log_condition()
