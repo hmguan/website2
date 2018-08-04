@@ -101,11 +101,11 @@ def thread_check_file_expired():
 
     while is_exit_thread == False:
         retention_time_min = system_config.get('retention_time_min')
-        if retention_time_min is None:
+        if retention_time_min is None or retention_time_min <= 0:
             retention_time_min = default_retention_time_min
 
         time_intervel_sec = system_config.get('time_intervel_sec')
-        if time_intervel_sec is None:
+        if time_intervel_sec is None or time_intervel_sec <= 0:
             time_intervel_sec = default_time_intervel_sec
 
         path_config = system_config.get('path_element')
@@ -448,3 +448,9 @@ def query_robot_process_config_info(robot_id):
 
 def update_process_config_info(robot_id,process_list):
     return shell_manager().update_process_config_info(robot_id,process_list)
+
+def is_file_busy(filepath) ->int:
+    file_path_set = file_manager().query_file_queue_used()  
+    if filepath in file_path_set:
+        return 1
+    return 0
