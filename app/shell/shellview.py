@@ -11,7 +11,7 @@ class shellview(base_event):
                           'get_robot_process_detail_info','query_user_transfer_queue','cancle_file_transform_task',
                           'query_robots_configuration_info','event_modify_file_lock','event_query_ftp_port',
                           'event_update_ntp_server','event_query_progress_info','event_operate_system_process',
-                          'event_query_robot_process_config_list','event_update_robot_process_config_list')
+                          'event_query_robot_process_config_list','event_update_robot_process_config_list','event_query_file_state')
         pass
 
     def flask_recvdata(self,requst_obj):
@@ -51,4 +51,6 @@ class shellview(base_event):
             return jsonify(query_robot_process_config_list(json_data.get('robot_id')))
         elif 'event_update_robot_process_config_list' == event:
             return jsonify(update_robot_process_config_list(json_data.get('robot_id'),json_data.get('process_list')))
+        elif 'event_query_file_state' == event:
+            return jsonify(is_file_occupied(json_data.get('author_id'),json_data.get('file_type'),json_data.get('file_name')))
         pass

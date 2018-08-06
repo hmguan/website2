@@ -50,11 +50,11 @@ class produce_config(config):
     sqlite_database = ''
 
 system_config = {
-    #�ļ�����ʱ��
+    #系统日志保留时间
     'retention_time_min':10*24*60,
-    #����ļ����
+    #检测时间间隔
     'time_intervel_sec':10*60,
-    #�ļ����·��
+    #检测路径
     'path_element':[
         {
             'path_root':config.ROOTDIR,

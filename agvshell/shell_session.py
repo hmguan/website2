@@ -355,9 +355,9 @@ class shell_session(tcp.obtcp):
         if day == 0:
             value = '%02d:%02d:%02d' % (hour,mini,second)
         elif day > 1:
-            value = '%d days %02d:%02d:%02d' % (day, hour, mini, second)
+            value = '%d-%02d:%02d:%02d' % (day, hour, mini, second)
         else:
-            value= '%d day %02d:%02d:%02d' % (day,hour,mini,second)
+            value= '%d-%02d:%02d:%02d' % (day,hour,mini,second)
 
         return value
 
@@ -383,6 +383,7 @@ class shell_session(tcp.obtcp):
         wait_handler().wait_singal(pkt_id)
 
     def get_log_types(self):
+
         return self.__log_type
 
     def get_log_data(self,task_id, start_time, end_time, types):

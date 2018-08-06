@@ -132,16 +132,13 @@ class task_thread_pool():
         del_task = []
         self.__queue_mutex.acquire()
         if count > 0 and callback :
-            index = 0
-            while index < len(self.__work_queue):
-                if callback(self.__work_queue[index]):
-                    del_task.append(self.__work_queue[index])
-                    del self.__work_queue[index]
-                    index = index -1
+            for item in list(self.__work_queue):
+                if callback(item):
+                    del_task.append(item)
+                    self.__work_queue.remove(item)
                     count = count -1
                     if count == 0:
                         break
-                index +=1
         self.__queue_mutex.release()
         return del_task
     
@@ -481,7 +478,16 @@ class file_manager():
         return queue_data
 
 
-    # def task_finish
+    def query_file_queue_used(self)->set:
+        file_mutex.acquire()
+        list_file_path = [ file_info for value in list(dict_file_info.values()) for file_info in list(value.values()) if file_info.m_type == FILE_OPER_TYPE_PUSH]
+        file_mutex.release()
+        file_path_set = set()
+        for item in list_file_path:
+            if item.m_path not in file_path_set:
+                file_path_set.add(item.m_path)
+        Logger().get_logger().info("file_path_set{} file is busy".format(file_path_set)) 
+        return file_path_set
 
     def push_file(self,threadID,m_userid,robot_id,file_path,file_type,task_id):
         if self.__shell_manager is None:

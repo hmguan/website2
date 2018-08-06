@@ -48,7 +48,7 @@ HttpResponseCode_UPLOADEXCEPTIONERROR=50
 HttpResponseCode_NOFILE=51
 HttpResponseCode_EXISTFILE=51
 HttpResponseCode_InvaildPath = 52
-
+HttpResponseCode_FileBusy = 53
 #不在线
 HttpResponseCode_RobotOffLine = 70
 
@@ -65,3 +65,5 @@ HttpResponseMsg_Failed='failed'
 HttpResponseMsg_FileNotExist = 'Cannot find file'
 HttpResponseMsg_RobotOffLine = 'Robot Not OnLine'
 HttpResponseMsg_Timeout='service timeout'
+HttpRequestMsg_UserNotExisted ='user does not exist'
+HttpResponseMsg_FileBusy = 'The file has been opened'
