@@ -9,7 +9,7 @@ import os, sys,tarfile,shutil
 import zipfile
 from db.db_users import user
 from configuration import config
-import copy
+from copy import deepcopy
 
 notify_step_function=None
 thread_wait = waitable_handle(True)
@@ -21,6 +21,7 @@ class backup_manage():
         self.task_id_=0
         self.tar_list=[]
         self.mutex = threading.RLock()
+        self.tar_mutex=threading.RLock()
         self.__check_timeout = threading.Thread(target=backup_manage.tar_threading_func, args=(self,))
         self.__check_timeout.setDaemon(True)
         self.__check_timeout.start()
@@ -55,18 +56,20 @@ class backup_manage():
                 # 同步等待
                 if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
                     wait_handler().wait_destory(pkt_id)
-                    data = shell_info.get_log_types()
-                    type_list = log.proto_log_type_vct()
-                    try:
-                        type_list.build(data, 0)
-                    except:
-                        print('get log type error exception')
-                        continue
+                    type_list = shell_info.get_log_types()
+                    # for i in range(cb):
+                    #     print(data[i], end=' ')
+                    # type_list = log.proto_log_type_vct()
+                    # try:
+                    #     type_list.build(data, 0)
+                    # except:
+                    #     print('get log type error exception')
+                    #     continue
                     for index in type_list.log_type_vct:
                         log_type[index.log_type.value] = 0  # 取并集
                         print('log_type:', index.log_type.value)
                 else:
-                    Logger().get_logger().error('failed get log type,robot:{0} it is timeout',id)
+                    Logger().get_logger().error('failed get log type,robot:{0} it is timeout'.format(id))
         for index in log_type.keys():
             ret_list.append(index)
         return ret_list
@@ -84,7 +87,6 @@ class backup_manage():
         self.task_user_[task_id] = user_id
         zip_file = self.get_user_path(user_id) + name
         zip_file_tmp=self.get_user_tmp_path(user_id)+name
-        self.get_user_tmp_path(user_id)
         hzip = tarfile.open(zip_file_tmp, "w:tar")
         self.mutex.acquire()
         self.user_task_data[user_id] = {'task': task_id, 'filepath': zip_file, 'name': name, 'handle': hzip, 'path': {},
@@ -93,8 +95,8 @@ class backup_manage():
         for id in robot_list:
             shell_info = shell_manager().get_session_by_id(int(id))
             if shell_info is not None:
+                shell_info.register_notify_log_path(self.load_log_path)
                 if shell_info.get_log_data(task_id, start_time, end_time, types) >= 0:
-                    shell_info.register_notify_log_path(self.load_log_path)
                     self.user_task_data[user_id]['wait'].append(id)
                     self.user_task_data[user_id]['path'][id] = ''
 
@@ -113,6 +115,7 @@ class backup_manage():
             return -1
         user = self.task_user_[task_id]
         if self.user_task_data.__contains__(user):
+            self.mutex.acquire()
             self.user_task_data[user]['status']=1
             for id in self.user_task_data[user]['path'].keys():
                 shell_info = shell_manager().get_session_by_id(int(id))
@@ -125,6 +128,13 @@ class backup_manage():
             self.delete_log(user,self.user_task_data[user]['name'])
             del self.user_task_data[user]
             del self.task_user_[task_id]
+            self.mutex.release()
+            self.tar_mutex.acquire()
+            for i in range(len(self.tar_list)):
+                if self.tar_list[i]['user']==user:
+                    del self.tar_list[i]
+            self.tar_mutex.release()
+
             Logger().get_logger().info('cancel get log task:{0}'.format(task_id))
             return 0
         return -1
@@ -180,11 +190,15 @@ class backup_manage():
         global notify_step_function
         if stat == -1 and data == '':  # shell此时断连的话
             for user in self.user_task_data.keys():
+                if self.user_task_data[user]['step']==100:
+                    return
+                self.mutex.acquire()
                 if not self.user_task_data[user]['shellback'].__contains__(id):
                     self.user_task_data[user]['shellback'].append(id)
                 if self.user_task_data[user]['path'].__contains__(id) :#==''表示车上没有压完文件，就断开了
                     if self.task_user_.__contains__(self.user_task_data[user]['task']):
                         if self.user_task_data[user]['path'][id] == 'null':
+                            self.mutex.release()
                             return
                         if self.user_task_data[user]['path'][id]=='ftpnull':
                             pass
@@ -195,7 +209,9 @@ class backup_manage():
                         if self.user_task_data[user]['success'].__contains__(id):
                             self.user_task_data[user]['success'].remove(id)
                         self.failed_get_log(user)
+                        self.mutex.release()
                         return
+                    self.mutex.release()
                 else:
                     return
 
@@ -206,6 +222,7 @@ class backup_manage():
             return
         user = self.task_user_[int(path.task_id)]
         if self.user_task_data[user]['status']==1:return
+        self.mutex.acquire()
         if not self.user_task_data[user]['shellback'].__contains__(id):
             self.user_task_data[user]['shellback'].append(id)
         if len(path.vct_log_file_name) == 0:  # 没有文件返回
@@ -217,7 +234,9 @@ class backup_manage():
                 if self.user_task_data[user]['success'].__contains__(id):
                     self.user_task_data[user]['success'].remove(id)
                 self.failed_get_log(user)
+                self.mutex.release()
                 return
+        self.mutex.release()
         self.mutex.acquire()
         if len(path.vct_log_file_name) != 0 and path.task_id==self.user_task_data[user]['task']:
             print('id_log_path', id, path.vct_log_file_name[0])
@@ -236,26 +255,33 @@ class backup_manage():
     def tar_threading_func(self):
         global notify_step_function,thread_wait
         while True:
-            if thread_wait.wait(0xffffffff) == False:
-                pass
+            thread_wait.wait(0xffffffff)
             print('tar_list1:', self.tar_list)
-            if len(self.tar_list) > 0:
-                user_id = self.tar_list[0]['user']
-                file_path = self.tar_list[0]['path']
+            while True:
+                self.tar_mutex.acquire()
+                if len(self.tar_list)<=0:
+                    self.tar_mutex.release()
+                    break
+                tar_tmp=deepcopy(self.tar_list[0])
+                del self.tar_list[0]
+                self.tar_mutex.release()
+                print('tar_list2:', tar_tmp)
+                user_id=tar_tmp['user']
+                file_path = tar_tmp['path']
+
                 open_path = self.get_user_tmp_path(user_id)
                 zip_file = self.get_user_path(user_id) + self.user_task_data[int(user_id)]['name']
-                zip_file_tmp = self.get_user_tmp_path(user_id) + self.user_task_data[user_id]['name']
+                zip_file_tmp = open_path + self.user_task_data[user_id]['name']
                 if self.user_task_data[int(user_id)]['handle'] is not None:
                     handle = self.user_task_data[user_id]['handle']
 
-                print('tar_list2:', self.tar_list)
-                if(self.tar_list[0]['path'])=='last':
+
+                if file_path=='last':
                     handle.close()
                     print('close task')
                     shutil.move(zip_file_tmp, zip_file)
                     if os.path.exists(open_path):
                         shutil.rmtree(open_path)
-                    del self.tar_list[0]
                 else:
                     print('write------', file_path, open_path, self.tar_list)
                     Logger().get_logger().info('tar log')
@@ -263,7 +289,7 @@ class backup_manage():
                     if os.path.isfile(filefullpath):
                         if os.path.isfile(zip_file_tmp):#防止文件被删除
                             handle.add(filefullpath, arcname=file_path)
-                    del self.tar_list[0]
+
                     if self.user_task_data[int(user_id)]['step'] == 100 :
                         handle.close()
                         print('close task')
@@ -281,27 +307,33 @@ class backup_manage():
         if file_path=='':
             #最后一个断线or没有文件，
             self.user_task_data[int(user_id)]['step'] = 100
+            self.tar_mutex.acquire()
             self.tar_list.append({'path': 'last', 'user': int(user_id)})
+            self.tar_mutex.release()
             thread_wait.sig()
             notify_step_function({'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log, 'user_id': user_id,
                                   'task_id': self.user_task_data[user_id]['task']})
             return
         print('step', step, error_code, status)
         if step == 100 and status == 1:
+            self.mutex.acquire()
             if not self.user_task_data[user_id]['success'].__contains__(robot_id):
-                self.mutex.acquire()
                 self.user_task_data[user_id]['success'].append(robot_id)
-                self.mutex.release()
             if self.user_task_data[user_id]['pull_list'].__contains__(robot_id):
                 self.user_task_data[user_id]['pull_list'].remove(robot_id)
+            self.mutex.release()
             tmp = str(robot_id) + '_' + file_path[file_path.rfind('/') + 1:]
+            self.tar_mutex.acquire()
             if len(self.user_task_data[user_id]['success'])+len(self.user_task_data[user_id]['failed'])==len(self.user_task_data[user_id]['wait']):
                 self.user_task_data[int(user_id)]['step'] = 100
             self.tar_list.append({'path': tmp, 'user': int(user_id)})
+            self.tar_mutex.release()
             print('tar--list0',self.tar_list )
             thread_wait.sig()
         if error_code != 0:
+            self.mutex.acquire()
             self.user_task_data[user_id]['path'][robot_id] = 'ftpnull'
+            self.mutex.release()
             if not self.user_task_data[user_id]['failed'].__contains__(robot_id):
                 self.mutex.acquire()
                 self.user_task_data[user_id]['failed'].append(robot_id)
