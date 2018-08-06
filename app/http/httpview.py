@@ -66,8 +66,9 @@ def upload_file():
                     if os.path.exists(folder_path) == False:
                         os.makedirs(folder_path)
                     file_path = os.path.join(folder_path, filename)
-                    result = status(file_path)
-                    if result is True:
+
+                    #The judgment is open only when the file exists
+                    if os.path.exists(file_path) and status(file_path):
                         return jsonify({'code': errtypes.HttpResponseCode_FileBusy, 'msg': errtypes.HttpResponseMsg_FileBusy})
                     
                     file.save(file_path)
