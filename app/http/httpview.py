@@ -20,11 +20,11 @@ def status(file_path):
     return is_opened
 
 def get_all_pid():
-    """获取当前所有进程"""
+    #获取当前所有进程
     return [_i for _i in os.listdir('/proc') if _i.isdigit()]
 
 def get_all_fd(file_path):
-    """获取所有已经打开该文件的fd路径"""
+    #获取所有已经打开该文件的fd路径
     all_fd = []
     if file_path.startswith('./'):
         file_path = os.path.abspath(file_path)

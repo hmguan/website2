@@ -38,7 +38,7 @@ class backupview(base_event):
                 return jsonify({'code': errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed,'tasl_id':task_id})
 
         if 'cancle_get_log' == event:
-            task_id=json_data.get['task_id']
+            task_id=json_data['task_id']
             if type(task_id) != int or task_id is None:
                 return {'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''}
             back = cancel_get_log(task_id)
