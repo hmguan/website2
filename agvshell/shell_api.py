@@ -125,7 +125,7 @@ def walk_file(root_path,retention_time,model=None):
     if os.path.isdir(root_path) == False:
         return
 
-    current_timestamp = int(round(time.time() * 1000))
+    current_timestamp = int(round(time.time()))
     # files = os.listdir(filepath)
     # for file_name in files:
     #     fi_d = os.path.join(filepath,file_name)
@@ -139,11 +139,11 @@ def walk_file(root_path,retention_time,model=None):
             dirs[:] = list(set(dirs).intersection(set(model)))
         for file_name in files:
             file_path = os.path.join(root, file_name)
-            last_update_file = os.path.getmtime(file_path)
+            last_update_file = int(os.path.getmtime(file_path))
             if last_update_file >= current_timestamp :
                 continue
             elif (current_timestamp - last_update_file) > retention_time:
-                if skip_file(file_name) is not False:
+                if skip_file(file_name) is False:
                     Logger().get_logger().info('remove file:filename{}'.format(file_path))
                     os.remove(file_path)
 

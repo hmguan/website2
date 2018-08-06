@@ -51,7 +51,7 @@ class produce_config(config):
 
 system_config = {
     #系统日志保留时间
-    'retention_time_min':10*24*60,
+    'retention_time_min':15*24*60,
     #检测时间间隔
     'time_intervel_sec':10*60,
     #检测路径
