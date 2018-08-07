@@ -336,6 +336,7 @@ class user_transfer_queue(object):
             if self.__task_thread_pool_push is None:
                 self.__task_thread_pool_push = task_thread_pool()
             if self.__task_thread_pool_push.add_task(task) != -1 :
+                Logger().get_logger().info("push_file_task robot_id{0},file_path{1} task_id{2}".format(robot_id,file_path,task_id)) 
                 task_list.append({'robot_id':robot_id,'task_id':task_id})
             else:
                 err_robot.append(robot_id)
@@ -359,6 +360,7 @@ class user_transfer_queue(object):
             task = file_task(userid,item['robot_id'],item['file_path'],file_type,FILE_OPER_TYPE_PULL,task_id,item['local_path'])
             if self.__task_thread_pool_pull.add_task(task) != -1 :
                 task_list.append({'robot_id':item['robot_id'],'task_id':task_id,'file_path':item['file_path']})
+                Logger().get_logger().info("pull_file_task robot_id{0},localpath{1} task_id{2}".format(item['robot_id'],item['local_path'],task_id))
             else:
                 err_robot.append(item['robot_id'])
         return task_list , err_robot
@@ -606,10 +608,11 @@ class file_manager():
         t_file_info.m_hd = self.__file_rw.create_file(t_file_info.m_name)
         if -1 == t_file_info.m_hd:
             print("wite file[%s] failure" % t_file_info.m_name)
+            self.remove_file_info(robot_id,proto_pull_head.file_id.value)
             file_mutex.release()
             #notify agvshell
-            self.notify(userid,robot_id,file_path,t_file_info.m_type,0,ERRNO_FILE_CREATE,-1,taskId)
-            self.task_finish(userid,threadID,taskId,t_file_info.m_oper_type)
+            self.notify(t_file_info.m_user_id,robot_id,t_file_info.m_path,t_file_info.m_type,0,ERRNO_FILE_CREATE,-1,t_file_info.m_task_id)
+            self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
             return ERRNO_FILE_CREATE
         
         t_file_info.m_size = proto_pull_head.total_size.value
@@ -841,6 +844,7 @@ class file_manager():
 
             self.__transfer_queue_mutex.acquire()
             transfer_queue = self.__map_user_transfer_queue.get(user_id)
+            Logger().get_logger().info('delete task user_id:{} robot_id:{} task_id:{}'.format(user_id,robot_id, task_id_list))
             if transfer_queue :
                 #取消待传输文件任务
                 del_task = transfer_queue.del_task(len(task_id_list),lambda task:task.m_task_id in task_id_list and task.m_robot_id == robot_id)
@@ -962,7 +966,7 @@ class file_manager():
                         Logger().get_logger().info('file name[{0}] transform timeout:{1}.'.format(v1[k2].m_name, diff_time))
                         if v1[k2].m_hd is not None and -1 != v1[k2].m_hd:
                             v1[k2].m_hd.close()
-                        if FILE_OPER_TYPE_PULL == v1[k2].m_oper_type:
+                        if FILE_OPER_TYPE_PULL == v1[k2].m_oper_type and os.path.exists(v1[k2].m_name):
                             t_size,t_ctime,t_atime,t_mtime = self.__file_rw.get_file_attr(v1[k2].m_name)
                             if t_size != v1[k2].m_size:
                                 shutil.rmtree(v1[k2].m_name)
