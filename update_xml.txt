@@ -1,0 +1,9 @@
+
+/etc/agv/nsp.xml  nsp timeout tick&12345678
+
+
+
+     /etc/agv/nsp.xml  nsp        boardcast      port&10009
+
+
+/etc/agv/var/swheel.xml  wheels wheel id 1
