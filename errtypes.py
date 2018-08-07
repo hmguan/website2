@@ -22,12 +22,6 @@ TypeShell_UpdateProcessList = 0x0000010a
 TypeMT_Error=0x00000601
 TypeMT_Offline=0x00000602
 
-
-#前端下载文件类型
-HttpRequestFileType_Patch = 0x00000001
-HttpRequestFileType_BlackBox = 0x00000002
-HttpRequestFileType_Bin = 0x00000003
-
 ###############################以下定义http状态响应码############################
 HttpResponseCode_Failed=-1
 HttpResponseCode_Normal=0
