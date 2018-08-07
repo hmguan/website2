@@ -232,3 +232,19 @@ def update_robot_process_config_list(robot_id,process_list):
         return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def is_file_occupied(author_id,file_type,file_name):
+    from db.db_users import user
+    from configuration import get_config_path
+    if type(author_id) != int  or type(file_type)!= int or type(file_name) != str:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        user_name = user.query_name_by_id(author_id)
+        result = 0
+        if user_name:
+            file_path = get_config_path(user_name,file_type) + file_name
+            result = is_file_busy(file_path)
+            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal ,'bOccupied':result}
+        return {'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted}
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

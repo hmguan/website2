@@ -101,11 +101,11 @@ def thread_check_file_expired():
 
     while is_exit_thread == False:
         retention_time_min = system_config.get('retention_time_min')
-        if retention_time_min is None:
+        if retention_time_min is None or retention_time_min <= 0:
             retention_time_min = default_retention_time_min
 
         time_intervel_sec = system_config.get('time_intervel_sec')
-        if time_intervel_sec is None:
+        if time_intervel_sec is None or time_intervel_sec <= 0:
             time_intervel_sec = default_time_intervel_sec
 
         path_config = system_config.get('path_element')
@@ -125,7 +125,7 @@ def walk_file(root_path,retention_time,model=None):
     if os.path.isdir(root_path) == False:
         return
 
-    current_timestamp = int(round(time.time() * 1000))
+    current_timestamp = int(round(time.time()))
     # files = os.listdir(filepath)
     # for file_name in files:
     #     fi_d = os.path.join(filepath,file_name)
@@ -139,11 +139,11 @@ def walk_file(root_path,retention_time,model=None):
             dirs[:] = list(set(dirs).intersection(set(model)))
         for file_name in files:
             file_path = os.path.join(root, file_name)
-            last_update_file = os.path.getmtime(file_path)
+            last_update_file = int(os.path.getmtime(file_path))
             if last_update_file >= current_timestamp :
                 continue
             elif (current_timestamp - last_update_file) > retention_time:
-                if skip_file(file_name) is not False:
+                if skip_file(file_name) is False:
                     Logger().get_logger().info('remove file:filename{}'.format(file_path))
                     os.remove(file_path)
 
@@ -219,6 +219,9 @@ def get_online_robot_list():
     global global_robot_info
     robot_temp = copy.deepcopy(global_robot_info)
     for mac_key,item in robot_temp.items():
+        if item.id not in process_list:
+            continue
+        
         process = process_list.get(item.id)
         robot_info = {'robot_id':item.id,'robot_mac':mac_key,'robot_host':item.host,
                       'shell_time':shelltime.get(item.id),'shell_version': versionifno.get(item.id),
@@ -315,7 +318,9 @@ def change_pull_file_dir(path):
 def change_file_block_size(size):
     file_manager().change_block_size(size)
 
-
+#user_id  1
+#robot_id 1
+#task_id_list [1,2,3,4...]
 def cancle_file_transform(user_id, robot_id, task_id_list) ->list:
     return file_manager().cancle_file_transform(user_id,robot_id,task_id_list)
 
@@ -443,3 +448,9 @@ def query_robot_process_config_info(robot_id):
 
 def update_process_config_info(robot_id,process_list):
     return shell_manager().update_process_config_info(robot_id,process_list)
+
+def is_file_busy(filepath) ->int:
+    file_path_set = file_manager().query_file_queue_used()  
+    if filepath in file_path_set:
+        return 1
+    return 0

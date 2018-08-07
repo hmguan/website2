@@ -14,11 +14,13 @@ from agvshell.shell_api import push_file_to_remote
 from agvshell.transfer_file_types import *
 import errtypes
 import os
+from configuration import config
+
 
 class package_view(base_event):
     def __init__(self):
         super(package_view,self).__init__()
-        self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages','event_robot_upgrade','event_download_files')
+        self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages','event_robot_upgrade','event_download_files','event_exist_files')
         
     def flask_recvdata(self,requst_obj):
         data = requst_obj.get_data()
@@ -93,4 +95,31 @@ class package_view(base_event):
             if file_path[0] == '.':
                 file_path = file_path[1:]
             ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'file_path':file_path}
+        
+        elif 'event_exist_files'==event:
+            user_id = json_data.get('user_id')
+            file_name = json_data.get('file_name')
+            file_type_index = json_data.get('file_type')
+            user_name = user.query_name_by_id(user_id)
+            if user_name is None:
+                return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'用户不存在'})
+
+            file_type=''
+            if file_type_index==errtypes.HttpRequestFileType_Bin:
+                file_type=config.BINFOLDER
+            elif file_type_index==errtypes.HttpRequestFileType_BlackBox:
+                file_type=config.BLACKBOXFOLDER  
+            elif file_type_index==errtypes.HttpRequestFileType_Patch:
+                file_type=config.PATCHFOLDER  
+            else:
+                 return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'文件类型错误'})
+
+           
+
+            file_path = config.ROOTDIR +user_name +file_type + file_name
+            print(file_path)
+            if os.path.exists(file_path) == False:
+                return jsonify({'code': errtypes.HttpResponseCode_NOFILE,'msg':'文件不存在'''})
+
+            ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal}
         return jsonify(ret)

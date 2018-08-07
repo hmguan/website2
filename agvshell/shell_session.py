@@ -42,7 +42,7 @@ class shell_session(tcp.obtcp):
         self.__upgrading = 0
         self.__current_netio_r = 0.0
         self.__current_netio_t = 0.0
-        self.__log_type=b''
+        self.__log_type=log.proto_log_type_vct()#bytearray()
         self.__previous_timestamp = int(round(time.time() * 1000))
         self.__push_notify_cb = push_notify
         self.__shell_process_config_list = []
@@ -352,9 +352,9 @@ class shell_session(tcp.obtcp):
         if day == 0:
             value = '%02d:%02d:%02d' % (hour,mini,second)
         elif day > 1:
-            value = '%d days %02d:%02d:%02d' % (day, hour, mini, second)
+            value = '%d-%02d:%02d:%02d' % (day, hour, mini, second)
         else:
-            value= '%d day %02d:%02d:%02d' % (day,hour,mini,second)
+            value= '%d-%02d:%02d:%02d' % (day,hour,mini,second)
 
         return value
 
@@ -376,7 +376,7 @@ class shell_session(tcp.obtcp):
         return pkt_id
 
     def recv_log_type(self, pkt_id, data):
-        self.__log_type = data
+        self.__log_type.build(data, 0)
         wait_handler().wait_singal(pkt_id)
 
     def get_log_types(self):
@@ -384,7 +384,6 @@ class shell_session(tcp.obtcp):
 
     def get_log_data(self,task_id, start_time, end_time, types):
         pkt = log.proto_log_condition()
-        # pkt.phead.id(task_id)
         pkt.task_id(task_id)
         pkt.start_time(start_time)
         pkt.end_time(end_time)
