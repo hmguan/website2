@@ -63,7 +63,7 @@ class HBaseApi(object):
     def __del__(self):
         self.transport.close()
 
-    def __del_table(self,table):
+    def del_table(self,table):
         self.client.disableTable(table)
         self.client.deleteTable(table)
 

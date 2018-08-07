@@ -15,6 +15,7 @@ def find_target(root,tar_node):
     return None
 
 
+#修改属性
 def property_mode(index,element,proerty,value):
     print(element,proerty,value)
     tree = ET.parse(element[0])
@@ -31,7 +32,8 @@ def property_mode(index,element,proerty,value):
 
     root.set(proerty, value)
     tree.write(element[0])
-  
+
+ # 修改元素
 def element_mode(index,element,value):
     print(element,value)
 

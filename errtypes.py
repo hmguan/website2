@@ -37,7 +37,7 @@ HttpResponseCode_TimeOut=22
 #用户管理
 HttpResponseCode_InvaildToken=23
 HttpResponseCode_TimeoutToken=24
-HttpResponseCode_InvaildUserAndPwd=25
+HttpResponseCode_InvaildUserOrPwd=25
 HttpResponseCode_UserOffline=26
 HttpResponseCode_UserExisted=27
 HttpResponseCode_UserNotExisted=28
