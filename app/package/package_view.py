@@ -74,7 +74,7 @@ class package_view(base_event):
 
                 user_name = retval.user.username
                 package_name = retval.package_name
-                file_path = get_config_path(user_name,errtypes.HttpRequestFileType_Patch) + package_name
+                file_path = get_config_path(user_name,httpRequestCode.HttpRequestFileType_Patch) + package_name
                 if os.path.exists(file_path) == False:
                     return jsonify({'code': errtypes.HttpResponseCode_InvaildPath, 'msg': errtypes.HttpResponseMsg_InvaildPath })
                 
