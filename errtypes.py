@@ -6,7 +6,7 @@ TypeError_UserWrongPWD = 0x00000502
 TypeError_UserLogined =  0x00000503
 
 #shell模块与前端socketio交互类型定义
-TypeShell_SokcetIOConnect = 0x00000100
+TypeShell_WebSokcetConnect = 0x00000000
 TypeShell_NewArrival = 0x00000101
 TypeShell_Offline = 0x00000102
 TypeShell_UpdateSoftware=0x00000103
@@ -21,12 +21,6 @@ TypeShell_UpdateProcessList = 0x0000010a
 #mt与前端交互类型定义
 TypeMT_Error=0x00000601
 TypeMT_Offline=0x00000602
-
-
-#前端下载文件类型
-HttpRequestFileType_Patch = 0x00000001
-HttpRequestFileType_BlackBox = 0x00000002
-HttpRequestFileType_Bin = 0x00000003
 
 ###############################以下定义http状态响应码############################
 HttpResponseCode_Failed=-1

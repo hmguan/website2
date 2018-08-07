@@ -92,7 +92,8 @@ class shell_manager():
         '''
         while self.__is_exist_th == False:
             # 文件传输超时检测
-            #Logger().get_logger().info('start file manager check timeout,current timestamp:{0}'.format(current_timestamp))
+
+            #Logger().get_logger().info('start file manager check timeout,current timestamp:{0}'.format(int(round(time.time() * 1000))))
             file_rw.file_manager().check_file_timeout(int(round(time.time() * 1000)))
             #Logger().get_logger().info('end file manager check timeout')
 
@@ -106,6 +107,7 @@ class shell_manager():
                     self.__mutex.release()
 
                     if session_link is None:
+                        Logger().get_logger().error('the robot link is null,robot_id is:{0}'.format(key_item))
                         continue
 
                     current_timestamp = int(round(time.time() * 1000))

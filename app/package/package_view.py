@@ -13,6 +13,7 @@ from configuration import get_config_path
 from agvshell.shell_api import push_file_to_remote
 from agvshell.transfer_file_types import *
 import errtypes
+import httpRequestCode
 import os
 from configuration import config
 
@@ -105,11 +106,11 @@ class package_view(base_event):
                 return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'用户不存在'})
 
             file_type=''
-            if file_type_index==errtypes.HttpRequestFileType_Bin:
+            if file_type_index==httpRequestCode.HttpRequestFileType_Bin:
                 file_type=config.BINFOLDER
-            elif file_type_index==errtypes.HttpRequestFileType_BlackBox:
+            elif file_type_index==httpRequestCode.HttpRequestFileType_BlackBox:
                 file_type=config.BLACKBOXFOLDER  
-            elif file_type_index==errtypes.HttpRequestFileType_Patch:
+            elif file_type_index==httpRequestCode.HttpRequestFileType_Patch:
                 file_type=config.PATCHFOLDER  
             else:
                  return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'文件类型错误'})

@@ -42,7 +42,7 @@ class shell_session(tcp.obtcp):
         self.__upgrading = 0
         self.__current_netio_r = 0.0
         self.__current_netio_t = 0.0
-        self.__log_type=b''
+        self.__log_type=log.proto_log_type_vct()#bytearray()
         self.__previous_timestamp = int(round(time.time() * 1000))
         self.__push_notify_cb = push_notify
         self.__shell_process_config_list = []
@@ -196,7 +196,7 @@ class shell_session(tcp.obtcp):
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_KEEPALIVE, _id=self.__net_manager.allocate_pkt())
         pkt.set_pkt_size(24)
         stream = pkt.serialize()
-        print('post alive pkt to target {0}'.format(self.__target_host))
+        Logger().get_logger().info('post alive pkt to target {0}'.format(self.__target_host))
         return self.send(stream, pkt.length())
 
     def post_sysinfo_fixed_request(self):
@@ -229,15 +229,12 @@ class shell_session(tcp.obtcp):
             self.__shell_serviceinfo['uptime']=info.uptime.value
             self.__shell_serviceinfo['disk_used_size']=info.disk_used_size.value
             self.__shell_serviceinfo['host_time'] = info.host_time.value
-            #print('netio:',info.net_io_rec.value - self.__current_netio_r)
-            #print('time_stamp:',self.__timestamp-self.__previous_timestamp)
-            
+
             dec_timestamp = (self.__timestamp-self.__previous_timestamp)/1000
             if dec_timestamp > 0:
                 self.__shell_serviceinfo['net_io_rec'] = int((info.net_io_rec.value - self.__current_netio_r)/float(dec_timestamp))
                 self.__shell_serviceinfo['net_io_tra'] = int((info.net_io_tra.value - self.__current_netio_t)/float(dec_timestamp))
-            #print('net_io_rec',self.__shell_serviceinfo['net_io_rec'])
-            #print('net_io_tra',self.__shell_serviceinfo['net_io_tra'])
+
             self.__current_netio_r=info.net_io_rec.value
             self.__current_netio_t=info.net_io_tra.value
             self.__previous_timestamp=self.__timestamp
@@ -379,16 +376,14 @@ class shell_session(tcp.obtcp):
         return pkt_id
 
     def recv_log_type(self, pkt_id, data):
-        self.__log_type = data
+        self.__log_type.build(data, 0)
         wait_handler().wait_singal(pkt_id)
 
     def get_log_types(self):
-
         return self.__log_type
 
     def get_log_data(self,task_id, start_time, end_time, types):
         pkt = log.proto_log_condition()
-        # pkt.phead.id(task_id)
         pkt.task_id(task_id)
         pkt.start_time(start_time)
         pkt.end_time(end_time)

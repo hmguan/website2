@@ -7,13 +7,13 @@ import uuid
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 def get_config_path(user_name,file_type):
-    import errtypes
+    import httpRequestCode
     config_path = ''
-    if file_type == errtypes.HttpRequestFileType_Patch:
+    if file_type == httpRequestCode.HttpRequestFileType_Patch:
         config_path = config.PATCHFOLDER
-    elif file_type == errtypes.HttpRequestFileType_BlackBox:
+    elif file_type == httpRequestCode.HttpRequestFileType_BlackBox:
         config_path = config.BLACKBOXFOLDER
-    elif file_type == errtypes.HttpRequestFileType_Bin:
+    elif file_type == httpRequestCode.HttpRequestFileType_Bin:
         config_path = config.BINFOLDER
     else:
         pass
@@ -30,9 +30,9 @@ class config:
     BINFOLDER = '/bin/'
     BACKUPFILEDER='/backup/'
     TRANSMIT_BLOCK_SIZE = 32*1024
-    SOCKET_PORT=5008
+    WEB_PORT=5008
     HTTP_PORT=5010
-
+    WEBSOCKET_PORT=5011
 
     @staticmethod
     def init_app(app):

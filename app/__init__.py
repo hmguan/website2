@@ -1,10 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from configuration import config_setting
-from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
-
-local_socketio=SocketIO()
 
 def create_app(config_name):
     '''
@@ -49,15 +46,3 @@ def create_http_app(config_name)->Flask:
     upapp.register_blueprint(http_blueprint)
 
     return upapp
-
-def create_socketio(app):
-    '''
-    create the socketio server,
-    this server will communication with every browser
-    :param app:the application instance,it's necessary.
-    :return:the socketio object
-    '''
-    global local_socketio
-    local_socketio.init_app(app,async_mode = 'eventlet')#, async_mode='eventlet', message_queue='redis://127.0.0.1:6700'
-    # local_socketio = SocketIO(app, async_mode='eventlet', message_queue='redis://127.0.0.1:6379/10', logger=False) #,ping_timeout=3,ping_interval=1    , message_queue='redis://127.0.0.1:6379/10'
-    return local_socketio

@@ -74,8 +74,9 @@ class obtcp(object):
 
         # initialize self tst struct
         self.tst = tcp_tst_t()
-        self.tst.parser = tcptst_parse_t(tstdef.tcp_parser)
-        self.tst.builder = tcptst_build_t(tstdef.tcp_builder)
+        if tstdef is not None:
+            self.tst.parser = tcptst_parse_t(tstdef.tcp_parser)
+            self.tst.builder = tcptst_build_t(tstdef.tcp_builder)
         self.tst.cb = 8
 
         # declare and initialize endpoint info
