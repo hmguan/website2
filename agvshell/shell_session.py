@@ -196,7 +196,7 @@ class shell_session(tcp.obtcp):
         pkt = head.proto_head(_type=typedef.PKTTYPE_AGV_SHELL_KEEPALIVE, _id=self.__net_manager.allocate_pkt())
         pkt.set_pkt_size(24)
         stream = pkt.serialize()
-        print('post alive pkt to target {0}'.format(self.__target_host))
+        Logger().get_logger().info('post alive pkt to target {0}'.format(self.__target_host))
         return self.send(stream, pkt.length())
 
     def post_sysinfo_fixed_request(self):
@@ -229,15 +229,12 @@ class shell_session(tcp.obtcp):
             self.__shell_serviceinfo['uptime']=info.uptime.value
             self.__shell_serviceinfo['disk_used_size']=info.disk_used_size.value
             self.__shell_serviceinfo['host_time'] = info.host_time.value
-            #print('netio:',info.net_io_rec.value - self.__current_netio_r)
-            #print('time_stamp:',self.__timestamp-self.__previous_timestamp)
-            
+
             dec_timestamp = (self.__timestamp-self.__previous_timestamp)/1000
             if dec_timestamp > 0:
                 self.__shell_serviceinfo['net_io_rec'] = int((info.net_io_rec.value - self.__current_netio_r)/float(dec_timestamp))
                 self.__shell_serviceinfo['net_io_tra'] = int((info.net_io_tra.value - self.__current_netio_t)/float(dec_timestamp))
-            #print('net_io_rec',self.__shell_serviceinfo['net_io_rec'])
-            #print('net_io_tra',self.__shell_serviceinfo['net_io_tra'])
+
             self.__current_netio_r=info.net_io_rec.value
             self.__current_netio_t=info.net_io_tra.value
             self.__previous_timestamp=self.__timestamp

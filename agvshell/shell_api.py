@@ -283,7 +283,7 @@ def get_robot_detail_info(robot_id):
     '''
     detail_info = shell_manager().get_fixed_sysytem_info(robot_id)
     global global_mutex
-    if global_mutex.acquire(timeout=3) == False:
+    if global_mutex.acquire() == False:
         return None
     else:
         global global_robot_info

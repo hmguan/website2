@@ -170,9 +170,8 @@ def modify_file_lock(opcode, robot_list):
 
 def query_ftp_port():
     from configuration import config
-
     try:
-        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'ftp_port': config.HTTP_PORT}
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'ftp_port': config.HTTP_PORT,'websocket_port':config.WEBSOCKET_PORT}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 

@@ -30,9 +30,9 @@ class config:
     BINFOLDER = '/bin/'
     BACKUPFILEDER='/backup/'
     TRANSMIT_BLOCK_SIZE = 32*1024
-    SOCKET_PORT=5008
+    WEB_PORT=5008
     HTTP_PORT=5010
-
+    WEBSOCKET_PORT=5011
 
     @staticmethod
     def init_app(app):

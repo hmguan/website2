@@ -6,7 +6,7 @@ TypeError_UserWrongPWD = 0x00000502
 TypeError_UserLogined =  0x00000503
 
 #shell模块与前端socketio交互类型定义
-TypeShell_SokcetIOConnect = 0x00000100
+TypeShell_WebSokcetConnect = 0x00000000
 TypeShell_NewArrival = 0x00000101
 TypeShell_Offline = 0x00000102
 TypeShell_UpdateSoftware=0x00000103
