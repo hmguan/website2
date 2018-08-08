@@ -23,12 +23,15 @@ TypeMT_Error=0x00000601
 TypeMT_Offline=0x00000602
 
 ###############################以下定义http状态响应码############################
-HttpResponseCode_Failed=-1
 HttpResponseCode_Normal=0
-HttpResponseCode_InvaildEvent=20
-HttpResponseCode_InvaildParament=21
-HttpResponseCode_TimeOut=22
-#用户管理
+
+#公共错误状态码
+HttpResponseCode_UserNotLogin=1
+HttpResponseCode_FailedVerifyToken=2
+HttpResponseCode_InvaildEvent=3
+HttpResponseCode_InvaildParament=4
+
+#用户管理相关错误状态码[100,200)
 HttpResponseCode_InvaildToken=23
 HttpResponseCode_TimeoutToken=24
 HttpResponseCode_InvaildUserOrPwd=25
@@ -37,6 +40,15 @@ HttpResponseCode_UserExisted=27
 HttpResponseCode_UserNotExisted=28
 HttpResponseCode_UserNotLogined=29
 HttpResponseCode_InvaildGroup_Name=30
+
+#用户管理错误状态码区间[200,300)
+
+
+#shell模块错误状态码区间[300,400)
+
+
+#MT模块错误状态码区间[600,700)
+
 #升级包
 HttpResponseCode_UPLOADEXCEPTIONERROR=50
 HttpResponseCode_NOFILE=51
@@ -52,6 +64,8 @@ HttpResponseCode_ServerError=500
 
 #############################以下定义http响应消息###############################
 HttpResponseMsg_Normal='success'
+
+HttpResponseMsg_UserNotLogin='current operate user is not login'
 HttpResponseMsg_InvaildEvent='invaild input event'
 HttpResponseMsg_InvaildParament='invalid input parament'
 HttpResponseMsg_InvaildPath='File Not Found'

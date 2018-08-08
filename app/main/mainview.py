@@ -8,10 +8,6 @@ from pynsp.logger import *
 from . import main
 import errtypes
 
-# from db.db_users import user
-# from configuration import config
-# from db.db_package import package_manager
-
 #the dict save the relationship route with event,
 #{event:object}
 map_event_obj = {}
@@ -21,18 +17,21 @@ def index():
     print('main route method:',request.method)
     if 'GET' == request.method:
         uid_value = uuid.uuid4()
-        # flask.session['uid']=uid_value
 
         resp= flask.make_response(render_template('index.html'))
         resp.set_cookie('token',str(uid_value).encode('utf-8'))
-        print('--------------uid:',uuid.uuid4())
         return resp
-    # try:
-    data = request.get_data()
-    print('data:',data)
-    json_data = json.loads(data.decode('utf-8'))
-    event = json_data['event']
-    print(event)
+    try:
+        data = request.get_data()
+        print('data:',data)
+        json_data = json.loads(data.decode('utf-8'))
+        login_id = json_data.get('login_id')
+        if login_id is None or type(login_id) != type(int):
+            return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament })
+
+        event = json_data.get('event')
+    except Exception as e:
+        return jsonify({'code':errtypes.HttpResponseCode_ServerError,'msg': str(e)})
 
     if event in map_event_obj.keys():
         obj = map_event_obj[event]
@@ -57,10 +56,6 @@ def write_log():
             print('the function object of event:{0} is null'.format(event))
 
     return jsonify({'code': errtypes.HttpResponseCode_InvaildEvent, 'msg': errtypes.HttpResponseMsg_InvaildEvent})
-
-@main.route('/test')
-def test():
-    return render_template('test.html')
 
 class base_event():
     def __init__(self):
