@@ -29,7 +29,11 @@ def client_closed(client_identify):
         thread_lock.release()
 
 def client_msg(msg_data,client_identify):
-    json_data = json.loads(msg_data)
+    try:
+        json_data = json.loads(msg_data)
+    except Exception as e:
+        Logger().get_logger().error('WebSocket failed to convert str to json,please check it')
+        return
 
     print('WebSocket get client message:', json_data)
     code=json_data['code']

@@ -2,7 +2,6 @@
 # pip install flask-socketio
 # pip install sqlalchemy
 
-eventlet==0.23.0
 Flask==1.0.2
 Flask-SocketIO==3.0.0
 Jinja2==2.10
@@ -10,6 +9,4 @@ SQLAlchemy==1.2.7
 Flask-Cors==3.0.4
 virtualenv==15.2.0
 Werkzeug==0.14.1
-
-this is a shit
 

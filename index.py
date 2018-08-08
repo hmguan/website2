@@ -15,6 +15,11 @@ from app.soketio.socketio_agent_center import *
 
 app=create_app('default')
 
+@app.before_request
+def before_request():
+    mm = request
+    return
+
 # 异常处理函数
 def quiet_errors(exc_type, exc_value, tb):
     Logger().get_logger().error(''.join(traceback.format_exception(exc_type, exc_value, tb)))
