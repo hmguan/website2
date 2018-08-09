@@ -1,7 +1,7 @@
 
 
 from db import session_obj,user_info,group_alias_info
-
+from pynsp.logger import*
 
 class user:
     def __init__(self):
@@ -39,8 +39,12 @@ class user:
         if user.is_exist(username)>=0:
             return -1
         user_obj = user_info(username=username,pwd=pwd,identity_type=identity_type,user_path='/',permission = permission)
-        session_obj.add(user_obj)
-        session_obj.commit()
+        try:
+            session_obj.add(user_obj)
+            session_obj.commit()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
         return 0
 
     #更新密码
@@ -51,9 +55,13 @@ class user:
             return -1
         if tmp.pwd !=pwd:
             return -2
-
-        tmp.pwd = new_pwd
-        session_obj.commit()
+        
+        try:
+            tmp.pwd = new_pwd
+            session_obj.commit()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -3
         return 0
 
     #重置密码
@@ -62,8 +70,14 @@ class user:
         tmp = session_obj.query(user_info).filter_by(id=user_id).first()
         if tmp ==None:
             return -1
-        tmp.pwd = "e10adc3949ba59abbe56e057f20f883e"
-        session_obj.commit()
+
+        try:
+            tmp.pwd = "e10adc3949ba59abbe56e057f20f883e"
+            session_obj.commit()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
+       
         return 0
 
     @staticmethod
@@ -71,8 +85,13 @@ class user:
         tmp = session_obj.query(user_info).filter_by(id=user_id).first()
         if tmp ==None:
             return -1
-        tmp.permission = permission
-        session_obj.commit()
+        
+        try:
+            tmp.permission = permission
+            session_obj.commit()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
         return 0
 
     #删除用户
@@ -84,8 +103,12 @@ class user:
         
         #删除用户
         tmp = session_obj.query(user_info).get(ret.id)
-        session_obj.delete(tmp)
-        session_obj.commit()
+        try:
+            session_obj.delete(tmp)
+            session_obj.commit()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
         return 0
 
     #通过id 查询用户名
@@ -99,7 +122,11 @@ class user:
     #通过name 查询用户id
     @staticmethod
     def query_userid_by_name(username)->str:
-        ret = session_obj.query(user_info).filter_by(username=username).first()
+        try:
+            ret = session_obj.query(user_info).filter_by(username=username).first()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
         if not ret:
             return -1
         return ret.id
@@ -107,34 +134,50 @@ class user:
     #查询用户
     @staticmethod
     def users():
-         return session_obj.query(user_info).all()
+        try:
+            return session_obj.query(user_info).all()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
+        
 
     #查询组别名
     @staticmethod
-    def group_alias(user_id,group_name):
-        ret = session_obj.query(group_alias_info).filter_by(user_id=user_id).filter_by(name=group_name).first()
+    def group_alias(login_id,group_name):
+        try:
+            ret = session_obj.query(user_info).filter_by(id=login_id).first()
+            if not ret:
+                return -1
+            
+            ret = session_obj.query(group_alias_info).filter_by(user_id=login_id).filter_by(name=group_name).first()
+            if ret is None:
+                alias_obj = group_alias_info(user_id = login_id,name=group_name)
+                session_obj.add(alias_obj)
+                session_obj.commit()
+                return ''
+            return ret.alias
         
-        # user_obj = user.query_name_by_id(user_id)
-        # if user_obj is None:
-        #     return -1
-        
-        if not ret:
-            alias_obj = group_alias_info(user_id = user_id,name=group_name)
-            session_obj.add(alias_obj)
-            session_obj.commit()
-            return None
-        
-        return ret.alias
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
 
 
     #更新查询组别名
     @staticmethod
-    def update_group_alias(user_id,group_name,alias):
-        ret = session_obj.query(group_alias_info).filter_by(user_id=user_id).filter_by(name=group_name).first()
-        if not ret:
-            return -1
-        ret.alias = alias
-        session_obj.commit()
+    def update_group_alias(login_id,group_name,alias):
+        try:
+            ret = session_obj.query(user_info).filter_by(id=login_id).first()
+            if not ret:
+                return -1
+            
+            ret = session_obj.query(group_alias_info).filter_by(user_id=login_id).filter_by(name=group_name).first()
+            if not ret:
+                return -2
+            ret.alias = alias
+            session_obj.commit()
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -3
         return 0
 
 

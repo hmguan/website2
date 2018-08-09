@@ -11,12 +11,24 @@ from db.db_logger import logger_manager
 from datetime import datetime
 import copy
 
+
+ROOT_ID = 1
 @singleton
 class user_manager():
     def __init__(self):
         self.login_user_ = {}
         self.login_mutex_ = RLock()
 
+    def check_user_login(self,user_id)->bool:
+        self.login_mutex_.acquire()
+        if user_id in self.login_user_.keys():
+            self.login_mutex_.release()
+            return True
+        
+        self.login_mutex_.release()
+        return False
+
+    
     #生成密钥
     def generate_auth_token(self, id,expiration = 2592000):
         s = Serializer(config.SECRET_KEY, expires_in = expiration)
@@ -64,17 +76,26 @@ class user_manager():
 
 
     #添加用户
-    def register_user(self,user_name,pwd,permission):
+    def register_user(self,login_id,user_name,pwd,permission):
+        if ROOT_ID!=login_id:
+             return {'code':errtypes.HttpResponseCode_PermissionDenied}
         ret = user.append(user_name,pwd,permission)
-        if (ret<0):
+        if (ret==-1):
             return {'code':errtypes.HttpResponseCode_UserExisted}
+        if (ret==-2):
+            self.login_mutex_.release()
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
         return {'code':0}
 
     #用户登录
     def user_login(self,user_name=None,pwd=None)->dict:
         ret = user.query_userid_by_name(user_name)
-        if(ret<0):
+        if (-1==ret):
             return {'code':errtypes.HttpResponseCode_UserNotExisted}
+        if (-2==ret):
+            self.login_mutex_.release()
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
+        
 
         #step 1: 验证登录有效性
         self.login_mutex_.acquire()
@@ -85,7 +106,7 @@ class user_manager():
             msg = "密码错误"
             logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='')
             return {'code':errtypes.HttpResponseCode_InvaildUserOrPwd}
-       
+        
         #step 2: 检查踢人
         if user_id in self.login_user_.keys():
             tmp = self.login_user_[user_id].u_uuid
@@ -99,7 +120,7 @@ class user_manager():
         self.login_user_[user_id] = user_obj
 
         self.login_mutex_.release()
-        
+       
         #step 4：生成token
         token = self.generate_auth_token(user_id)
 
@@ -109,121 +130,144 @@ class user_manager():
 
 
     #注销登录
-    def user_logout(self,user_id)->dict:
+    def user_logout(self,login_id)->dict:
         self.login_mutex_.acquire()
         u_uuid=''
-        if user_id not in self.login_user_.keys():
+        if login_id not in self.login_user_.keys():
             msg = "用户未登录"
-            logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid="")
+            logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid="")
             self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_UserNotLogined}
         
-        u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
-        del self.login_user_[user_id]
+        u_uuid = copy.deepcopy(self.login_user_[login_id].u_uuid)
+        del self.login_user_[login_id]
         self.login_mutex_.release()
 
 
         msg = "注销登录，通知用户下线"
         socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
-        logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+        logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
 
         return {'code':0}
 
     #删除用户
-    def remove_user(self,user_id):
-        
+    def remove_user(self,login_id,target_id):
+        if ROOT_ID!=login_id:
+             return {'code':errtypes.HttpResponseCode_PermissionDenied}
         self.login_mutex_.acquire()
-        ret = user.remove(user_id)
-        if (ret<0):
+        ret = user.remove(target_id)
+        if (ret==-1):
             self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_UserNotExisted} # 正常情况不会出现
+        if (ret==-2):
+            self.login_mutex_.release()
+            return {'code':errtypes.HttpResponseCode_ServerError}
 
         u_uuid=''
-        if user_id in self.login_user_.keys():
-            u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
-            del self.login_user_[user_id]
+        if target_id in self.login_user_.keys():
+            u_uuid = copy.deepcopy(self.login_user_[target_id].u_uuid)
+            del self.login_user_[target_id]
             msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
-            logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+            logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
 
         msg = "删除成功"
-        logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+        logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret}
 
     #更新密码
-    def update_pwd(self,user_id,pwd,new_pwd):
+    def update_pwd(self,login_id,pwd,new_pwd):
 
         self.login_mutex_.acquire()
-        ret = user.update_pwd(user_id,pwd,new_pwd)
+        ret = user.update_pwd(login_id,pwd,new_pwd)
         if (ret==-1):
             self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_UserNotExisted}
         if (ret==-2):
             self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_InvaildUserOrPwd}
+        if (ret==-3):
+            self.login_mutex_.release()
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
 
         u_uuid=''
-        if user_id in self.login_user_.keys():
-            u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
-            del self.login_user_[user_id]
+        if login_id in self.login_user_.keys():
+            u_uuid = copy.deepcopy(self.login_user_[login_id].u_uuid)
+            del self.login_user_[login_id]
             msg = "更新密码成功，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'uuid':u_uuid},room_identify=u_uuid)
-            logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+            logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
         
 
         msg = "更新密码成功，请重新登录！"
-        logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+        logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret}
 
     #重置密码
-    def reset_pwd(self,user_id):
+    def reset_pwd(self,login_id,target_id):
+        if ROOT_ID!=login_id:
+            return {'code':errtypes.HttpResponseCode_PermissionDenied}
         
         self.login_mutex_.acquire()
-        ret = user.reset_pwd(user_id)
+        ret = user.reset_pwd(target_id)
         if (ret==-1):
             self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_UserNotExisted}
+        if (-2==ret):
+            self.login_mutex_.release()
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
 
         u_uuid=''
-        if user_id in self.login_user_.keys():
-            u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
-            del self.login_user_[user_id]
+        if target_id in self.login_user_.keys():
+            u_uuid = copy.deepcopy(self.login_user_[target_id].u_uuid)
+            del self.login_user_[target_id]
             msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'uuid':u_uuid},room_identify=u_uuid)
-            logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+            logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
 
         msg = "账号信息已被修改"
-        logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+        logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret}
 
     #重置权限
-    def reset_permission(self,user_id,permission):
-    
+    def reset_permission(self,login_id,target_id,permission):
+        if ROOT_ID!=login_id:
+            return {'code':errtypes.HttpResponseCode_PermissionDenied}
+
         self.login_mutex_.acquire()
-        ret = user.reset_permission(user_id,permission)
+        ret = user.reset_permission(target_id,permission)
         if (ret==-1):
             self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_UserNotExisted}
+        if (-2==ret):
+            self.login_mutex_.release()
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
         
         u_uuid=''
-        if user_id in self.login_user_.keys():
-            u_uuid = copy.deepcopy(self.login_user_[user_id].u_uuid)
-            del self.login_user_[user_id]
+        if target_id in self.login_user_.keys():
+            u_uuid = copy.deepcopy(self.login_user_[target_id].u_uuid)
+            del self.login_user_[target_id]
             msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
-            logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+            logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
 
         msg = "修改权限成功"
-        logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+        logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret}
     
     #查询用户
-    def users(self):
+    def users(self,login_id):
+        if ROOT_ID!=login_id:
+            return {'code':errtypes.HttpResponseCode_PermissionDenied}
+        
         ret = user.users()
+        if -2==ret:
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
+        
         dict_users=[]
         for index, value in enumerate(ret):
             dict_user={}
@@ -236,14 +280,24 @@ class user_manager():
         return {'code':0,'data':{'users':dict_users}}
 
     #查询别名
-    def group_alias(self,user_id,group_name):
-        return user.group_alias(user_id,group_name)
+    def group_alias(self,login_id,group_name):
+        ret= user.group_alias(login_id,group_name)
+        if -1==ret:
+            return {'code':errtypes.HttpResponseCode_UserNotExisted}
+        if -3==ret:
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
+        return {'code':ret,'alias':ret}
+        
 
     #更新组名
-    def update_group_alias(self,user_id,group_name,alias):
-        ret = user.update_group_alias(user_id,group_name,alias)
-        if ret<0:
+    def update_group_alias(self,login_id,group_name,alias):
+        ret = user.update_group_alias(login_id,group_name,alias)
+        if -1==ret:
+            return {'code':errtypes.HttpResponseCode_UserNotExisted}
+        if -2==ret:
             return {'code':errtypes.HttpResponseCode_InvaildGroup_Name}
+        if -3==ret:
+            return {'code':errtypes.HttpResponseCode_Sqlerror}
         return {'code':ret,'alias':ret}
 
     #查询用户uuid

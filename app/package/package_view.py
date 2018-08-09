@@ -84,18 +84,6 @@ class package_view(base_event):
                 ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'transfer_list':task_list,'error_robots':err_robots}
             except Exception as e:
                 ret = {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
-        elif 'event_download_files' == event:
-            user_id = json_data.get('user_id')
-            package_name = json_data.get('package_name')
-            user_name = user.query_name_by_id(user_id)
-            if user_name is None:
-                return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'用户不存在'})
-            file_path = config.ROOTDIR +user_name +config.PATCHFOLDER + package_name
-            if os.path.exists(file_path) == False:
-                return jsonify({'code': errtypes.HttpResponseCode_NOFILE,'msg':'文件不存在'''})
-            if file_path[0] == '.':
-                file_path = file_path[1:]
-            ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'file_path':file_path}
         
         elif 'event_exist_files'==event:
             user_id = json_data.get('user_id')

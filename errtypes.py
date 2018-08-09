@@ -30,16 +30,21 @@ HttpResponseCode_UserNotLogin=1
 HttpResponseCode_FailedVerifyToken=2
 HttpResponseCode_InvaildEvent=3
 HttpResponseCode_InvaildParament=4
+HttpResponseCode_InvaildGroup_Name=30
+HttpResponseCode_UserNotLogined=31
+
 
 #用户管理相关错误状态码[100,200)
-HttpResponseCode_InvaildToken=23
-HttpResponseCode_TimeoutToken=24
-HttpResponseCode_InvaildUserOrPwd=25
-HttpResponseCode_UserOffline=26
-HttpResponseCode_UserExisted=27
-HttpResponseCode_UserNotExisted=28
-HttpResponseCode_UserNotLogined=29
-HttpResponseCode_InvaildGroup_Name=30
+HttpResponseCode_UserExisted=100
+HttpResponseCode_Sqlerror=101
+HttpResponseCode_InvaildUserOrPwd=102
+HttpResponseCode_UserNotExisted=103
+HttpResponseCode_InvaildToken=104
+HttpResponseCode_PermissionDenied=105
+HttpResponseCode_TimeoutToken=106
+HttpResponseCode_UserOffline=107
+
+
 
 #用户管理错误状态码区间[200,300)
 
@@ -75,3 +80,6 @@ HttpResponseMsg_RobotOffLine = 'Robot Not OnLine'
 HttpResponseMsg_Timeout='service timeout'
 HttpRequestMsg_UserNotExisted ='user does not exist'
 HttpResponseMsg_FileBusy = 'The file has been opened'
+
+
+

@@ -9,6 +9,7 @@ import os,datetime
 from db.db_package import package_manager
 from pynsp.logger import *
 import os
+import httpRequestCode
 
 def status(file_path):
     open_fd_list = get_all_fd(file_path)
@@ -61,7 +62,7 @@ def upload_file():
 
                     version = request.form['version']
                     remark =request.form['remark']
-                    folder_path = get_config_path(user_name,errtypes.HttpRequestFileType_Patch)
+                    folder_path = get_config_path(user_name,httpRequestCode.HttpRequestFileType_Patch)
 
                     if os.path.exists(folder_path) == False:
                         os.makedirs(folder_path)
@@ -103,7 +104,7 @@ def download_file(url_fileinfo):
 
     user_name = user.query_name_by_id(int(userinfo[1]))
     if user_name is None:
-        Logger().get_logger().error('can not find user by user_id = {}'.format(user_id))
+        Logger().get_logger().error('can not find user by user_id = {}'.format(int(userinfo[1])))
         return '',404
 
     type_id = int(type_info[1])

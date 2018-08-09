@@ -11,12 +11,14 @@ from sqlalchemy.orm import relationship
 engine = create_engine('sqlite:///db/db_users.db',connect_args={'check_same_thread': False},encoding='utf-8')
 Base = declarative_base()
 
+
+SQL_STRING_LEN =  256
 #用户表
 class user_info(Base):
     __tablename__ = 'users'  
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String(50),nullable=False)
-    pwd= Column(String(12),nullable=False)
+    username = Column(String(258),nullable=False)                
+    pwd= Column(String(258),nullable=False)                     
     identity_type= Column(Enum('admin','guest'),nullable=False)
     user_path = Column(String(12),nullable=False)
     permission =  Column(Enum('r','w','wr'),nullable=False)
@@ -58,7 +60,7 @@ class blackbox_temps(Base):
     id= Column(Integer,primary_key = True,autoincrement=True)
     name =  Column(String(256),nullable=False)
     user_id = Column(Integer,ForeignKey('users.id'),nullable=False)
-    temps_types = Column(String(1024),nullable=False)
+    temps_types = Column(String(256),nullable=False)
     others = Column(String(256),nullable=True)
     time = Column(DateTime,nullable=False)
 
