@@ -43,13 +43,18 @@ HttpResponseCode_PermissionDenied=105
 HttpResponseCode_TimeoutToken=106
 HttpResponseCode_UserOffline=107
 
-
-
-#用户管理错误状态码区间[200,300)
-
+#文件管理错误状态码区间[200,300)
+HttpResponseCode_NoAuthority = 203
+HttpResponseCode_FileBusy = 204
+HttpResponseCode_DateBasePacketIdNotFound = 205
+HttpResponseCode_NotFileOwner = 206
 
 #shell模块错误状态码区间[300,400)
-
+HttpResponseCode_DatabaseRecordAbnormity = 300
+HttpResponseCode_IDRepetition = 301
+HttpResponseCode_TaskFull = 302
+HttpResponseCode_RobotOffLine =303
+HttpResponseCode_TaskNotExist = 304
 
 #MT模块错误状态码区间[600,700)
 
@@ -58,9 +63,7 @@ HttpResponseCode_UPLOADEXCEPTIONERROR=50
 HttpResponseCode_NOFILE=51
 HttpResponseCode_EXISTFILE=51
 HttpResponseCode_InvaildPath = 52
-HttpResponseCode_FileBusy = 53
 #不在线
-HttpResponseCode_RobotOffLine = 70
 
 HttpResponseCode_NotFound=404
 HttpResponseCode_ServerError=500
@@ -75,11 +78,21 @@ HttpResponseMsg_InvaildParament='invalid input parament'
 HttpResponseMsg_InvaildPath='File Not Found'
 HttpResponseMsg_Failed='failed'
 HttpResponseMsg_FileNotExist = 'Cannot find file'
-HttpResponseMsg_RobotOffLine = 'Robot Not OnLine'
 HttpResponseMsg_Timeout='service timeout'
 HttpRequestMsg_UserNotExisted ='user does not exist'
-HttpResponseMsg_FileBusy = 'The file has been opened'
 
+#shell 模块
+HttpResponseMsg_DatabaseRecordAbnormity = 'Database record abnormity'
+HttpResponseMsg_IDRepetition = 'ID repeat in the request'
+HttpResponseMsg_TaskFull = 'Task to reach maximum'
+HttpResponseMsg_RobotOffLine = 'Robot not OnLine'
+HttpResponseMsg_TaskNotExist ='The task does not exist'
+
+#文件管理
+HttpResponseMsg_NoAuthority = 'No authority'
+HttpResponseMsg_FileBusy = 'The file has been opened'
+HttpResponseMsg_DateBasePacketIdNotFound = 'The packetid can not be found in the database'
+HttpResponseMsg_NotFileOwner = 'Not File Owner'
 
 #用户管理相关错误状态码错误说明
 HttpResponseCodeMsg_UserExisted='user is existed'

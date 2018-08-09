@@ -233,7 +233,7 @@ class shell_manager():
         except Exception as e:
             self.__mutex.release()
             Logger().get_logger().error('modify_robot_file_lock :{}'.format(str(e)))
-            return 1
+            raise e
 
     def update_robot_ntp_server(self,robot_id,ntp_server) ->int:
         err_code = 0
@@ -249,7 +249,7 @@ class shell_manager():
         except Exception as e:
             Logger().get_logger().error('update_robot_ntp_server :{}'.format(str(e)))
             self.__mutex.release()
-            return 1
+            raise e
 
     def Query_robots_progress_list(self)->dict:
         progress_info = dict()
@@ -289,7 +289,7 @@ class shell_manager():
         except Exception as e:
             self.__mutex.release()
             Logger().get_logger().error('setting_progress_state :{}'.format(str(e)))
-            return err_list
+            raise e
 
     def query_robot_process_config_info(self,robot_id)->dict:
         process_list = dict()

@@ -319,10 +319,9 @@ def change_file_block_size(size):
     file_manager().change_block_size(size)
 
 #user_id  1
-#robot_id 1
 #task_id_list [1,2,3,4...]
-def cancle_file_transform(user_id, robot_id, task_id_list) ->list:
-    return file_manager().cancle_file_transform(user_id,robot_id,task_id_list)
+def cancle_file_transform(user_id, task_id_list) ->list:
+    return file_manager().cancle_file_transform(user_id,list(set(task_id_list)))
 
 
 def push_file_to_remote(user_id, robot_list, file_path, file_type,package_id):
@@ -449,8 +448,5 @@ def query_robot_process_config_info(robot_id):
 def update_process_config_info(robot_id,process_list):
     return shell_manager().update_process_config_info(robot_id,process_list)
 
-def is_file_busy(filepath) ->int:
-    file_path_set = file_manager().query_file_queue_used()  
-    if filepath in file_path_set:
-        return 1
-    return 0
+def is_file_busy(package_id) ->bool:
+    return file_manager().query_file_queue_used(package_id)
