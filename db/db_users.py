@@ -147,7 +147,7 @@ class user:
             return session_obj.query(user_info).all()
         except Exception as e:
             Logger().get_logger().warning(str(e))
-            return -2
+            return -1
         
 
     #查询组别名
