@@ -26,9 +26,8 @@ def index():
         print('data:',data)
         json_data = json.loads(data.decode('utf-8'))
         login_id = json_data.get('login_id')
-        if login_id is None or type(login_id) != type(int):
+        if login_id is None or type(login_id) != int:
             return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament })
-
 
         event = json_data.get('event')
     except Exception as e:

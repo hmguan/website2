@@ -82,4 +82,15 @@ HttpRequestMsg_UserNotExisted ='user does not exist'
 HttpResponseMsg_FileBusy = 'The file has been opened'
 
 
+#用户管理相关错误状态码错误说明
+HttpResponseCodeMsg_UserExisted='user is existed'
+HttpResponseCodeMsg_Sqlerror='sql error'
+HttpResponseCodeMsg_InvaildUserOrPwd='username or password is wrong'
+HttpResponseCodeMsg_UserNotExisted='user is not existed'
+HttpResponseCodeMsg_InvaildToken='token signature expired'
+HttpResponseCodeMsg_PermissionDenied='ermission denied'
+HttpResponseCodeMsg_TimeoutToken='token bad signature'
+HttpResponseCodeMsg_UserOffline='offline'
+
+
 

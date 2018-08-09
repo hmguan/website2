@@ -16,20 +16,15 @@ class userview(base_event):
         data = requst_obj.get_data()
         json_data = json.loads(data.decode('utf-8'))
         event = json_data['event']
-        
-        if 'user_id' in json_data:
-            tmp_id = json_data['user_id']
-            if tmp_id is None or type(tmp_id) !=int:
-                return jsonify({'code':errtypes.HttpResponseCode_InvaildParament,'msg':"无效用户ID"})
-
+    
         if 'event_register_user'==event:
             ret = users_center.register_user(json_data['login_id'],json_data['user_name'], json_data['password'],json_data['permission'])
         if 'event_update_pwd'==event:
             ret = users_center.update_pwd(json_data['login_id'],json_data['old_password'],json_data['new_password']) 
         if 'event_remove_user'==event:
-            ret = users_center.remove_user(json_data['target_id'])
+            ret = users_center.remove_user(json_data['login_id'],json_data['target_id'])
         if 'event_users'==event:
-            ret = users_center.users()
+            ret = users_center.users(json_data['login_id'])
         if 'event_login'==event:
             if 'token' in json_data:
                 ret =  users_center.verify_auth_token(json_data['token'],json_data['uuid'])
@@ -38,9 +33,9 @@ class userview(base_event):
         if 'event_logout'==event:
             ret = users_center.user_logout(json_data['login_id'])
         if 'event_reset_pwd'==event:
-            ret = users_center.reset_pwd(json_data['target_id'])
+            ret = users_center.reset_pwd(json_data['login_id'],json_data['target_id'])
         if 'event_alter_permission'==event:
-            ret = users_center.reset_permission(json_data['target_id'],json_data['permission'])
+            ret = users_center.reset_permission(json_data['login_id'],json_data['target_id'],json_data['permission'])
         if 'event_group_alias'==event:
             ret = users_center.update_group_alias(json_data['login_id'], json_data['group_name'],json_data['alias'])
         if  'event_query_alias'==event:
