@@ -2,9 +2,7 @@ import flask
 import json
 from flask import jsonify
 from app.main.mainview import base_event
-from . import user_manager
-import errtypes
-users_center = user_manager.user_manager()
+from .user_service_agant import users_center
 
 class userview(base_event):
     def __init__(self):
@@ -26,8 +24,8 @@ class userview(base_event):
         if 'event_users'==event:
             ret = users_center.users(json_data['login_id'])
         if 'event_login'==event:
-            if 'token' in json_data:
-                ret =  users_center.verify_auth_token(json_data['token'],json_data['uuid'])
+            if 'login_token' in json_data:
+                ret =  users_center.verify_auth_token(json_data['login_token'],json_data['uuid'])
                 return jsonify(ret)
             ret = users_center.user_login(json_data['user_name'], json_data['password'])
         if 'event_logout'==event:

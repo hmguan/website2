@@ -19,8 +19,6 @@ class user_manager():
         self.login_user_ = {}
         self.login_mutex_ = RLock()
 
-    
-    ######################################用户增删改查############################################
     #添加用户
     def register_user(self,login_id,user_name,pwd,permission):
         if ROOT_ID!=login_id:
@@ -140,7 +138,7 @@ class user_manager():
             return {'code':errtypes.HttpResponseCode_PermissionDenied,'msg':errtypes.HttpResponseCodeMsg_PermissionDenied}
         
         ret = user.users()
-        if -2==ret:
+        if -1==ret:
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
         
         dict_users=[]
@@ -155,11 +153,9 @@ class user_manager():
         return {'code':0,'msg':'success','data':{'users':dict_users}}
 
 
-
-    ################################ 登陆相关##############################
     #返回tuple(retval,login_id)  
-    # retval:错误码   
-    # login_id：当retval=0有效
+    #### retval:错误码   
+    #### login_id：当retval=0有效
 
     def check_user_login(self,token)->tuple:
         s = Serializer(config.SECRET_KEY)
@@ -181,12 +177,6 @@ class user_manager():
             logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='')
             return (errtypes.HttpResponseCode_InvaildToken,-1)
 
-        self.login_mutex_.acquire()
-        if user_id in self.login_user_.keys():
-            self.login_mutex_.release()
-            return True
-        
-        self.login_mutex_.release()
         return (0,user_id)
 
     def find_token_by_userid(self,user_id):
@@ -254,7 +244,6 @@ class user_manager():
         if (-1==ret):
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':errtypes.HttpResponseCodeMsg_UserNotExisted}
         if (-2==ret):
-            self.login_mutex_.release()
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
         
 
@@ -265,12 +254,12 @@ class user_manager():
         if -1==user_id:
             self.login_mutex_.release()
             msg = "密码错误"
-            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='')
+            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='123')
             return {'code':errtypes.HttpResponseCode_InvaildUserOrPwd,'msg':errtypes.HttpResponseCodeMsg_InvaildUserOrPwd}
         if -2==user_id:
             self.login_mutex_.release()
             msg = "sql error"
-            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='')
+            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='123')
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
         #step 2: 检查踢人
         if user_id in self.login_user_.keys():
@@ -289,12 +278,10 @@ class user_manager():
 
         self.login_mutex_.release()
        
-        #step 4：生成token
-        
-
+       
         msg = "登录成功"
         logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid=new_uuid)
-        return {'code':0,'msg':'success','data':{'uuid':new_uuid,'token':token.decode('utf-8'),'login_id':user_id}}
+        return {'code':0,'msg':'success','data':{'uuid':new_uuid,'login_token':token.decode('utf-8')}}
 
 
     #注销登录

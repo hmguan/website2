@@ -7,6 +7,8 @@ import json
 from pynsp.logger import *
 from . import main
 import errtypes
+from ..user.user_service_agant import users_center
+
 
 #the dict save the relationship route with event,
 #{event:object}
@@ -25,11 +27,16 @@ def index():
         data = request.get_data()
         print('data:',data)
         json_data = json.loads(data.decode('utf-8'))
-        login_id = json_data.get('login_id')
-        if login_id is None or type(login_id) != int:
+        login_token = json_data.get('login_token')
+
+        if login_token is None or type(login_token) != str:
             return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament })
 
+        (retval,user_id) = users_center.check_user_login(login_token)
+        if retval!=0:
+            return jsonify({'code': errtypes.HttpResponseCode_InvaildToken,'msg': errtypes.HttpResponseCodeMsg_InvaildToken })
         event = json_data.get('event')
+
     except Exception as e:
         return jsonify({'code':errtypes.HttpResponseCode_ServerError,'msg': str(e)})
 
