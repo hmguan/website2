@@ -29,6 +29,7 @@ def index():
         if login_id is None or type(login_id) != type(int):
             return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament })
 
+
         event = json_data.get('event')
     except Exception as e:
         return jsonify({'code':errtypes.HttpResponseCode_ServerError,'msg': str(e)})
@@ -39,12 +40,8 @@ def index():
     print('can not find event:', event)
     return jsonify({'code':errtypes.HttpResponseCode_InvaildEvent,'msg': errtypes.HttpResponseMsg_InvaildEvent})
 
-@main.route('/logger',methods=['GET','POST'])
-def write_log():
-    print('logger route method:',request.method)
-
-    data = request.get_data()
-    print('data',data)
+def query_event(data):
+    print('data', data)
     json_data = json.loads(data.decode('utf-8'))
     event = json_data['event']
 
@@ -56,6 +53,29 @@ def write_log():
             print('the function object of event:{0} is null'.format(event))
 
     return jsonify({'code': errtypes.HttpResponseCode_InvaildEvent, 'msg': errtypes.HttpResponseMsg_InvaildEvent})
+
+@main.route('/login',methods=["GET","POST"])
+def login():
+    print('login route method:',request.method)
+    return query_event(request.get_data())
+
+@main.route('/logger',methods=['GET','POST'])
+def write_log():
+    print('logger route method:',request.method)
+    return query_event(request.get_data())
+    # data = request.get_data()
+    # print('data',data)
+    # json_data = json.loads(data.decode('utf-8'))
+    # event = json_data['event']
+    #
+    # if event in map_event_obj.keys():
+    #     obj = map_event_obj.get(event)
+    #     if obj is not None:
+    #         return obj.flask_recvdata(request)
+    #     else:
+    #         print('the function object of event:{0} is null'.format(event))
+    #
+    # return jsonify({'code': errtypes.HttpResponseCode_InvaildEvent, 'msg': errtypes.HttpResponseMsg_InvaildEvent})
 
 class base_event():
     def __init__(self):
