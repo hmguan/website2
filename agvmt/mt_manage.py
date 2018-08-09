@@ -187,17 +187,18 @@ class mt_manage():
 
     def get_var(self,id):
         if self.__robot_lnk.__contains__(id) == False:
-            return {}
+            return {},-1
         self.__mutex.acquire()
         session_link=self.__robot_lnk[id]
         self.__mutex.release()
         pkt_id=session_link.get_var_list()
-        var_list=list()
+        valid_list=list()
         if wait_handler().wait_simulate(pkt_id, 5000) >=0:
             var_list=session_link.get_local_var_list()
             wait_handler().wait_destory(pkt_id)
-        valid_list = mt_var_info.get_valid_list(var_list)
-        return valid_list
+            valid_list = mt_var_info.get_valid_list(var_list)
+        else :return {},-2
+        return valid_list,0
 
     def robots_status(self):
         status_list=dict()
@@ -208,21 +209,21 @@ class mt_manage():
         return status_list
 
 
-    def var_data(self,id,var_id,type_id):
+    def var_data(self,id,var_id):
         if self.__robot_lnk.__contains__(id) == False:
             return {}
         self.__mutex.acquire()
         session_link=self.__robot_lnk[id]
         self.__mutex.release()
 
-        pkt_id = session_link.get_var_data(var_id,type_id)
+        pkt_id,type_id = session_link.get_var_data(var_id)
         if pkt_id==-1:
-            return {'result': 'error'}
-        #var_data=dict()
+            return {}
+        var_data = []
         if wait_handler().wait_simulate(pkt_id, 5000) >= 0:
             tmppp = session_link.get_local_var_data()
             wait_handler().wait_destory(pkt_id)
-        var_data=mt_var_info.get_var_data(var_id,type_id,tmppp)
+            var_data=mt_var_info.get_var_data(var_id,type_id,tmppp)
         return var_data
 
     def callback_error_status(self,notify_call=None):

@@ -56,7 +56,12 @@ HttpResponseCode_TaskFull = 302
 HttpResponseCode_RobotOffLine =303
 HttpResponseCode_TaskNotExist = 304
 
-#MT模块错误状态码区间[600,700)
+
+
+HttpResponseCode_BlackboxSendFailed=381
+HttpResponseCode_BlackboxReTask=382
+HttpResponseCode_BlackboxNoTask=383
+HttpResponseCode_BlackboxWaitTar=384
 
 #升级包
 HttpResponseCode_UPLOADEXCEPTIONERROR=50
@@ -67,6 +72,12 @@ HttpResponseCode_InvaildPath = 52
 
 HttpResponseCode_NotFound=404
 HttpResponseCode_ServerError=500
+
+#MT模块错误状态码区间[600,700)
+HttpResponseCode_MtOffline=601
+HttpResponseCode_MtProtoErr=602
+HttpResponseCode_MtQueryTimeout=603
+HttpResponseCode_MtMissVariate=604
 
 
 #############################以下定义http响应消息###############################
@@ -104,5 +115,15 @@ HttpResponseCodeMsg_PermissionDenied='permission denied'
 HttpResponseCodeMsg_TimeoutToken='token bad signature'
 HttpResponseCodeMsg_UserOffline='offline'
 
+#MT相关错误状态码说明
+HttpResponseMsg_MtOffline = 'Mt offline'
+HttpResponseMsg_MtProtoErr = 'Mt protocol error'
+HttpResponseMsg_MtQueryTimeout = 'mt query data timeout'
+HttpResponseMsg_MtMissVariate = 'The variable cannot be found'
 
+#Blackbox相关错误状态码说明
+HttpResponseMsg_BlackboxReTask='the user already has task'
+HttpResponseMsg_BlackboxSendFailed='All agvs failed to be sent'
+HttpResponseMsg_BlackboxNoTask='can not find the task'
+HttpResponseMsg_BlackboxWaitTar='a log file is being tar '
 
