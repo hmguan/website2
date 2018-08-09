@@ -3,6 +3,7 @@ from pynsp.logger import *
 from ..user.userview import users_center
 from agvshell.transfer_file_types import *
 import errtypes
+import httpRequestCode
 
 set_push_file_type = {FILE_TYPE_A_UPGRADE,FILE_TYPE_VCU_UPGRADE}
 set_pull_file_type = {FILE_TYPE_BLACKBOX_PULL_FILES}
@@ -105,7 +106,6 @@ def query_transmit_queue( userid ,file_type):
             transfer_queue = query_user_transmit_queue(userid,FILE_OPER_TYPE_PULL)
         else:
             return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
-            pass
 
         packet_dict = dict()
         packet_info = None
@@ -116,28 +116,29 @@ def query_transmit_queue( userid ,file_type):
                     packet_info = package_manager.query_packages(item['packet_id'])
                     if packet_info is not None:
                         packet_dict[item['packet_id']] = packet_info
-                item['file_name'] = packet_info.package_name
-                item['version'] = packet_info.version
-                item['author'] = packet_info.user.username
+                item['file_name'] = 'invalid'
+                item['version'] = 'invalid'
+                item['author'] = 'invalid'
+                if packet_info is not None:
+                    item['file_name'] = packet_info.package_name
+                    item['version'] = packet_info.version
+                    item['author'] = packet_info.user.username
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'transfer_list': transfer_queue}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
-def cancle_transform(user_id, robot_id, task_id_list):
-    if type(user_id) != int or type(robot_id) != int or type(task_id_list) != list:
+def cancle_transform(user_id, task_id_list):
+    if type(user_id) != int or type(task_id_list) != list or len(task_id_list) == 0:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
     try:
-        remove_task_list = list()
-        for task_id in task_id_list:
-            if type(task_id) != int:
-                task_id = int(task_id)
-            remove_task_list.append(task_id)
+        remove_task_list = list(map(int,task_id_list))
+        if len(set(remove_task_list)) != len(remove_task_list):
+            return {'code': errtypes.HttpResponseCode_IDRepetition, 'msg': errtypes.HttpResponseMsg_IDRepetition}
 
-        remove_list = cancle_file_transform(user_id,robot_id,remove_task_list)
-        err_task = []
-        for task_id in remove_task_list:
-            if task_id not in remove_list:
-                err_task.append(task_id)
+        remove_list = cancle_file_transform(user_id,remove_task_list)
+        err_task = [{task_id:errtypes.HttpResponseCode_TaskNotExist} for task_id in remove_task_list if task_id not in remove_list]
+        if len(err_task) > 0:
+             return {'code': errtypes.HttpResponseCode_TaskNotExist, 'msg': errtypes.HttpResponseMsg_TaskNotExist,'err_task':err_task,'success':remove_list}
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,'err_task':err_task,'success':remove_list}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
@@ -160,10 +161,17 @@ def get_on_line_robot_configuration(user_id):
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
 def modify_file_lock(opcode, robot_list):
-    if type(opcode) != int or type(robot_list) != list or opcode not in {0,1}:
+    length_robots = len(robot_list)
+    if type(opcode) != int or type(robot_list) != list or opcode not in {0,1} or length_robots == 0:
         return {'code':errtypes.HttpResponseCode_InvaildParament,'msg':errtypes.HttpResponseMsg_InvaildParament}
+    robot_list = list(map(int,robot_list))    
+    if len(set(robot_list)) != length_robots:
+        return {'code': errtypes.HttpResponseCode_IDRepetition, 'msg': errtypes.HttpResponseMsg_IDRepetition}
     try:
         error_list = modify_robot_file_lock(robot_list,opcode)
+        error_list = [{robot_id:errtypes.HttpResponseCode_RobotOffLine} for robot_id in error_list]
+        if len(error_list) > 0:
+            return {'code': errtypes.HttpResponseCode_RobotOffLine, 'msg': errtypes.HttpResponseMsg_RobotOffLine, 'error_list': error_list}
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
@@ -176,11 +184,16 @@ def query_ftp_port():
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
 def update_robots_ntp_server(robot_list,ntp_host):
-    if type(robot_list) != list or type(ntp_host) !=str:
+    length_robots = len(robot_list)
+    if type(robot_list) != list or type(ntp_host) !=str or length_robots == 0:
         return {'code':errtypes.HttpResponseCode_InvaildParament,'msg':errtypes.HttpResponseMsg_InvaildParament}
+    robot_list = list(map(int,robot_list))
+    if len(set(robot_list)) != length_robots:
+        return {'code': errtypes.HttpResponseCode_IDRepetition, 'msg': errtypes.HttpResponseMsg_IDRepetition}
     try:
         robot_list = [int(robot_id) for robot_id in robot_list]
         error_list = update_ntp_server(robot_list,ntp_host)
+        error_list = [{robot_id:errtypes.HttpResponseCode_RobotOffLine} for robot_id in error_list]
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
@@ -202,10 +215,13 @@ def query_robots_progress_info(user_id):
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
 def operate_system_process(robot_list,command):
-    if type(robot_list)!= list or type(command) != int or command not in {0,1,2}:
+    length_robots = len(robot_list)
+    if type(robot_list)!= list or type(command) != int or command not in {0,1,2} or length_robots == 0:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    robot_list = list(map(int,robot_list))
+    if len(set(robot_list)) != length_robots:
+        return {'code': errtypes.HttpResponseCode_IDRepetition, 'msg': errtypes.HttpResponseMsg_IDRepetition}
     try:
-        robot_list = [int(robot_id) for robot_id in robot_list]
         error_list = setting_progress_state(robot_list,command)
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'error_list': error_list}
     except Exception as e:
@@ -233,18 +249,93 @@ def update_robot_process_config_list(robot_id,process_list):
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
 
-def is_file_occupied(author_id,file_type,file_name):
-    from db.db_users import user
+def query_upgrade_file_write_permission(login_id,package_id):
+    from db.db_package import package_manager
     from configuration import get_config_path
-    if type(author_id) != int  or type(file_type)!= int or type(file_name) != str:
+
+    if type(login_id) != int or type(package_id) != int:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
     try:
-        user_name = user.query_name_by_id(author_id)
-        result = 0
-        if user_name:
-            file_path = get_config_path(user_name,file_type) + file_name
-            result = is_file_busy(file_path)
-            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal ,'bOccupied':result}
-        return {'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted}
+        retval = package_manager.query_packages(package_id)
+        if retval is None:
+            return {'code': errtypes.HttpResponseCode_DateBasePacketIdNotFound, 'msg': errtypes.HttpResponseMsg_DateBasePacketIdNotFound }
+
+        user_name = retval.user.username
+        package_name = retval.package_name
+        file_path = get_config_path(user_name,httpRequestCode.HttpRequestFileType_Patch) + package_name
+
+        if os.path.exists(file_path) is False:
+            package_manager.remove(package_id)
+            return {'code': errtypes.HttpResponseCode_DatabaseRecordAbnormity, 'msg': errtypes.HttpResponseMsg_DatabaseRecordAbnormity}
+
+        if retval.user_id != login_id:
+            return {'code': errtypes.HttpResponseCode_NotFileOwner, 'msg': errtypes.HttpResponseMsg_NotFileOwner}
+
+        if os.access(file_path,os.W_OK) is False:
+            return {'code': errtypes.HttpResponseCode_NoAuthority, 'msg': errtypes.HttpResponseMsg_NoAuthority}
+
+        if is_file_busy(package_id) is True:
+            return {'code': errtypes.HttpResponseCode_FileBusy, 'msg': errtypes.HttpResponseMsg_FileBusy }
+
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal }
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+
+def query_upgrade_file_read_permission(login_id,package_id):
+    from db.db_package import package_manager
+    from configuration import get_config_path
+
+    if type(login_id) != int or type(package_id) != int:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
+    try:
+        retval = package_manager.query_packages(package_id)
+        if retval is None:
+            return {'code': errtypes.HttpResponseCode_DateBasePacketIdNotFound, 'msg': errtypes.HttpResponseMsg_DateBasePacketIdNotFound }
+
+        user_name = retval.user.username
+        package_name = retval.package_name
+        file_path = get_config_path(user_name,httpRequestCode.HttpRequestFileType_Patch) + package_name
+
+        if os.path.exists(file_path) is False:
+            package_manager.remove(package_id)
+            return {'code': errtypes.HttpResponseCode_DatabaseRecordAbnormity, 'msg': errtypes.HttpResponseMsg_DatabaseRecordAbnormity}
+
+        if retval.user_id != login_id:
+            return {'code': errtypes.HttpResponseCode_NotFileOwner, 'msg': errtypes.HttpResponseMsg_NotFileOwner}
+
+        if os.access(file_path,os.R_OK) is False:
+            return {'code': errtypes.HttpResponseCode_NoAuthority, 'msg': errtypes.HttpResponseMsg_NoAuthority}
+
+        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal }
+    except Exception as e:
+        return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+def robot_upgrade(package_id,user_id,robot_list):
+    from db.db_package import package_manager
+    from configuration import get_config_path
+    
+    if type(package_id) != int or type(robot_list) != list or type(user_id) != int or len(robot_list) == 0:
+        return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament }
+
+    robot_list = list(map(int,robot_list))
+    if len(set(robot_list)) != len(robot_list):
+        return {'code': errtypes.HttpResponseCode_RobotIDRepetition, 'msg': errtypes.HttpResponseMsg_RobotIDRepetition }
+    try:
+        retval = package_manager.query_packages(package_id)
+        if retval is None:
+            return {'code': errtypes.HttpResponseCode_NOFILE, 'msg': errtypes.HttpResponseMsg_FileNotExist }
+
+        user_name = retval.user.username
+        package_name = retval.package_name
+        file_path = get_config_path(user_name,httpRequestCode.HttpRequestFileType_Patch) + package_name
+        if os.path.exists(file_path) == False:
+            package_manager.remove(package_id)
+            return {'code': errtypes.HttpResponseCode_DatabaseRecordAbnormity, 'msg': errtypes.HttpResponseMsg_DatabaseRecordAbnormity }
+                
+        error_code,task_list = push_file_to_remote(user_id,robot_list,file_path,FILE_TYPE_A_UPGRADE,package_id)
+        if error_code == -1:
+            return {'code': errtypes.HttpResponseCode_TaskFull, 'msg': errtypes.HttpResponseMsg_TaskFull }
+        return {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'transfer_list':task_list}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}

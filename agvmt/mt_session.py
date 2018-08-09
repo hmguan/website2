@@ -300,7 +300,14 @@ class mt_session(tcp.obtcp):
         self.send(stream,var_pkt.length())
         return pkt_id
 
-    def get_var_data(self,var_id,type_id):
+    def get_var_data(self,var_id):
+        type_id=-1
+        for item in self.__var_list:
+            if item.items.var_id==var_id:
+                type_id=item.items.type_id
+                break
+        if type_id==-1:
+            return -1,-1
         self.__is_appoint = False
         pkt_opt = view_data.optpar_t()
         cread_item = cread.proto_common_read_item()
@@ -308,7 +315,7 @@ class mt_session(tcp.obtcp):
         cread_item.var_offset(0)
         length=mt_var_info.get_var_read_length(type_id)
         if length is None:
-            return -1
+            return -1,-1
         cread_item.var_length(length)
 
         pkt_cread = cread.proto_common_read()
@@ -318,7 +325,7 @@ class mt_session(tcp.obtcp):
         pkt_cread.phead.size(pkt_cread.length())
         stream = pkt_cread.serialize()
         self.send(stream, pkt_cread.length())
-        return pkt_id
+        return pkt_id,type_id
 
     def recv_navigation_data(self, pkt_id ,data):
         self.__navigation_cache.build(data,0)

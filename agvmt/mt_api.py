@@ -132,8 +132,8 @@ def set_stop_emergency(robot_list):
 def get_var_list(robot_id):
     return mt_manage().get_var(robot_id)
 
-def get_vars_data(robot_id,var_id,type_id):
-    return mt_manage().var_data(robot_id,var_id,type_id)
+def get_vars_data(robot_id,var_id):
+    return mt_manage().var_data(robot_id,var_id)
 
 def get_robots_status():
     return mt_manage().robots_status()
