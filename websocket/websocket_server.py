@@ -136,13 +136,14 @@ class websocket_thread(threading.Thread):
         global connected_notify_callback
         if connected_notify_callback is not None:
             connected_notify_callback(self.__userid)
+
+        global clients
         while True:
             try:
                 data=self.__connection.recv(2048)
             except socket.error as e:
                 Logger().get_logger().error('WebSocket unexcepted error:{0}'.format(str(e)))
                 if client_lock.acquire() == True:
-                    global clients
                     clients.pop(self.__userid)
                     client_lock.release()
                 break
@@ -158,7 +159,6 @@ class websocket_thread(threading.Thread):
                 Logger().get_logger().info('WebSocket get close the client session code,the username is:{0}'.format(self.__userid))
                 self.__connection.close()
                 if client_lock.acquire() == True:
-                    global clients
                     clients.pop(self.__userid)
                     client_lock.release()
                 break

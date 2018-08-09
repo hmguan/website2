@@ -86,7 +86,7 @@ def background_thead():
                 obj = post_msg_list.pop(0)
                 thread_lock.release()
                 message=''
-                if type(obj) == type(dict()):
+                if type(obj) == dict:
                     message = json.dumps(obj)
                 else:
                     message = obj
@@ -103,7 +103,7 @@ def background_thead():
                         client_items = {id_key:uuid_value for id_key,uuid_value in uuid_with_user_id.items() if uuid_value == key}
                         thread_lock.release()
                         message = ''
-                        if type(item) == type(dict()):
+                        if type(item) == dict:
                             message = json.dumps(item)
                         else:
                             message = item
