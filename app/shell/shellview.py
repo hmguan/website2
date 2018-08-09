@@ -20,7 +20,7 @@ class shellview(base_event):
         event = json_data['event']
 
         if 'get_online_robot_list' == event:
-            return jsonify(get_online_robot_information(json_data.get('user_id')))
+            return jsonify(get_online_robot_information(json_data.get('login_id')))
         elif 'get_offline_robot_list' == event:
             return jsonify(get_offline_robot_information())
         elif 'get_unusual_robot_list' == event:

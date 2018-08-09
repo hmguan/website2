@@ -39,42 +39,25 @@ def index():
     print('can not find event:', event)
     return jsonify({'code':errtypes.HttpResponseCode_InvaildEvent,'msg': errtypes.HttpResponseMsg_InvaildEvent})
 
-def query_event(data):
-    print('data', data)
-    json_data = json.loads(data.decode('utf-8'))
-    event = json_data['event']
-
-    if event in map_event_obj.keys():
-        obj = map_event_obj.get(event)
-        if obj is not None:
-            return obj.flask_recvdata(request)
-        else:
-            print('the function object of event:{0} is null'.format(event))
-
-    return jsonify({'code': errtypes.HttpResponseCode_InvaildEvent, 'msg': errtypes.HttpResponseMsg_InvaildEvent})
+def query_event(request_data,event_name):
+    try:
+        json_data = json.loads(request_data.decode('utf-8'))
+        obj = map_event_obj.get(event_name)
+        if event_name != json_data.get('event') or obj is None:
+            return jsonify({'code':errtypes.HttpResponseCode_InvaildEvent,'msg': errtypes.HttpResponseMsg_InvaildEvent})
+        return obj.flask_recvdata(request)
+    except Exception as e:
+        return jsonify({'code':errtypes.HttpResponseCode_ServerError,'msg': str(e)})
 
 @main.route('/login',methods=["GET","POST"])
 def login():
     print('login route method:',request.method)
-    return query_event(request.get_data())
+    return query_event(request.get_data(),'event_login')
 
 @main.route('/logger',methods=['GET','POST'])
 def write_log():
     print('logger route method:',request.method)
-    return query_event(request.get_data())
-    # data = request.get_data()
-    # print('data',data)
-    # json_data = json.loads(data.decode('utf-8'))
-    # event = json_data['event']
-    #
-    # if event in map_event_obj.keys():
-    #     obj = map_event_obj.get(event)
-    #     if obj is not None:
-    #         return obj.flask_recvdata(request)
-    #     else:
-    #         print('the function object of event:{0} is null'.format(event))
-    #
-    # return jsonify({'code': errtypes.HttpResponseCode_InvaildEvent, 'msg': errtypes.HttpResponseMsg_InvaildEvent})
+    return query_event(request.get_data(),'write_logger_event')
 
 class base_event():
     def __init__(self):
