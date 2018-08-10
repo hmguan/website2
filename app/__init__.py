@@ -23,6 +23,7 @@ def create_app(config_name):
     # from .blackbox import logview
     from .backup import backupview
     from .log_browser import logger_flask
+    from .configuration import config_flask
     #加载主蓝图
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
