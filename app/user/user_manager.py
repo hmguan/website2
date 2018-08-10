@@ -24,9 +24,9 @@ class user_manager():
         if ROOT_ID!=login_id:
              return {'code':errtypes.HttpResponseCode_PermissionDenied,'msg':errtypes.HttpResponseCodeMsg_PermissionDenied}
         ret = user.append(user_name,pwd,permission)
-        if (ret==-1):
+        if (-1==ret):
             return {'code':errtypes.HttpResponseCode_UserExisted,'msg':errtypes.HttpResponseCodeMsg_UserExisted}
-        if (ret==-2):
+        if (-2==ret):
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
         return {'code':0,'msg':'success'}
 
@@ -35,9 +35,9 @@ class user_manager():
         if ROOT_ID!=login_id:
              return {'code':errtypes.HttpResponseCode_PermissionDenied,'msg':errtypes.HttpResponseCodeMsg_PermissionDenied}
         ret = user.remove(target_id)
-        if (ret==-1):
+        if (-1==ret):
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':errtypes.HttpResponseCodeMsg_UserNotExisted}
-        if (ret==-2):
+        if (-2==ret):
             return {'code':errtypes.HttpResponseCode_ServerError,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
 
         self.login_mutex_.acquire()
@@ -58,11 +58,11 @@ class user_manager():
     #更新密码
     def update_pwd(self,login_id,pwd,new_pwd):
         ret = user.update_pwd(login_id,pwd,new_pwd)
-        if (ret==-1):
+        if (-1==ret):
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':errtypes.HttpResponseCodeMsg_UserNotExisted}
-        if (ret==-2):
+        if (-2==ret):
             return {'code':errtypes.HttpResponseCode_InvaildUserOrPwd,'msg':errtypes.HttpResponseCodeMsg_InvaildUserOrPwd}
-        if (ret==-3):
+        if (-3==ret):
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
 
         self.login_mutex_.acquire()
@@ -156,7 +156,6 @@ class user_manager():
     #返回tuple(retval,login_id)  
     #### retval:错误码   
     #### login_id：当retval=0有效
-
     def check_user_login(self,token)->tuple:
         s = Serializer(config.SECRET_KEY)
         user_id = 0
@@ -170,13 +169,10 @@ class user_manager():
                 return (errtypes.HttpResponseCode_Sqlerror,-1)
         except SignatureExpired:
             msg = "登录信息已过期，请重新登录！"
-            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='')
             return (errtypes.HttpResponseCode_TimeoutToken,-1)
         except BadSignature:
             msg = "登录信息有误，请重新登录！"
-            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='')
             return (errtypes.HttpResponseCode_InvaildToken,-1)
-
         return (0,user_id)
 
     def find_token_by_userid(self,user_id):
@@ -235,7 +231,7 @@ class user_manager():
         self.login_mutex_.release()
 
         logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg="登录成功token",u_uuid=user_uuid)
-        return {'code':0,'msg':'success','data':{'token':token,'login_id':user_id}}
+        return {'code':0,'msg':'success','data':{'login_token':token,'uuid':u_uuid}}
 
 
     #用户登录
@@ -321,9 +317,9 @@ class user_manager():
         ret= user.group_alias(login_id,group_name)
         if -1==ret:
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':errtypes.HttpResponseCodeMsg_UserNotExisted}
-        if -3==ret:
+        if -2==ret:
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
-        return {'code':ret,'alias':ret}
+        return {'code':0,'alias':ret}
         
 
     #更新组名
@@ -335,7 +331,7 @@ class user_manager():
             return {'code':errtypes.HttpResponseCode_InvaildGroup_Name}
         if -3==ret:
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
-        return {'code':ret,'alias':ret}
+        return {'code':0}
 
    
     
