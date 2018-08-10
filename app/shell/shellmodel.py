@@ -20,11 +20,14 @@ def get_online_robot_information(user_id):
         online_info = get_online_robot_list()
         data_list=list()
         for keys,item in online_info.items():
-            alias_name = users_center.group_alias(user_id,keys)
-            if alias_name is None:
+            alias_name_dict = users_center.group_alias(user_id,keys)
+            if alias_name_dict['code']!=0:
+                return {'code':alias_name_dict['code'],'msg':errtypes.HttpResponseMsg_InvaildParament,'data':''}
+
+            if alias_name_dict['alias'] is '':
                 data_list.append({'process_group':keys,'process_group_alias':'','robot_list':item})
             else:
-                data_list.append({'process_group': keys, 'process_group_alias': alias_name, 'robot_list': item})
+                data_list.append({'process_group': keys, 'process_group_alias': alias_name_dict['alias'], 'robot_list': item})
         print('data list:',data_list)
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'data': data_list}
     except Exception as e:
