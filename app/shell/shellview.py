@@ -15,9 +15,8 @@ class shellview(base_event):
                           'event_robot_upgrade','event_query_upgrade_file_read_permission','event_query_upgrade_file_write_permission')
         pass
 
-    def flask_recvdata(self,requst_obj):
-        data = requst_obj.get_data()
-        json_data = json.loads(data.decode('utf-8'))
+    def flask_recvdata(self,json_data):
+
         event = json_data['event']
 
         if 'get_online_robot_list' == event:

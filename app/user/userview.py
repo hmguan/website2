@@ -10,9 +10,7 @@ class userview(base_event):
         self.regist_event('event_login','event_logout','event_register_user','event_update_pwd',
         'event_remove_user','event_users','event_reset_pwd','event_alter_permission','event_group_alias','event_query_alias')
 
-    def flask_recvdata(self,requst_obj):
-        data = requst_obj.get_data()
-        json_data = json.loads(data.decode('utf-8'))
+    def flask_recvdata(self,json_data):
         event = json_data['event']
     
         if 'event_register_user'==event:

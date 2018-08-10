@@ -23,11 +23,8 @@ class package_view(base_event):
         super(package_view,self).__init__()
         self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages','event_download_files','event_exist_files')
         
-    def flask_recvdata(self,requst_obj):
-        data = requst_obj.get_data()
-        json_data = json.loads(data.decode('utf-8'))
+    def flask_recvdata(self,json_data):
         event = json_data['event']
-
         if 'event_package_update'==event:
             if 'package_id' not in json_data or 'remark' not in json_data: 
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': '参数错误'})

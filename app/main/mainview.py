@@ -35,14 +35,16 @@ def index():
         (retval,user_id) = users_center.check_user_login(login_token)
         if retval!=0:
             return jsonify({'code': errtypes.HttpResponseCode_InvaildToken,'msg': errtypes.HttpResponseCodeMsg_InvaildToken })
+
         event = json_data.get('event')
+        json_data['login_id']=user_id
 
     except Exception as e:
         return jsonify({'code':errtypes.HttpResponseCode_ServerError,'msg': str(e)})
 
     if event in map_event_obj.keys():
         obj = map_event_obj[event]
-        return obj.flask_recvdata(request)
+        return obj.flask_recvdata(json_data)
     print('can not find event:', event)
     return jsonify({'code':errtypes.HttpResponseCode_InvaildEvent,'msg': errtypes.HttpResponseMsg_InvaildEvent})
 
@@ -52,7 +54,7 @@ def query_event(request_data,event_name):
         obj = map_event_obj.get(event_name)
         if event_name != json_data.get('event') or obj is None:
             return jsonify({'code':errtypes.HttpResponseCode_InvaildEvent,'msg': errtypes.HttpResponseMsg_InvaildEvent})
-        return obj.flask_recvdata(request)
+        return obj.flask_recvdata(json_data)
     except Exception as e:
         return jsonify({'code':errtypes.HttpResponseCode_ServerError,'msg': str(e)})
 

@@ -10,9 +10,7 @@ class loggerviewer(base_event):
         init_logger()
         pass
 
-    def flask_recvdata(self, requst_obj):
-        data = requst_obj.get_data()
-        json_data = json.loads(data.decode('utf-8'))
+    def flask_recvdata(self, json_data):
         event = json_data['event']
 
         if 'write_logger_event' == event:

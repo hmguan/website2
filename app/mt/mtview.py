@@ -12,9 +12,7 @@ class mt_view(base_event):
         self.regist_event('load_navigation', 'load_vehicle','load_operation','load_optpar','load_varlist','load_vardata','clear_error','stop_emergency','load_error_status')
         pass
 
-    def flask_recvdata(self,requst_obj):
-        data = requst_obj.get_data()
-        json_data = json.loads(data.decode('utf-8'))
+    def flask_recvdata(self,json_data):
         event = json_data['event']
         print('user flaks', event)
         print('--------------json_data:', json_data)

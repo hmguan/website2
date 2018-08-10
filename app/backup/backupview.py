@@ -13,9 +13,8 @@ class backupview(base_event):
                           'get_executing_log', 'delete_log', 'get_log_list', 'download_log')
         pass
 
-    def flask_recvdata(self, requst_obj):
-        data = requst_obj.get_data()
-        json_data = json.loads(data.decode('utf-8'))
+    def flask_recvdata(self, json_data):
+
         event = json_data['event']
         if 'get_log_types' == event:
             robot_id = json_data['robot_id']
