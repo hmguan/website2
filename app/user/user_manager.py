@@ -296,7 +296,7 @@ class user_manager():
 
 
         msg = "注销登录，通知用户下线"
-        socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
+        socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_Loginout,'uuid':u_uuid},room_identify=u_uuid)
         logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
 
         return {'code':0,'msg':'success'}
