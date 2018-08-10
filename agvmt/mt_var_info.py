@@ -90,7 +90,7 @@ def get_var_data(var_id,type_id,var_data):
             var_dict=[{'canbus':can_data.canbus_.value,},{'canport':can_data.canport_.value},{'cannode':can_data.cannode_.value},
                       {'latency': can_data.latency_.value},{'merge':can_data.merge_.value},{'self_rw64':can_data.self_rw64_.value},
                       {'pdocnt': can_data.pdocnt_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_Elmo:
         elmo_data = view_data.var__elmo_t()
@@ -105,7 +105,7 @@ def get_var_data(var_id,type_id,var_data):
                       {'node_state':elmo_data.node_state_.value},{'error_code':elmo_data.error_code_.value},{'time_stamp':elmo_data.time_stamp_.value},
                       {'actual_velocity':elmo_data.actual_velocity_.value},{'actual_position':elmo_data.actual_position_.value},{'actual_current':elmo_data.actual_current_.value},
                       {'enabled':elmo_data.enabled_.value},{'di':elmo_data.di_.value},{'do':elmo_data.do_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     # elif type_id == viewtype.kVarType_Copley:
     #     pass
@@ -167,7 +167,7 @@ def get_var_data(var_id,type_id,var_data):
                     tmp = 'ao2[' + str(i) + ']' + '_data_'+str(j)
                     tmp_dict[tmp]=dio_data.ao2_[i].data_[j].value
                     var_dict.append({tmp: tmp_dict[tmp]})
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_Moons:
         moons_data = view_data.var__moons_t()
@@ -183,7 +183,7 @@ def get_var_data(var_id,type_id,var_data):
                     {'error_code':moons_data.error_code_.value},{'time_stamp':moons_data.time_stamp_.value},
                     {'actual_velocity_':moons_data.actual_velocity_.value},{'actual_position_':moons_data.actual_position_.value},{'actual_current':moons_data.actual_current_.value},
                     {'enabled':moons_data.enabled_.value},{'di':moons_data.di_.value},{'do':moons_data.do_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_AngleEncoder:
         angle_data = view_data.var__angle_encoder_t()
@@ -193,7 +193,7 @@ def get_var_data(var_id,type_id,var_data):
                     { 'candev_head_latency': angle_data.candev_head_.latency_.value},{'candev_head_merge':angle_data.candev_head_.merge_.value},{'candev_head_self_rw64':angle_data.candev_head_.self_rw64_.value},
                     { 'candev_head_pdocnt': angle_data.candev_head_.pdocnt_.value},{'angle_encoder_type':angle_data.angle_encoder_type_t.value},{'state':angle_data.state_.value},
                     { 'actual_angle':angle_data.actual_angle_.value},{'error_code':angle_data.error_code_.value},{'time_stamp':angle_data.time_stamp_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_SafetyProtec:
         safe_data=view_data.var__safety_t()
@@ -210,7 +210,7 @@ def get_var_data(var_id,type_id,var_data):
                     {'sensor_trrigered_reslut': safe_data.sensor_trrigered_.reslut.value},{'sensor_trrigered_sensor_name':str(safe_data.sensor_trrigered_.sensor_name)},
                     {'sensor_trrigered_ai_thres': safe_data.sensor_trrigered_.ai_thres.value},{'sensor_trrigered_ai_cur':safe_data.sensor_trrigered_.ai_cur.value},
                     {'manual_bank_id':safe_data.manual_bank_id_.value},{'manual_bank_level':safe_data.manual_bank_level_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_Vehicle:
         vehi_data = view_data.vehicle_t()
@@ -232,7 +232,7 @@ def get_var_data(var_id,type_id,var_data):
                 {'odo_meter_x':vehi_data.odo_meter_.x_ .value},{ 'odo_meter_y':vehi_data.odo_meter_.y_ .value},{ 'odo_meter_angle':vehi_data.odo_meter_.angle_.value},
                 {'time_stamp': vehi_data.time_stamp_.value},{ 'is_moving':vehi_data.is_moving_.value},{ 'normal_stopped':vehi_data.normal_stopped_.value},{ 'emergency_stopped':vehi_data.emergency_stopped_.value},
                 {'slow_done': vehi_data.slow_done_.value},{ 'total_odo_meter':vehi_data.total_odo_meter_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_Navigation:
         nav_view = view_data.navigation_t()
@@ -263,7 +263,7 @@ def get_var_data(var_id,type_id,var_data):
                 { 'pos_x': nav_view.pos_.x_.value},{ 'pos_y': nav_view.pos_.y_.value},{ 'pos_angle': nav_view.pos_.angle_.value},
                 { 'current_edge_wop_properties_wop_id': nav_view.current_edge_wop_properties_.wop_id_.value},{'current_edge_wop_properties_enabled_': nav_view.current_edge_wop_properties_.enabled_.value}]
                     #'current_edge_wop_properties_wop_properties': nav_view.current_edge_wop_properties_.wop_properties_}
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_Operation:
         oper_data = view_data.operation_t()
@@ -275,14 +275,14 @@ def get_var_data(var_id,type_id,var_data):
                 {'param7_': oper_data.param0_.value},{'param8_':oper_data.param0_.value},{'param9_':oper_data.param0_.value},{'param10_':oper_data.param0_.value},{'param11_':oper_data.param11_.value},
                 {'param11': oper_data.param11_.value},{'param12':oper_data.param12_.value},{'param13':oper_data.param13_.value},{'param14':oper_data.param14_.value},{'param15':oper_data.param15_.value},
                 {'param16': oper_data.param16_.value},{'param17':oper_data.param17_.value},{'param18':oper_data.param18_.value},{'param19':oper_data.param19_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_UserDefined:
         user_data=view_data.var__usrdef_buffer_t()
         if user_data.length()==len(var_data):
             user_data.build(var_data,0)
             var_dict=[{'usrbuf':str(user_data.usrbuf_)}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_SWheel:
         swheel_data=view_data.var__swheel_t()
@@ -295,7 +295,7 @@ def get_var_data(var_id,type_id,var_data):
                 {'actual_angle':swheel_data.actual_angle_.value},{'actual_angle_enc':swheel_data.actual_angle_enc_.value},{'time_stamp':swheel_data.time_stamp_.value},
                 {'error_code':swheel_data.error_code_.value},{'enable':swheel_data.enable_.value},{'command_angle':swheel_data.command_angle_.value},
                 {'command_angle_enc':swheel_data.command_angle_enc_.value},{'command_rate':swheel_data.command_rate_.value},{'command_rate_enc':swheel_data.command_rate_enc_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_DWheel:
         dwheel_data=view_data.var__dwheel_t()
@@ -308,14 +308,14 @@ def get_var_data(var_id,type_id,var_data):
                 {'actual_current':dwheel_data.actual_current_.value},{'time_stamp':dwheel_data.time_stamp_.value},{'error_code':dwheel_data.error_code_.value},
                 {'enable':dwheel_data.enable_.value},{'command_velocity':dwheel_data.command_velocity_.value},{'command_velocity_enc':dwheel_data.command_velocity_enc_.value},
                 {'command_position':dwheel_data.command_position_.value},{'command_position_enc':dwheel_data.command_position_enc_.value},{'command_current':dwheel_data.command_current_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_SDDExtra:
         sdd_dat=view_data.var__sdd_extra()
         if sdd_dat.length()==len(var_data):
             sdd_dat.build(var_data,0)
             var_dict=[{'guage':sdd_dat.gauge_.value},{'abc':sdd_dat.gauge_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     elif type_id == viewtype.kVarType_OperationTarget:
         oprtar_data=view_data.optpar_t()
@@ -325,6 +325,6 @@ def get_var_data(var_id,type_id,var_data):
                 {'ull05': oprtar_data.ull05_.value},{'ull06':oprtar_data.ull06_.value},{'ull07':oprtar_data.ull07_.value},{'ull08':oprtar_data.ull08_.value},{'ull09':oprtar_data.ull09_.value},
                 {'ull10': oprtar_data.ull10_.value},{'ull11': oprtar_data.ull11_.value},{'ull12': oprtar_data.ull12_.value},{'ull13': oprtar_data.ull13_.value},{'ull14': oprtar_data.ull14_.value},
                 {'ull15': oprtar_data.ull15_.value},{'ull16': oprtar_data.ull16_.value},{'ull17': oprtar_data.ull17_.value},{'ull18': oprtar_data.ull18_.value},{'ull19': oprtar_data.ull19_.value}]
-        return {var_id:var_dict}
+        return var_dict
 
     else:pass

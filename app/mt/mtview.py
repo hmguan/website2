@@ -47,7 +47,7 @@ class mt_view(base_event):
                 return jsonify({'code':errtypes.HttpResponseCode_InvaildParament,'msg':errtypes.HttpResponseMsg_InvaildParament})
             info,err = get_var_list(int(robot_id))
             if err==-1:
-                return jsonify({'code':errtypes.HttpResponseCode_MtOffline,'msg':errtypes.HttpResponseMsg_MtProtoErr})
+                return jsonify({'code':errtypes.HttpResponseCode_MtOffline,'msg':errtypes.HttpResponseMsg_MtOffline})
             elif err==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_MtQueryTimeout,'msg':errtypes.HttpResponseMsg_MtQueryTimeout})
             print('-------------------------load_varlist:', len(info))

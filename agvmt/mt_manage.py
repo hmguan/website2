@@ -197,7 +197,8 @@ class mt_manage():
             var_list=session_link.get_local_var_list()
             wait_handler().wait_destory(pkt_id)
             valid_list = mt_var_info.get_valid_list(var_list)
-        else :return {},-2
+        else :
+            return {},-2
         return valid_list,0
 
     def robots_status(self):

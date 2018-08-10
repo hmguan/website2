@@ -184,7 +184,7 @@ class user_manager():
         return token
 
     #生成密钥
-    def generate_auth_token(self, id,expiration = 2592000):
+    def generate_auth_token(self, id,expiration = 86400):
         s = Serializer(config.SECRET_KEY, expires_in = expiration)
         return s.dumps({ 'id': id })
     
@@ -319,7 +319,10 @@ class user_manager():
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':errtypes.HttpResponseCodeMsg_UserNotExisted}
         if -2==ret:
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
-        return {'code':0,'alias':ret}
+        
+        if None == ret:
+            return {'code':0,'msg':'success','alias':''}
+        return {'code':0,'msg':'success','alias':ret}
         
 
     #更新组名
@@ -331,7 +334,7 @@ class user_manager():
             return {'code':errtypes.HttpResponseCode_InvaildGroup_Name}
         if -3==ret:
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
-        return {'code':0}
+        return {'code':0,'msg':'success'}
 
    
     
