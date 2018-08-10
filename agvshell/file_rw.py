@@ -491,7 +491,7 @@ class file_manager():
         self.__transfer_queue_mutex.release()
         return queue_data
 
-    def query_file_queue_used(self,packet_id)->bool:
+    def query_package_used(self,packet_id)->bool:
         self.__transfer_queue_mutex.acquire()
         for user_id,user_transfer_queue in self.__map_user_transfer_queue.items():
             transfer_queue = user_transfer_queue.get_transfer_queue(FILE_OPER_TYPE_PUSH)
@@ -511,7 +511,7 @@ class file_manager():
         # Logger().get_logger().info("file_path_set{} file is busy".format(file_path_set)) 
         # return file_path_set
 
-    def is_open(file_path) ->bool:
+    def is_open(self,file_path) ->bool:
         if file_path.startswith('./'):
             file_path = os.path.abspath(file_path)
         all_pid = [_i for _i in os.listdir('/proc') if _i.isdigit()]
