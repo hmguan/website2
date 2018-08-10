@@ -33,7 +33,7 @@ if __name__ == '__main__':
     #初始化日志文件
     init_logger()
     start_black_box()
-    register_blackbox_step_notify_function(notify_call = send_msg_to_all)
+    register_blackbox_step_notify_function(notify_call = send_msg_to_client_byuserid)
     #启动agvinfo server服务
     start_agvinfo_service()
     #启动agvshell manager管理服务

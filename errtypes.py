@@ -30,6 +30,7 @@ HttpResponseCode_UserNotLogin=1
 HttpResponseCode_FailedVerifyToken=2
 HttpResponseCode_InvaildEvent=3
 HttpResponseCode_InvaildParament=4
+HttpResponseCode_MutexTimeout=5
 HttpResponseCode_InvaildGroup_Name=30
 
 

@@ -284,16 +284,19 @@ def get_robot_detail_info(robot_id):
     :param robot_id:
     :return:
     '''
-    detail_info = shell_manager().get_fixed_sysytem_info(robot_id)
+    detail_info,errcode = shell_manager().get_fixed_sysytem_info(robot_id)
+    if errcode != errtypes.HttpResponseCode_Normal:
+        return {},errcode
+
     global global_mutex
-    if global_mutex.acquire() == False:
-        return None
+    if global_mutex.acquire(timeout=3) == False:
+        return {},errtypes.HttpResponseCode_MutexTimeout
     else:
         global global_robot_info
         mac_list = [item.mac for item in global_robot_info.values() if item.id == robot_id]
         detail_info['robot_mac'] = mac_list[0] if len(mac_list) != 0 else ""
         global_mutex.release()
-    return detail_info
+    return detail_info,errtypes.HttpResponseCode_Normal
 
 def get_robot_system_info(robot_id):
     '''

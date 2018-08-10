@@ -66,7 +66,13 @@ def get_robot_detail_information(robot_id):
     if type(robot_id) != int or robot_id is None:
         return {'code':errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament,'data':''}
     try:
-        return {'code': errtypes.HttpResponseCode_Normal,'msg': errtypes.HttpResponseMsg_Normal,'data':get_robot_detail_info(robot_id)}
+        data,code = get_robot_detail_info(robot_id)
+        if code == errtypes.HttpResponseCode_Normal:
+            return {'code': errtypes.HttpResponseCode_Normal,'msg': errtypes.HttpResponseMsg_Normal,'data':data}
+        elif code == errtypes.HttpResponseCode_RobotOffLine:
+            return {'code':errtypes.HttpResponseCode_RobotOffLine,'msg':errtypes.HttpResponseMsg_RobotOffLine,'data':''}
+        elif code == errtypes.HttpResponseCode_MutexTimeout:
+            return {'code':errtypes.HttpResponseCode_MutexTimeout,'msg':errtypes.HttpResponseMsg_Timeout,'data':''}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e),'data':''}
 
@@ -79,7 +85,13 @@ def get_robot_system_information(robot_id):
     if type(robot_id) != int or robot_id is None:
         return {'code':errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament,'system_info':''}
     try:
-        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'system_info': get_robot_system_info(robot_id)}
+        data,code = get_robot_system_info(robot_id)
+        if code == errtypes.HttpResponseCode_Normal:
+            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'system_info':data}
+        elif code == errtypes.HttpResponseCode_RobotOffLine:
+            return {'code':errtypes.HttpResponseCode_RobotOffLine,'msg':errtypes.HttpResponseMsg_RobotOffLine,'system_info':''}
+        elif code == errtypes.HttpResponseCode_MutexTimeout:
+            return {'code':errtypes.HttpResponseCode_MutexTimeout,'msg':errtypes.HttpResponseMsg_Timeout,'system_info':''}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e),'system_info':''}
 
@@ -92,7 +104,13 @@ def get_robot_process_detail_information(robot_id):
     if type(robot_id) != int or robot_id is None:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament, 'process_info_list': ''}
     try:
-        return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'process_info_list': get_robot_process_detail_info(robot_id)}
+        data,code = get_robot_process_detail_info(robot_id)
+        if code == errtypes.HttpResponseCode_Normal:
+            return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'process_info_list':data}
+        elif code == errtypes.HttpResponseCode_RobotOffLine:
+            return {'code':errtypes.HttpResponseCode_RobotOffLine,'msg':errtypes.HttpResponseMsg_RobotOffLine,'process_info_list':''}
+        elif code == errtypes.HttpResponseCode_MutexTimeout:
+            return {'code':errtypes.HttpResponseCode_MutexTimeout,'msg':errtypes.HttpResponseMsg_Timeout,'process_info_list':''}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e),'process_info_list':''}
 

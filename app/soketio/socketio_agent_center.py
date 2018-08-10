@@ -4,6 +4,7 @@ from flask import request
 from pynsp.wait import *
 import errtypes
 import json
+from ..user.user_service_agant import users_center
 
 thread = None
 thread_lock = RLock()
@@ -16,6 +17,9 @@ post_room_list=[]
 
 #key:client_id value:uuid
 uuid_with_user_id = {}
+
+#key:user_id value:uuid
+user_id_with_uuid = {}
 
 def client_conneted(client_identify):
     print('WebSocket get a new client browser connected:{0},uuid_with_user_id:{1}'.format(client_identify,uuid_with_user_id))
@@ -39,12 +43,16 @@ def client_msg(msg_data,client_identify):
     code=json_data['code']
     if code == errtypes.TypeShell_WebSokcetConnect:
         uuid_tmp = ''
+        token_tmp = ''
         data = json_data.get('data')
         if data is not None:
             uuid_tmp = data.get('uuid')
+            token_tmp = data.get('login_token')
         if thread_lock.acquire() == True:
-            global uuid_with_user_id
+            global uuid_with_user_id,user_id_with_uuid
             uuid_with_user_id[client_identify] = uuid_tmp
+            (retval, user_id) = users_center.check_user_login(token_tmp)
+            user_id_with_uuid[user_id]=uuid_tmp
             thread_lock.release()
         print('WebSocket client message:',uuid_with_user_id)
 
@@ -53,6 +61,18 @@ def send_msg_to_client(uuid_value,msg):
     msg_dict[uuid_value] = msg
     if thread_lock.acquire():
         global post_room_list
+        post_room_list.append(msg_dict)
+        thread_lock.release()
+
+    global thread_msg_wait
+    thread_msg_wait.sig()
+
+def send_msg_to_client_byuserid(user_id,msg):
+    msg_dict = dict()
+    if thread_lock.acquire():
+        global post_room_list
+        uuid_value = user_id_with_uuid.get(user_id)
+        msg_dict[uuid_value] = msg
         post_room_list.append(msg_dict)
         thread_lock.release()
 

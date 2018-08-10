@@ -11,6 +11,7 @@ from .shproto.errno import *
 from pynsp.logger import *
 from pynsp.waite_handler import *
 from .notify_thread_socket_io import *
+import errtypes
 
 #监测心跳超时时间戳差
 CHECK_ALIVE_TIMESTAMP_OUT=6000
@@ -143,11 +144,17 @@ class shell_manager():
 
     def get_shell_service_info(self,robot_id):
         info = {}
-        self.__mutex.acquire()
-        if robot_id in self.__robot_lnk.keys():
-            info = self.__robot_lnk.get(robot_id).get_shell_sys_service_info()
-        self.__mutex.release()
-        return info
+        if self.__mutex.acquire(timeout=3):
+            if robot_id in self.__robot_lnk.keys():
+                info = self.__robot_lnk.get(robot_id).get_shell_sys_service_info()
+                self.__mutex.release()
+                return info,errtypes.HttpResponseCode_Normal
+            else:
+                self.__mutex.release()
+                return {}, errtypes.HttpResponseCode_RobotOffLine
+        else:
+            return {}, errtypes.HttpResponseCode_MutexTimeout
+
 
     def get_all_robot_online_info(self):
         '''
@@ -187,13 +194,18 @@ class shell_manager():
     def get_session_by_id(self,robot_id):
         return self.__robot_lnk.get(robot_id)
     
-    def get_fixed_sysytem_info(self,robot_id)->dict:
-        info = dict()
-        self.__mutex.acquire()
-        if robot_id in self.__robot_lnk.keys():
-            info = self.__robot_lnk.get(robot_id).get_fixed_system_info()
-        self.__mutex.release()
-        return info
+    def get_fixed_sysytem_info(self,robot_id):
+        if self.__mutex.acquire(timeout=3) == True:
+            if robot_id in self.__robot_lnk.keys():
+                info = dict()
+                info = self.__robot_lnk.get(robot_id).get_fixed_system_info()
+                self.__mutex.release()
+                return info,errtypes.HttpResponseCode_Normal
+            else:
+                self.__mutex.release()
+                return {},errtypes.HttpResponseCode_RobotOffLine
+        else:
+            return {},errtypes.HttpResponseCode_MutexTimeout
 
     def get_shell_process_name_join(self,robot_id):
         result = ''
@@ -203,13 +215,18 @@ class shell_manager():
         self.__mutex.release()
         return result
 
-    def get_shell_process_detail_info(self,robot_id)->list:
-        info = list()
-        self.__mutex.acquire()
-        if robot_id in self.__robot_lnk.keys():
-            info = self.__robot_lnk.get(robot_id).get_shell_process_detail_list()
-        self.__mutex.release()
-        return info
+    def get_shell_process_detail_info(self,robot_id):
+        if self.__mutex.acquire(timeout=3) == True:
+            info = list()
+            if robot_id in self.__robot_lnk.keys():
+                info = self.__robot_lnk.get(robot_id).get_shell_process_detail_list()
+                self.__mutex.release()
+                return info, errtypes.HttpResponseCode_Normal
+            else:
+                self.__mutex.release()
+                return [], errtypes.HttpResponseCode_RobotOffLine
+        else:
+            return [], errtypes.HttpResponseCode_MutexTimeout
 
     def push_notify(self,msg_type,data):
         if self.__notify_thread:
