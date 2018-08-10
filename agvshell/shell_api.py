@@ -448,5 +448,8 @@ def query_robot_process_config_info(robot_id):
 def update_process_config_info(robot_id,process_list):
     return shell_manager().update_process_config_info(robot_id,process_list)
 
-def is_file_busy(package_id) ->bool:
+def is_package_in_task(package_id) ->bool:
     return file_manager().query_file_queue_used(package_id)
+
+def is_file_open(file_path)->bool:
+    return file_manager().is_open(file_path)

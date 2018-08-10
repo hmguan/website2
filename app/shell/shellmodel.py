@@ -277,7 +277,7 @@ def query_upgrade_file_write_permission(login_id,package_id):
         if os.access(file_path,os.W_OK) is False:
             return {'code': errtypes.HttpResponseCode_NoAuthority, 'msg': errtypes.HttpResponseMsg_NoAuthority}
 
-        if is_file_busy(package_id) is True:
+        if is_file_open(file_path) or is_package_in_task(package_id):
             return {'code': errtypes.HttpResponseCode_FileBusy, 'msg': errtypes.HttpResponseMsg_FileBusy }
 
         return {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal }

@@ -303,8 +303,8 @@ class mt_session(tcp.obtcp):
     def get_var_data(self,var_id):
         type_id=-1
         for item in self.__var_list:
-            if item.items.var_id==var_id:
-                type_id=item.items.type_id
+            if item.var_id==var_id:
+                type_id=item.var_type
                 break
         if type_id==-1:
             return -1,-1

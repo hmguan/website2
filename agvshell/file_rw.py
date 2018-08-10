@@ -511,6 +511,21 @@ class file_manager():
         # Logger().get_logger().info("file_path_set{} file is busy".format(file_path_set)) 
         # return file_path_set
 
+    def is_open(file_path) ->bool:
+        if file_path.startswith('./'):
+            file_path = os.path.abspath(file_path)
+        all_pid = [_i for _i in os.listdir('/proc') if _i.isdigit()]
+        for pid in all_pid:
+            _fd_dir = '/proc/{pid}/fd'.format(pid = pid)
+            if os.access(_fd_dir, os.R_OK) == False:
+                continue
+
+            for fd in os.listdir(_fd_dir):
+                fd_path = os.path.join(_fd_dir, fd)
+                if os.path.exists(fd_path) and os.readlink(fd_path) == file_path:
+                    return True
+        return False
+
     def push_file(self,threadID,m_userid,robot_id,file_path,file_type,task_id):
         if self.__shell_manager is None:
             Logger().get_logger().error("shell manager regist failure, robot_id{}".format(robot_id)) 

@@ -155,46 +155,48 @@ def get_mt_error(robot_id, status):
 ##################################################################################
 #自测部分
 
-# def start_connect_to_mt(agv_info):
-#     global global_mt_mutex
-#     global_mt_mutex.acquire()
-#     global mt_collection
-#     global mt_robot_info
-#     mt_robot_info.clear()
-#     mt_robot_info = copy.deepcopy(agv_info)
-#     for key,item in agv_info.items():
-#         if key not in mt_collection.keys():
-#             mt_collection[key] = item
-#     global_mt_mutex.release()
-#     global mt_thread_wait
-#     mt_thread_wait.sig()
+def start_connect_to_mt(agv_info):
+    global global_mt_mutex
+    global_mt_mutex.acquire()
+    global mt_collection
+    global mt_robot_info
+    mt_robot_info.clear()
+    mt_robot_info = copy.deepcopy(agv_info)
+    for key,item in agv_info.items():
+        if key not in mt_collection.keys():
+            mt_collection[key] = item
+    global_mt_mutex.release()
+    global mt_thread_wait
+    mt_thread_wait.sig()
+
+def set_agv_info(agvinfo):
+    st = threading.Thread(target=start_connect_to_mt_th)
+    st.start()
+    start_connect_to_mt(agvinfo)
 #
-# def set_agv_info(agvinfo):
-#     st = threading.Thread(target=start_connect_to_mt_th)
-#     st.start()
-#     start_connect_to_mt(agvinfo)
-#
-#if __name__ == '__main__':
-#     print('1111111111')
-#     info = agvinfoser.agvinfo_runtime(1, '10.10.100.131', 4409, 'aa:bb:cc', 4410)
-#     infos = {'aa:bb:cc': info}
-#     set_agv_info(infos)
-#     sleep(2)
-#     #set_stop_emergency(1)
-#     #get_opt_data(1)
-#     #get_nav_data(1)
-#
-#     get_nav_data(1)
-#
-#     sleep(2)
-#     #get_vars_data(1, 131, 258)
-#     get_vars_data(1, 1, 2)
-#
-#     get_var_list(1)
-#     #get_vars_data(1,131,258)
-#
-#     sleep(2)
-#     get_vars_data(1,102,260)
-#     while 1:
-#         print('---------')
-#         sleep(2)
+if __name__ == '__main__':
+    print('1111111111')
+    info = agvinfoser.agvinfo_runtime(1, '10.10.100.131', 4409, '08:00:27:40:91:42', 4410)
+    info.mtready=True
+    infos = {'08:00:27:40:91:42': info}
+    set_agv_info(infos)
+    sleep(2)
+    #set_stop_emergency(1)
+    #get_opt_data(1)
+    #get_nav_data(1)
+
+
+    sleep(2)
+    #get_vars_data(1, 131, 258)
+    # get_vars_data(1, 1, 2)
+
+    llist,err=get_var_list(1)
+    #get_vars_data(1,131,258)
+    print('llist',llist[0].var_id,llist[0].var_type,llist[1].var_id,llist[2].var_type)
+
+    sleep(2)
+    data=get_vars_data(1,131)
+    print('data',data)
+    while 1:
+        print('---------')
+        sleep(2)
