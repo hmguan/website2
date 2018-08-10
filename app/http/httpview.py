@@ -4,7 +4,7 @@ from flask import Flask,render_template,request, session
 import errtypes
 from . import http_main
 from db.db_users import user
-from app.user.user_manager import user_manager
+from app.user.user_service_agant import users_center
 from configuration import get_config_path
 import os,datetime
 from db.db_package import package_manager
