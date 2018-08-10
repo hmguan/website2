@@ -21,66 +21,46 @@ from configuration import config
 class package_view(base_event):
     def __init__(self):
         super(package_view,self).__init__()
-        self.regist_event('event_package_upload','event_package_update','event_package_remove','event_packages','event_download_files','event_exist_files')
+        self.regist_event('event_package_upload','event_package_remove','event_package_list')
         
     def flask_recvdata(self,json_data):
         event = json_data['event']
         if 'event_package_update'==event:
             if 'package_id' not in json_data or 'remark' not in json_data: 
-                return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': '参数错误'})
+                return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament})
 
             retval = package_manager.update(json_data['package_id'],json_data['remark'])
-            if retval<0:
-                return jsonify( {'code': errtypes.HttpResponseCode_ServerError, 'msg': '更新失败'})
-            ret = {'code': 0, 'msg': '更新成功'}
+            if -1==retval:
+                return jsonify( {'code': errtypes.HttpResponseCode_NOEXISTPackage, 'msg': errtypes.HttpResponseCodeMsg_NOEXISTPackage})
+            if -2==retval:
+                return jsonify( {'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
+            ret = {'code': 0, 'msg': 'suceess'}
         
         if 'event_package_remove'==event:
             if 'package_id' not in json_data : 
-                return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': '参数错误'}
+                return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
 
             retval = package_manager.remove(json_data['package_id'])
-            if retval<0:
-                return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '删除失败'})
-            ret = {'code': 0, 'msg': '删除成功'}
+            if -1==retval:
+                return jsonify( {'code': errtypes.HttpResponseCode_NOEXISTPackage, 'msg': errtypes.HttpResponseCodeMsg_NOEXISTPackage})
+            if -2==retval:
+                return jsonify( {'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
+            ret = {'code': 0, 'msg': 'suceess'}
 
-        if 'event_packages'==event:
-            retval = package_manager.packages(json_data['user_id'])
-            
+        if 'event_package_list'==event:
+            retval = package_manager.packages(json_data['login_id'])
+            if -1==retval:
+                return jsonify( {'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
+
             list_package=[]
             for index, value in enumerate(retval):
                 tmp={}
-                tmp['id']= value.id
+                tmp['package_id']= value.id
                 tmp['user_name']= value.user.username
                 tmp['version']= value.version
                 tmp['package_name'] = value.package_name
                 tmp['time']= value.time.strftime("%Y/%m/%d %H:%M:%S") 
                 tmp['remarks'] = value.remarks
                 list_package.append(tmp)
-            ret = {'code':0,'msg':'查询成功','data':{'users':list_package}}        
-        elif 'event_exist_files'==event:
-            user_id = json_data.get('user_id')
-            file_name = json_data.get('file_name')
-            file_type_index = json_data.get('file_type')
-            user_name = user.query_name_by_id(user_id)
-            if user_name is None:
-                return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'用户不存在'})
-
-            file_type=''
-            if file_type_index==httpRequestCode.HttpRequestFileType_Bin:
-                file_type=config.BINFOLDER
-            elif file_type_index==httpRequestCode.HttpRequestFileType_BlackBox:
-                file_type=config.BLACKBOXFOLDER  
-            elif file_type_index==httpRequestCode.HttpRequestFileType_Patch:
-                file_type=config.PATCHFOLDER  
-            else:
-                 return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted,'msg':'文件类型错误'})
-
-           
-
-            file_path = config.ROOTDIR +user_name +file_type + file_name
-            print(file_path)
-            if os.path.exists(file_path) == False:
-                return jsonify({'code': errtypes.HttpResponseCode_NOFILE,'msg':'文件不存在'''})
-
-            ret = {'code': 0,'msg':errtypes.HttpResponseMsg_Normal}
+            ret = {'code':0,'msg':'suceess','data':{'users':list_package}}        
         return jsonify(ret)

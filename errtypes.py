@@ -42,12 +42,15 @@ HttpResponseCode_InvaildToken=104
 HttpResponseCode_PermissionDenied=105
 HttpResponseCode_TimeoutToken=106
 HttpResponseCode_UserOffline=107
+HttpResponseCode_Loginout=108
 
 #文件管理错误状态码区间[200,300)
 HttpResponseCode_NoAuthority = 203
 HttpResponseCode_FileBusy = 204
 HttpResponseCode_DateBasePacketIdNotFound = 205
 HttpResponseCode_NotFileOwner = 206
+HttpResponseCode_NOEXISTPackage=207
+
 
 #shell模块错误状态码区间[300,400)
 HttpResponseCode_DatabaseRecordAbnormity = 300
@@ -63,11 +66,8 @@ HttpResponseCode_BlackboxReTask=382
 HttpResponseCode_BlackboxNoTask=383
 HttpResponseCode_BlackboxWaitTar=384
 
-#升级包
-HttpResponseCode_UPLOADEXCEPTIONERROR=50
-HttpResponseCode_NOFILE=51
-HttpResponseCode_EXISTFILE=51
-HttpResponseCode_InvaildPath = 52
+
+
 #不在线
 
 HttpResponseCode_NotFound=404
@@ -127,3 +127,5 @@ HttpResponseMsg_BlackboxSendFailed='All agvs failed to be sent'
 HttpResponseMsg_BlackboxNoTask='can not find the task'
 HttpResponseMsg_BlackboxWaitTar='a log file is being tar '
 
+#升级包管理
+HttpResponseCodeMsg_NOEXISTPackage='package is not existed'
