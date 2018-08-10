@@ -28,7 +28,7 @@ class backupview(base_event):
             robot_id = json_data['robot_id']
             if robot_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
-            task_id = send_log_condition(robot_id, int(json_data['user_id']), json_data.get('start_time'),
+            task_id = send_log_condition(robot_id, int(json_data['login_id']), json_data.get('start_time'),
                                       json_data.get('end_time'), json_data.get('type_list'),
                                       json_data['name'])  # ['agv_shell','nshost']
             if task_id >0:
@@ -45,10 +45,10 @@ class backupview(base_event):
             return jsonify(ret)
 
         if 'event_bk_temps_insert' == event:
-            user_id=json_data['user_id']
-            if type(user_id) != int or user_id is None:
+            login_id=json_data['login_id']
+            if type(login_id) != int or login_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
-            ret = blackbox_manager.insert_temps(user_id, json_data['name'], json_data.get('temps_types'),
+            ret = blackbox_manager.insert_temps(login_id, json_data['name'], json_data.get('temps_types'),
                                                 json_data.get('others'))
             if ret < 0:
                 return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '添加失败'})
@@ -66,10 +66,10 @@ class backupview(base_event):
             return jsonify({'code': 0, 'msg': '删除成功'})
 
         if 'event_bk_temps' == event:
-            user_id=json_data['user_id']
-            if type(user_id) != int or user_id is None:
+            login_id=json_data['login_id']
+            if type(login_id) != int or login_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
-            ret = blackbox_manager.temps(user_id)
+            ret = blackbox_manager.temps(login_id)
 
             list_temps = []
             for index, value in enumerate(ret):
@@ -84,37 +84,37 @@ class backupview(base_event):
             return jsonify(ret)
 
         if 'get_executing_log' == event:
-            user_id=json_data['user_id']
-            if type(user_id) != int or user_id is None:
+            login_id=json_data['login_id']
+            if type(login_id) != int or login_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
-            log_name, task_id, step = get_executing_log(user_id)
+            log_name, task_id, step = get_executing_log(login_id)
             ret = {'code': 0, 'msg': errtypes.HttpResponseCode_Normal, 'log_name': log_name, 'task_id': task_id,
                    'step': step}
             return jsonify(ret)
 
         if 'delete_log' == event:
-            user_id=json_data['user_id']
-            if type(user_id) != int or user_id is None:
+            login_id=json_data['login_id']
+            if type(login_id) != int or login_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             log_name = json_data['log_name']
-            ret = delete_log(user_id, log_name)
+            ret = delete_log(login_id, log_name)
             if ret < 0:
                 return jsonify({'code': errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed})
             return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
 
         if 'get_log_list' == event:
-            user_id=json_data['user_id']
-            if type(user_id) != int or user_id is None:
+            login_id=json_data['login_id']
+            if type(login_id) != int or login_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
-            log_list = get_log_list(user_id)
+            log_list = get_log_list(login_id)
             return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,
                             'log_list': log_list})
 
         if 'download_log' == event:
-            user_id=json_data['user_id']
-            if type(user_id) != int or user_id is None:
+            login_id=json_data['login_id']
+            if type(login_id) != int or login_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             log_name = json_data['log_name']
-            path = download_log(user_id, log_name)
+            path = download_log(login_id, log_name)
             return jsonify(
                 {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'path': path})
