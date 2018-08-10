@@ -4,6 +4,7 @@ from flask import Flask,render_template,request, session
 import errtypes
 from . import http_main
 from db.db_users import user
+from app.user.user_manager import user_manager
 from configuration import get_config_path
 import os,datetime
 from db.db_package import package_manager
@@ -11,22 +12,16 @@ from pynsp.logger import *
 import os
 import httpRequestCode
 
-def status(file_path):
-    open_fd_list = get_all_fd(file_path)
-    open_count = len(open_fd_list)
-    Logger().get_logger().info('file_path:{0}, open_count:{1}'.format(file_path,open_count))
-    is_opened = False
-    if open_count > 0:
-        is_opened = True
+def is_file_open(file_path):
+    is_opened = is_open(file_path)
+    Logger().get_logger().info('file_path:{0}, is_open:{1}'.format(file_path,is_opened))
     return is_opened
 
 def get_all_pid():
     #获取当前所有进程
     return [_i for _i in os.listdir('/proc') if _i.isdigit()]
 
-def get_all_fd(file_path):
-    #获取所有已经打开该文件的fd路径
-    all_fd = []
+def is_open(file_path) ->bool:
     if file_path.startswith('./'):
         file_path = os.path.abspath(file_path)
     for pid in get_all_pid():
@@ -37,8 +32,8 @@ def get_all_fd(file_path):
         for fd in os.listdir(_fd_dir):
             fd_path = os.path.join(_fd_dir, fd)
             if os.path.exists(fd_path) and os.readlink(fd_path) == file_path:
-                all_fd.append(fd_path)
-    return all_fd
+                return True
+    return False
 
 @http_main.route('/upload' ,methods=['GET' ,'POST'])
 def upload_file():
@@ -69,7 +64,7 @@ def upload_file():
                     file_path = os.path.join(folder_path, filename)
 
                     #The judgment is open only when the file exists
-                    if os.path.exists(file_path) and status(file_path):
+                    if os.path.exists(file_path) and is_file_open(file_path):
                         return jsonify({'code': errtypes.HttpResponseCode_FileBusy, 'msg': errtypes.HttpResponseMsg_FileBusy})
                     
                     file.save(file_path)
@@ -102,7 +97,12 @@ def download_file(url_fileinfo):
         Logger().get_logger().error('Incorrectly formatting {}:{}'.format(data[0],data[1]))
         return '',404
 
-    user_name = user.query_name_by_id(int(userinfo[1]))
+    (retval,user_id) = users_center.check_user_login(userinfo[1])
+    if retval:
+        Logger().get_logger().error('check_user_login result{}  user_id = {}'.format(retval,user_id))
+        return '',404
+
+    user_name = user.query_name_by_id(user_id)
     if user_name is None:
         Logger().get_logger().error('can not find user by user_id = {}'.format(int(userinfo[1])))
         return '',404
