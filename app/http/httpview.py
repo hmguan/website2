@@ -105,11 +105,12 @@ def download_file(url_fileinfo):
         Logger().get_logger().error('Incorrectly formatting {}:{}'.format(data[0],data[1]))
         return '',404
 
-    (retval,user_id) = users_center.check_user_login(userinfo[1])
-    if retval:
-        Logger().get_logger().error('check_user_login result{}  user_id = {}'.format(retval,user_id))
-        return '',404
+    json_data = get_user_id(userinfo[1])
+    if json_data.get('code') != 0:
+        return jsonify({'code': json_data.get('code'),
+                        'msg': json_data.get('msg')})
 
+    user_id = json_data.get('user_id')
     user_name = user.query_name_by_id(user_id)
     if user_name is None:
         Logger().get_logger().error('can not find user by user_id = {}'.format(int(userinfo[1])))
@@ -117,7 +118,6 @@ def download_file(url_fileinfo):
 
     type_id = int(type_info[1])
 
-        # return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': 'can not find user'})
     try:
         directory = get_config_path(user_name,type_id)
         if directory.startswith('./'):
