@@ -21,7 +21,7 @@ from configuration import config
 class package_view(base_event):
     def __init__(self):
         super(package_view,self).__init__()
-        self.regist_event('event_package_upload','event_package_remove','event_package_list')
+        self.regist_event('event_package_update','event_package_remove','event_package_list')
         
     def flask_recvdata(self,json_data):
         event = json_data['event']
