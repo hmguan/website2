@@ -33,7 +33,6 @@ HttpResponseCode_InvaildParament=4
 HttpResponseCode_MutexTimeout=5
 HttpResponseCode_InvaildGroup_Name=30
 
-
 #用户管理相关错误状态码[100,200)
 HttpResponseCode_UserExisted=100
 HttpResponseCode_Sqlerror=101
@@ -51,7 +50,8 @@ HttpResponseCode_FileBusy = 204
 HttpResponseCode_DateBasePacketIdNotFound = 205
 HttpResponseCode_NotFileOwner = 206
 HttpResponseCode_NOEXISTPackage=207
-
+HttpResponseCode_NOFILE=208
+HttpResponseCode_UPLOADEXCEPTIONERROR=209
 
 #shell模块错误状态码区间[300,400)
 HttpResponseCode_DatabaseRecordAbnormity = 300
@@ -60,14 +60,10 @@ HttpResponseCode_TaskFull = 302
 HttpResponseCode_RobotOffLine =303
 HttpResponseCode_TaskNotExist = 304
 
-
-
 HttpResponseCode_BlackboxSendFailed=381
 HttpResponseCode_BlackboxReTask=382
 HttpResponseCode_BlackboxNoTask=383
 HttpResponseCode_BlackboxWaitTar=384
-
-
 
 #不在线
 
@@ -79,7 +75,6 @@ HttpResponseCode_MtOffline=601
 HttpResponseCode_MtProtoErr=602
 HttpResponseCode_MtQueryTimeout=603
 HttpResponseCode_MtMissVariate=604
-
 
 #############################以下定义http响应消息###############################
 HttpResponseMsg_Normal='success'
@@ -105,6 +100,7 @@ HttpResponseMsg_NoAuthority = 'No authority'
 HttpResponseMsg_FileBusy = 'The file has been opened'
 HttpResponseMsg_DateBasePacketIdNotFound = 'The packetid can not be found in the database'
 HttpResponseMsg_NotFileOwner = 'Not File Owner'
+HttpResponseCodeMsg_NoFileSelect='There is not file been selected'
 
 #用户管理相关错误状态码错误说明
 HttpResponseCodeMsg_UserExisted='user is existed'
