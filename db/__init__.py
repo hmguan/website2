@@ -65,6 +65,14 @@ class blackbox_temps(Base):
     time = Column(DateTime,nullable=False)
 
 
+class file_list(Base):
+    __tablename__ = 'file_list'
+    id= Column(Integer,primary_key = True,autoincrement=True)
+    file_name =  Column(String(256),nullable=False)
+    user_id = Column(Integer,ForeignKey('users.id'),nullable=False)
+    file_size = Column(String(256),nullable=False)
+    time = Column(DateTime,nullable=False)
+
 Base.metadata.create_all(engine) 
 session_cls =sessionmaker(bind=engine)
 session_obj = session_cls()
