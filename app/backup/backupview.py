@@ -131,7 +131,6 @@ class backupview(base_event):
             # return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,
             #                 'log_list': log_list})
             ret_list=file_manager.file_list(user_id)
-            print('list---',ret_list,len(ret_list),ret_list[0])
             log_list=list()
             for i in range(len(ret_list)):
                 log_item = dict()
