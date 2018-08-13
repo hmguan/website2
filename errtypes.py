@@ -52,6 +52,7 @@ HttpResponseCode_NotFileOwner = 206
 HttpResponseCode_NOEXISTPackage=207
 HttpResponseCode_NOFILE=208
 HttpResponseCode_UPLOADEXCEPTIONERROR=209
+HttpResponseCode_FailedRemoveFile=210
 
 #shell模块错误状态码区间[300,400)
 HttpResponseCode_DatabaseRecordAbnormity = 300
