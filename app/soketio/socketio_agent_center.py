@@ -75,8 +75,9 @@ def send_msg_to_client_byuserid(user_id,msg):
     if thread_lock.acquire():
         global post_room_list
         uuid_value = user_id_with_uuid.get(user_id)
-        msg_dict[uuid_value] = msg
-        post_room_list.append(msg_dict)
+        if uuid_value is not None:
+            msg_dict[uuid_value] = msg
+            post_room_list.append(msg_dict)
         thread_lock.release()
 
     global thread_msg_wait
@@ -113,6 +114,7 @@ def background_thead():
                     message = json.dumps(obj)
                 else:
                     message = obj
+                print('WebSocket message:',message)
                 web_emit_all_client(message)
                 print('WebSocket send message to all client session.')
 

@@ -41,19 +41,24 @@ def upload_file():
     if request.method == 'POST':
         print('recv file local')
         if 'file' not in request.files:
-            return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': '参数有误'})
+            return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament})
         file =request.files['file']
         if file.filename == '':
-            return jsonify({'code': errtypes.HttpResponseCode_NOFILE, 'msg': '未选文件'})
+            return jsonify({'code': errtypes.HttpResponseCode_NOFILE, 'msg': errtypes.HttpResponseCodeMsg_NoFileSelect})
         else:
             filename = file.filename
             try:
                 if file:
-                    user_id = request.form['user_id']
+                    login_token = request.form['login_token']
+
+                    (retval, user_id) = users_center.check_user_login(login_token)
+                    if retval != 0:
+                        return jsonify({'code': errtypes.HttpResponseCode_InvaildToken,
+                                        'msg': errtypes.HttpResponseCodeMsg_InvaildToken})
                     user_name = user.query_name_by_id(user_id)
                     if user_name is None:
                         Logger().get_logger().error('can not find user by user_id = {}'.format(user_id))
-                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': 'can not find user'})
+                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
 
                     version = request.form['version']
                     remark =request.form['remark']
@@ -69,11 +74,11 @@ def upload_file():
                     
                     file.save(file_path)
                     time = datetime.datetime.now()
-                    ret = package_manager.upload(request.form['user_id'], filename, version, time, remark)
+                    ret = package_manager.upload(user_id, filename, version, time, remark)
                     if ret == -1:
-                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': '上传失败，用户不存在'})
+                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
 
-                    return jsonify({'code': 0, 'msg': '上传成功'})
+                    return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
             except Exception as e:
                 return jsonify({'code': errtypes.HttpResponseCode_UPLOADEXCEPTIONERROR, 'msg': str(e)})
 
