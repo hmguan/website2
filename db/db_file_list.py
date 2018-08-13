@@ -48,7 +48,7 @@ class file_manager():
                 return -1
 
             tmp  = session_obj.query(file_list).get(ret.id)
-            folder_path = config.ROOTDIR +tmp.user.username +config.BACKUPFILEDER
+            folder_path = config.ROOTDIR +tmp.user.username +config.BLACKBOXFOLDER
                         
             file_path = os.path.join(folder_path,tmp.file_name)
             if os.path.exists(file_path):
@@ -56,7 +56,7 @@ class file_manager():
                     os.remove(file_path)
                 except Exception as e:
                     Logger().get_logger().warning(str(e))
-                return -2
+                    return -2
 
             session_obj.delete(tmp)
             session_obj.commit()

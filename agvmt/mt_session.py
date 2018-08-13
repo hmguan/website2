@@ -30,6 +30,7 @@ class mt_session(tcp.obtcp):
         self.__optpar_cache=view_data.optpar_t()
         self.__var_list=list()
         self.__var_data=b''
+        self.__var_err=0
         self.__is_appoint=True
         return
 
@@ -50,6 +51,8 @@ class mt_session(tcp.obtcp):
         self.__mutex.release()
 
         pkt_id = phead.id
+        pkt_err=phead.err
+        self.__var_err = pkt_err
         if phead.err.value < 0:
             wait_handler().wait_singal(pkt_id.value)
             return
@@ -74,28 +77,30 @@ class mt_session(tcp.obtcp):
             pass
 
         elif cread.PKTTYPE_COMMON_READ_BYID_ACK == phead.type:
-            common_ack=cread.proto_common_vct()
-            common_ack.build(data,0)
-            # print('data---',common_ack.items[0].var_data.value)
-            if not self.__is_appoint:
-                self.recv_var_data(pkt_id,common_ack.items[0].var_data.value)
-                return
-            # print('mt---on common read ack,type:', common_ack.items[0].var_id)
-            if common_ack.items[0].var_id == kVarFixedObject_Vehide:
-                if common_ack.length()== 48:
-                    pkterror=error_status.proto_error()
-                    pkterror.build(common_ack.items[0].var_data.value,0)
-                    self.__error = pkterror.error
-                else:
-                    self.recv_vehicle_data(pkt_id,common_ack.items[0].var_data.value)
+            common_ack = cread.proto_common_vct()
+            if pkt_err==0:
+                common_ack.build(data,0)
+                # print('data---',common_ack.items[0].var_data.value)
+                if not self.__is_appoint:
+                    self.recv_var_data(pkt_id,common_ack.items[0].var_data.value)
+                    return
+                # print('mt---on common read ack,type:', common_ack.items[0].var_id)
+                if common_ack.items[0].var_id == kVarFixedObject_Vehide:
+                    if common_ack.length()== 48:
+                        pkterror=error_status.proto_error()
+                        pkterror.build(common_ack.items[0].var_data.value,0)
+                        self.__error = pkterror.error
+                    else:
+                        self.recv_vehicle_data(pkt_id,common_ack.items[0].var_data.value)
 
-            elif common_ack.items[0].var_id == kVarFixedObject_Navigation:
-                self.recv_navigation_data(pkt_id,common_ack.items[0].var_data.value)
-            elif common_ack.items[0].var_id ==kVarFixedObject_Operation:
-                self.recv_operation_data(pkt_id,common_ack.items[0].var_data.value)
-            elif common_ack.items[0].var_id ==kVarFixedObject_OptPar:
-                self.recv_optpar_data(pkt_id,common_ack.items[0].var_data.value)
-
+                elif common_ack.items[0].var_id == kVarFixedObject_Navigation:
+                    self.recv_navigation_data(pkt_id,common_ack.items[0].var_data.value)
+                elif common_ack.items[0].var_id ==kVarFixedObject_Operation:
+                    self.recv_operation_data(pkt_id,common_ack.items[0].var_data.value)
+                elif common_ack.items[0].var_id ==kVarFixedObject_OptPar:
+                    self.recv_optpar_data(pkt_id,common_ack.items[0].var_data.value)
+            else:
+                wait_handler().wait_singal(pkt_id.value)
 
         elif mthead.PKTTYPE_DBG_CLEAR_FAULT_ACK==phead.type:
             print('mt--clear ack')
@@ -104,9 +109,10 @@ class mt_session(tcp.obtcp):
             print('mt--stop_ack')
 
         elif mthead.PKTTYPE_DBG_VARLS_ACK==phead.type:
-            var_list=mthead.proto_var_report_items()
-            var_list.build(data,0)
-            self.recv_var_list_data(pkt_id,var_list.items)
+            var_list = mthead.proto_var_report_items()
+            if pkt_err==0:
+                var_list.build(data, 0)
+            self.recv_var_list_data(pkt_id, var_list.items, pkt_err)
 
         else:print('mt---not type')
 
@@ -343,7 +349,7 @@ class mt_session(tcp.obtcp):
         self.__optpar_cache.build(data,0)
         wait_handler().wait_singal(pkt_id.value)
 
-    def recv_var_list_data(self,pkt_id,data):
+    def recv_var_list_data(self,pkt_id,data,err):
         self.__var_list=data
         wait_handler().wait_singal(pkt_id.value)
 
@@ -354,23 +360,20 @@ class mt_session(tcp.obtcp):
         wait_handler().wait_singal(pkt_id.value)
 
     def get_local_navigation_data(self):
-        return self.__navigation_cache
+        return self.__navigation_cache,self.__var_err
 
     def get_local_vehicle_data(self):
-        return self.__vehicle_cache
+        return self.__vehicle_cache,self.__var_err
 
     def get_local_operation_data(self):
-        return self.__operation_cache
+        return self.__operation_cache,self.__var_err
 
     def get_local_optpar_data(self):
-        return self.__optpar_cache
+        return self.__optpar_cache,self.__var_err
 
     def get_local_var_list(self):
-        return self.__var_list
+        return self.__var_list,self.__var_err
 
     def get_local_var_data(self):
-        return self.__var_data
-
-
-
+        return self.__var_data,self.__var_err
 
