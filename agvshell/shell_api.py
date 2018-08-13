@@ -343,10 +343,8 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     from app.user.userview import users_center
     from app.soketio import socketio_agent_center
     from .shproto.errno import g_err_str
-    global notify_client_function
 
     notify_dic = dict()
-    notify_dic['user_id'] = user_id
     notify_dic['robot_id'] = robot_id
     notify_dic['file_path'] = file_path
     notify_dic['step'] = step
@@ -371,10 +369,8 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
                 if shell_info is not None:
                     shell_info.post_a_begin_upgrade(f_name, file_size)
 
-            if notify_client_function is not None:
-                notify_client_function(notify_dic)
             # sockio_api.response_to_client_data(notify_dic)
-            # socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
+            socketio_agent_center.send_msg_to_client_byuserid(user_id,notify_dic)
         elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
             pass
         elif FILE_TYPE_BLACKBOX_PULL_FILES == file_type:
