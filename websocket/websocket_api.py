@@ -54,3 +54,11 @@ def regist_client_message(notify_callback):
     :return:
     '''
     regist_recvdata_callback(notify_callback)
+
+def close_websocket(client_identify):
+    '''
+    close the client session with webserver
+    :param client_identify:
+    :return:
+    '''
+    close_client_websocket(client_identify)

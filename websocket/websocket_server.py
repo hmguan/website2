@@ -62,6 +62,14 @@ def regist_recvdata_callback(notify_callback):
     global recvdata_notify_callback
     recvdata_notify_callback = notify_callback
 
+def close_client_websocket(client_identify):
+    global clients
+    if client_lock.acquire() == True:
+        connection = clients.get(client_identify)
+        if connection is not None:
+            connection.close()
+        client_lock.release()
+
 #########################################################################################
 
 class websocket_thread(threading.Thread):
@@ -144,7 +152,8 @@ class websocket_thread(threading.Thread):
             except socket.error as e:
                 Logger().get_logger().error('WebSocket unexcepted error:{0}'.format(str(e)))
                 if client_lock.acquire() == True:
-                    clients.pop(self.__userid)
+                    if self.__userid in clients.keys():
+                        clients.pop(self.__userid)
                     client_lock.release()
                 break
             if len(data) == 0:
@@ -159,7 +168,8 @@ class websocket_thread(threading.Thread):
                 Logger().get_logger().info('WebSocket get close the client session code,the username is:{0}'.format(self.__userid))
                 self.__connection.close()
                 if client_lock.acquire() == True:
-                    clients.pop(self.__userid)
+                    if self.__userid in clients.keys():
+                        clients.pop(self.__userid)
                     client_lock.release()
                 break
             elif code == ws_type.WS_PONG_FRAME:

@@ -4,6 +4,7 @@ from ..user.userview import users_center
 from agvshell.transfer_file_types import *
 import errtypes
 import httpRequestCode
+from ..user.user_service_agant import users_center
 
 set_push_file_type = {FILE_TYPE_A_UPGRADE,FILE_TYPE_VCU_UPGRADE}
 set_pull_file_type = {FILE_TYPE_BLACKBOX_PULL_FILES}
@@ -353,3 +354,11 @@ def robot_upgrade(package_id,user_id,robot_list):
         return {'code': 0,'msg':errtypes.HttpResponseMsg_Normal,'transfer_list':task_list}
     except Exception as e:
         return {'code': errtypes.HttpResponseCode_ServerError,'msg':str(e)}
+
+
+def get_user_id(login_token):
+    retval, user_id = users_center.check_user_login(login_token)
+    if retval == 0:
+        return {'code':errtypes.HttpResponseCode_Normal,'msg':errtypes.HttpResponseMsg_Normal,'user_id':user_id}
+    else:
+        return {'code':retval,'msg':errtypes.HttpResponseMsg_Failed,'user_id':user_id}
