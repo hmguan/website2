@@ -4,7 +4,7 @@ from flask import request
 from pynsp.wait import *
 import errtypes
 import json
-from ..user.user_service_agant import users_center
+
 
 thread = None
 thread_lock = RLock()
@@ -51,7 +51,10 @@ def client_msg(msg_data,client_identify):
         if thread_lock.acquire() == True:
             global uuid_with_user_id,user_id_with_uuid
             uuid_with_user_id[client_identify] = uuid_tmp
+
+            from ..user.user_service_agant import users_center
             (retval, user_id) = users_center.check_user_login(token_tmp)
+
             user_id_with_uuid[user_id]=uuid_tmp
             thread_lock.release()
         print('WebSocket client message:',uuid_with_user_id)
