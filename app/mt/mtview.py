@@ -50,22 +50,27 @@ class mt_view(base_event):
                 return jsonify({'code':errtypes.HttpResponseCode_MtOffline,'msg':errtypes.HttpResponseMsg_MtOffline})
             elif err==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_MtQueryTimeout,'msg':errtypes.HttpResponseMsg_MtQueryTimeout})
-            print('-------------------------load_varlist:', len(info))
-            var_view = []#[{0:{1:'a'}},{2:{3:'b'}},{4:{5:'c'}}]
-            view=dict()
-            for iter in info:
-                 view[int(iter.var_id)] = {int(iter.var_type): viewtype.typeDict[int(iter.var_type)]}
-                 var_view.append({int(iter.var_id):{int(iter.var_type): viewtype.typeDict[int(iter.var_type)]}})
+            elif err==0:
+                print('-------------------------load_varlist:', len(info))
+                var_view = []#[{0:{1:'a'}},{2:{3:'b'}},{4:{5:'c'}}]
+                view=dict()
+                for iter in info:
+                     view[int(iter.var_id)] = {int(iter.var_type): viewtype.typeDict[int(iter.var_type)]}
+                     var_view.append({int(iter.var_id):{int(iter.var_type): viewtype.typeDict[int(iter.var_type)]}})
+                return jsonify({'code': errtypes.HttpResponseCode_Normal,'msg': errtypes.HttpResponseMsg_Normal,'data':var_view})
+            else:
+                return jsonify({'code': errtypes.HttpResponseCode_MtProtoErr, 'msg': errtypes.HttpResponseMsg_MtProtoErr})
 
-            return jsonify({'code': errtypes.HttpResponseCode_Normal,'msg': errtypes.HttpResponseMsg_Normal,'data':var_view})
         elif 'load_vardata'==event:
             robot_id = json_data['robot_id']
             var_id = json_data['var_id']
             if type(robot_id) != int or robot_id is None or type(var_id)!=int or var_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament,'data': ''})
-            info = get_vars_data(int(robot_id),int(var_id))
+            info,err = get_vars_data(int(robot_id),int(var_id))
             if info=={}:
-                return jsonify({'code': errtypes.HttpResponseCode_MtMissVariate, 'msg': errtypes.HttpResponseMsg_MtMissVariate, 'data': info})
+                return jsonify({'code': errtypes.HttpResponseCode_MtOffline, 'msg': errtypes.HttpResponseMsg_MtOffline, 'data': info})
+            if err!=0:
+                return jsonify({'code': errtypes.HttpResponseCode_MtProtoErr, 'msg': errtypes.HttpResponseMsg_MtProtoErr, 'data': info})
             return jsonify({'code': errtypes.HttpResponseCode_Normal,'msg': errtypes.HttpResponseMsg_Normal,'data':info})
         elif 'clear_error'==event:
             robot_list=json_data['robot_id']

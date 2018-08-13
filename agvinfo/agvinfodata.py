@@ -137,7 +137,7 @@ def add_agvinfo_xml(agvinfo):
         updateTree = ElementTree.parse(path)
     except IOError:
         Logger().get_logger().error('Error:add_agvinfo_xml can not find agv_info.xml filed')
-        new_agvinfo_xml(path, agvinfo)
+        new_agvinfo_xml(agvinfo,path)
         return
     except xml.etree.ElementTree.ParseError:
         Logger().get_logger().error('parse error. maybe no element existed')

@@ -72,6 +72,7 @@ class file_list(Base):
     user_id = Column(Integer,ForeignKey('users.id'),nullable=False)
     file_size = Column(String(256),nullable=False)
     time = Column(DateTime,nullable=False)
+    user = relationship("user_info", foreign_keys=[user_id])
 
 Base.metadata.create_all(engine) 
 session_cls =sessionmaker(bind=engine)
