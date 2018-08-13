@@ -36,4 +36,5 @@ class userview(base_event):
             ret = users_center.update_group_alias(json_data['login_id'], json_data['group_name'],json_data['alias'])
         if  'event_query_alias'==event:
             ret = users_center.group_alias(json_data['login_id'], json_data['group_name'])
+        
         return jsonify(ret)

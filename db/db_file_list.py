@@ -5,7 +5,7 @@ from sqlalchemy import desc
 import os
 from datetime import datetime
 from pynsp.logger import*
-
+from configuration import config
 
 
 class file_manager():
@@ -20,7 +20,7 @@ class file_manager():
                 return -1
             
             tmp = session_obj.query(file_list).filter_by(file_name=file_name).first()
-            if(tmp ==None):
+            if(tmp !=None):
                 return -2
             time = datetime.datetime.now()
             list_obj = file_list(user_id = user_id,file_name= file_name,file_size =file_size,time=time)
@@ -48,6 +48,15 @@ class file_manager():
                 return -1
 
             tmp  = session_obj.query(file_list).get(ret.id)
+            folder_path = config.ROOTDIR +tmp.user.username +config.BACKUPFILEDER
+                        
+            file_path = os.path.join(folder_path,tmp.file_name)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    Logger().get_logger().warning(str(e))
+                return -2
 
             session_obj.delete(tmp)
             session_obj.commit()
