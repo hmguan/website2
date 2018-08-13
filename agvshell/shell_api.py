@@ -343,10 +343,8 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     from app.user.userview import users_center
     from app.soketio import socketio_agent_center
     from .shproto.errno import g_err_str
-    global notify_client_function
 
     notify_dic = dict()
-    notify_dic['user_id'] = user_id
     notify_dic['robot_id'] = robot_id
     notify_dic['file_path'] = file_path
     notify_dic['step'] = step
@@ -358,32 +356,26 @@ def file_tansfer_notify(user_id, robot_id, file_path, file_type, step, error_cod
     notify_dic['status'] = status
     notify_dic['task_id'] = task_id
 
-    # if step == 100:
-#    print(step)
-    u_uuid = users_center.user_uuid(user_id)
-    if u_uuid is not None:
-        if FILE_TYPE_A_UPGRADE == file_type :
-            notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
-            if 100 == step and status == 1:
-                print("a begin upgrade")
-                f_name = file_path[file_path.rfind('/') + 1:]
-                shell_info = shell_manager().get_session_by_id(robot_id)
-                if shell_info is not None:
-                    shell_info.post_a_begin_upgrade(f_name, file_size)
 
-            if notify_client_function is not None:
-                notify_client_function(notify_dic)
-            # sockio_api.response_to_client_data(notify_dic)
-            # socketio_agent_center.post_msg_to_room(notify_dic,room_identify=u_uuid)
-        elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
-            pass
-        elif FILE_TYPE_BLACKBOX_PULL_FILES == file_type:
-            global step_notify_callback
-            print('pull', step_notify_callback,step)
-            if step_notify_callback is not None:
-                step_notify_callback(user_id,robot_id, step, file_path, error_code,status)
-        else:
-            pass
+    if FILE_TYPE_A_UPGRADE == file_type :
+        notify_dic['msg_type'] = errtypes.TypeShell_UpdateSoftware
+        if 100 == step and status == 1:
+            print("a begin upgrade")
+            f_name = file_path[file_path.rfind('/') + 1:]
+            shell_info = shell_manager().get_session_by_id(robot_id)
+            if shell_info is not None:
+                shell_info.post_a_begin_upgrade(f_name, file_size)
+
+        socketio_agent_center.send_msg_to_client_byuserid(user_id,notify_dic)
+    elif FILE_TYPE_VCU_UPGRADE == file_type and 100 == step:
+        pass
+    elif FILE_TYPE_BLACKBOX_PULL_FILES == file_type:
+        global step_notify_callback
+        print('pull', step_notify_callback,step)
+        if step_notify_callback is not None:
+            step_notify_callback(user_id,robot_id, step, file_path, error_code,status)
+    else:
+        pass
 
 def register_notify_log_step(notify_call=None):
     if notify_call is not None:

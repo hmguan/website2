@@ -334,11 +334,11 @@ def robot_upgrade(package_id,user_id,robot_list):
 
     robot_list = list(map(int,robot_list))
     if len(set(robot_list)) != len(robot_list):
-        return {'code': errtypes.HttpResponseCode_RobotIDRepetition, 'msg': errtypes.HttpResponseMsg_RobotIDRepetition }
+        return {'code': errtypes.HttpResponseCode_IDRepetition, 'msg': errtypes.HttpResponseCode_IDRepetition }
     try:
         retval = package_manager.query_packages(package_id)
         if retval is None:
-            return {'code': errtypes.HttpResponseCode_NOFILE, 'msg': errtypes.HttpResponseMsg_FileNotExist }
+            return {'code': errtypes.HttpResponseCode_DateBasePacketIdNotFound, 'msg': errtypes.HttpResponseMsg_DateBasePacketIdNotFound }
 
         user_name = retval.user.username
         package_name = retval.package_name
