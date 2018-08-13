@@ -51,7 +51,7 @@ HttpResponseCode_FileBusy = 204
 HttpResponseCode_DateBasePacketIdNotFound = 205
 HttpResponseCode_NotFileOwner = 206
 HttpResponseCode_NOEXISTPackage=207
-
+HttpResponseCode_FailedRemoveFile=208
 
 #shell模块错误状态码区间[300,400)
 HttpResponseCode_DatabaseRecordAbnormity = 300
@@ -130,3 +130,4 @@ HttpResponseMsg_BlackboxWaitTar='a log file is being tar '
 
 #升级包管理
 HttpResponseCodeMsg_NOEXISTPackage='package is not existed'
+HttpResponseCodeMsg_FailedRemoveFile ='failedto remove file'

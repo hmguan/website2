@@ -6,7 +6,7 @@ from sqlalchemy import desc
 from configuration import config
 import os
 from pynsp.logger import*
-
+from agvshell.shell_api import is_file_open,is_package_in_task
 class package_manager():
     def __init__(self):
         pass
@@ -65,15 +65,22 @@ class package_manager():
             folder_path = config.ROOTDIR +tmp.user.username +config.PATCHFOLDER
                         
             file_path = os.path.join(folder_path,tmp.package_name)
+
+            if is_file_open(file_path) or is_package_in_task(package_id):
+                return -4
             if os.path.exists(file_path):
-                os.remove(file_path)
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    Logger().get_logger().warning(str(e))
+                return -2
 
             session_obj.delete(tmp)
             session_obj.commit()
             return 0
         except Exception as e:
             Logger().get_logger().warning(str(e))
-            return -2
+            return -3
         
     @staticmethod
     def query_packages(package_id):

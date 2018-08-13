@@ -34,7 +34,7 @@ class package_view(base_event):
                 return jsonify( {'code': errtypes.HttpResponseCode_NOEXISTPackage, 'msg': errtypes.HttpResponseCodeMsg_NOEXISTPackage})
             if -2==retval:
                 return jsonify( {'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
-            ret = {'code': 0, 'msg': 'suceess'}
+            ret = {'code': 0, 'msg': 'success'}
         
         if 'event_package_remove'==event:
             if 'package_id' not in json_data : 
@@ -44,8 +44,12 @@ class package_view(base_event):
             if -1==retval:
                 return jsonify( {'code': errtypes.HttpResponseCode_NOEXISTPackage, 'msg': errtypes.HttpResponseCodeMsg_NOEXISTPackage})
             if -2==retval:
+                return jsonify( {'code': errtypes.HttpResponseCode_FailedRemoveFile, 'msg': errtypes.HttpResponseCodeMsg_FailedRemoveFile})
+            if -3==retval:
                 return jsonify( {'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
-            ret = {'code': 0, 'msg': 'suceess'}
+            if -4==retval:
+                return jsonify({'code': errtypes.HttpResponseCode_FileBusy, 'msg': errtypes.HttpResponseMsg_FileBusy })
+            ret = {'code': 0, 'msg': 'success'}
 
         if 'event_package_list'==event:
             retval = package_manager.packages(json_data['login_id'])
@@ -62,5 +66,5 @@ class package_view(base_event):
                 tmp['time']= value.time.strftime("%Y/%m/%d %H:%M:%S") 
                 tmp['remarks'] = value.remarks
                 list_package.append(tmp)
-            ret = {'code':0,'msg':'suceess','data':{'users':list_package}}        
+            ret = {'code':0,'msg':'success','data':{'users':list_package}}        
         return jsonify(ret)

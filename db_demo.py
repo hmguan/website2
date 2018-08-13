@@ -128,17 +128,22 @@ class HBaseApi(object):
 
         return ret
 
-def main():
-    ha = HBaseApi()
-    ha.put('0002','age','23')
-    rowKeys = [str(key) for key in range(10001,10010)]
-    values = ['fr'+str(val) for val in range(10001,10010)]
-    ha.puts(rowKeys,'name',values)
-    print(ha.scanner())
-    print(ha.getRow('0002','age'))
-    print(ha.getRows(rowKeys))
 
- 
+from db.db_file_list import file_manager
+
+def main():
+    # ha = HBaseApi()
+    # ha.put('0002','age','23')
+    # rowKeys = [str(key) for key in range(10001,10010)]
+    # values = ['fr'+str(val) for val in range(10001,10010)]
+    # ha.puts(rowKeys,'name',values)
+    # print(ha.scanner())
+    # print(ha.getRow('0002','age'))
+    # print(ha.getRows(rowKeys))
+    file_manager.insert(3,'hello','13')
+    file_manager.insert(3,'hello12','13')
+    file_manager.remove(1)
+    print(file_manager.file_list(3))
 
 if __name__ == "__main__":
     main()
