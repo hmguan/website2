@@ -54,8 +54,6 @@ class package_view(base_event):
             ret = {'code': 0, 'msg': 'success'}
 
         if 'event_package_list'==event:
-            if 'package_id' not in json_data or  type(json_data['package_id'])!=int:
-                return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament})
             if 'login_id' not in json_data or  type(json_data['login_id'])!=int:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament})
 
