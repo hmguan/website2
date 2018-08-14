@@ -47,8 +47,8 @@ def get_log_list(user_id):
     return backup_manage().get_log_list(user_id)
 
 # 获取后台要下载文件的全路径
-def download_log(user_id, log_name):
-    return backup_manage().download_log(user_id, log_name)
+def exists_log(user_id, log_name):
+    return backup_manage().exists_log(user_id, log_name)
 
 def blackbox_step_notify(user_id,dict):
     if notify_step_function is not None:

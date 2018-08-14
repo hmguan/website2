@@ -68,6 +68,7 @@ HttpResponseCode_BlackboxNoTask=383
 HttpResponseCode_BlackboxWaitTar=384
 HttpResponseCode_BlackboxDeleteFailed=385
 HttpResponseCode_BlackboxDbNoFile=386
+HttpResponseCode_BlackboxNoDownlownFile=387
 
 #不在线
 
@@ -129,6 +130,7 @@ HttpResponseMsg_BlackboxNoTask='can not find the task'
 HttpResponseMsg_BlackboxWaitTar='a log file is being tar '
 HttpResponseMsg_BlackboxDeleteFailed='delete log failed '
 HttpResponseMsg_BlackboxDbNoFile='the file cannot be found in the database'
+HttpResponseMsg_BlackboxNoDownlownFile='the downlown file cannot be found'
 
 #升级包管理
 HttpResponseCodeMsg_NOEXISTPackage='package is not existed'
