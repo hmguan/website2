@@ -65,6 +65,7 @@ HttpResponseCode_BlackboxSendFailed=381
 HttpResponseCode_BlackboxReTask=382
 HttpResponseCode_BlackboxNoTask=383
 HttpResponseCode_BlackboxWaitTar=384
+HttpResponseCode_BlackboxDeleteFailed=385
 
 #不在线
 
@@ -124,6 +125,7 @@ HttpResponseMsg_BlackboxReTask='the user already has task'
 HttpResponseMsg_BlackboxSendFailed='All agvs failed to be sent'
 HttpResponseMsg_BlackboxNoTask='can not find the task'
 HttpResponseMsg_BlackboxWaitTar='a log file is being tar '
+HttpResponseMsg_BlackboxDeleteFailed='delete log failed '
 
 #升级包管理
 HttpResponseCodeMsg_NOEXISTPackage='package is not existed'

@@ -394,8 +394,11 @@ class backup_manage():
             self.user_task_data[user_id]['failed'].append(robot_id)
         if len(self.user_task_data[user_id]['success']) + len(self.user_task_data[user_id]['failed']) == len(self.user_task_data[user_id]['wait']) and \
                 len(self.user_task_data[user_id]['failed']) != len(self.user_task_data[user_id]['wait']):
-            notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log,
-                                  'task_id': self.user_task_data[user_id]['task']})
+            self.user_task_data[int(user_id)]['step'] = 100
+            task_tar = threading.Thread(target=backup_manage.task_over_tar_log_file, args=(self, user_id))
+            task_tar.setDaemon(True)
+            task_tar.start()
+            #notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log,'task_id': self.user_task_data[user_id]['task']})
 
 
     def register_blackbox_step_notify(self,log_notify=None):
