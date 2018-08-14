@@ -48,7 +48,10 @@ def notify_one_client(identify,msg):
         return
     data = encode_webmessage(0x80 | ws_type.WS_TEXT_FRAME,msg)
     client_session = clients.get(identify)
-    client_session.send(data)
+    if client_session is not None:
+        client_session.send(data)
+    else:
+        Logger().get_logger().error('WebSocket client session:{0} is null,then can not send message.'.format(identify))
 
 def regist_connect_callback(notify_callback):
     global connected_notify_callback
