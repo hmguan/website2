@@ -266,7 +266,7 @@ def update_robot_process_config_list(robot_id,process_list):
 
 def query_upgrade_file_write_permission(login_id,package_id):
     from db.db_package import package_manager
-    from configuration import get_config_path
+    from app.configuration.configapi import get_config_path
 
     if type(login_id) != int or type(package_id) != int:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
@@ -299,7 +299,7 @@ def query_upgrade_file_write_permission(login_id,package_id):
 
 def query_upgrade_file_read_permission(login_id,package_id):
     from db.db_package import package_manager
-    from configuration import get_config_path
+    from app.configuration.configapi import get_config_path
 
     if type(login_id) != int or type(package_id) != int:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}
@@ -328,7 +328,7 @@ def query_upgrade_file_read_permission(login_id,package_id):
 
 def robot_upgrade(package_id,user_id,robot_list):
     from db.db_package import package_manager
-    from configuration import get_config_path
+    from app.configuration.configapi import get_config_path
     
     if type(package_id) != int or type(robot_list) != list or type(user_id) != int or len(robot_list) == 0:
         return {'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament }

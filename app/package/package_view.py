@@ -9,7 +9,6 @@ from flask import jsonify
 from flask import Flask, request
 from db.db_users import user
 from db.db_package import package_manager
-from configuration import get_config_path
 from agvshell.shell_api import push_file_to_remote
 from agvshell.transfer_file_types import *
 import errtypes

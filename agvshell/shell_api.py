@@ -143,7 +143,7 @@ def walk_file(root_path,retention_time,model=None):
             if last_update_file >= current_timestamp :
                 continue
             elif (current_timestamp - last_update_file) > retention_time:
-                if skip_file(file_name) is False:
+                if skip_file(file_name) is False and is_file_open(file_path) is False:
                     Logger().get_logger().info('remove file:filename{}'.format(file_path))
                     os.remove(file_path)
 

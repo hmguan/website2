@@ -6,20 +6,6 @@ import uuid
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-def get_config_path(user_name,file_type):
-    import httpRequestCode
-    config_path = ''
-    if file_type == httpRequestCode.HttpRequestFileType_Patch:
-        config_path = config.PATCHFOLDER
-    elif file_type == httpRequestCode.HttpRequestFileType_BlackBox:
-        config_path = config.BLACKBOXFOLDER
-    elif file_type == httpRequestCode.HttpRequestFileType_Bin:
-        config_path = config.BINFOLDER
-    else:
-        pass
-
-    return config.ROOTDIR +user_name + config_path
-
 class config:
     SECRET_KEY=str(uuid.uuid4())
     MAX_CONTENT_LENGTH=1024*1024*1024
@@ -58,7 +44,9 @@ system_config = {
     'path_element':[
         {
             'path_root':config.ROOTDIR,
-            'path_model':[config.BLACKBOXFOLDER.strip('/')]
+            'path_model':[
+                # config.BLACKBOXFOLDER.strip('/')
+            ]
         },
         {
             'path_root':'./pynsp/logs'
