@@ -1,6 +1,5 @@
 from websocket.websocket_api import *
 from threading import RLock
-from flask import request
 from pynsp.wait import *
 import errtypes
 import json
@@ -50,12 +49,17 @@ def client_msg(msg_data,client_identify):
             uuid_tmp = data.get('uuid')
             token_tmp = data.get('login_token')
 
+        if token_tmp is None:
+            Logger().get_logger().error("WebSocket can not get login_token is null")
+            close_websocket(client_identify)
+            return
+
         if thread_lock.acquire() == True:
             global uuid_with_user_id,user_id_with_uuid
             uuid_with_user_id[client_identify] = uuid_tmp
 
             if token_tmp is None:
-                Logger().get_logger().warning("WebSocket can not get login_token is null")
+                Logger().get_logger().error("WebSocket can not get login_token is null")
             else:
                 from ..user.user_service_agant import users_center
                 (retval, user_id) = users_center.check_user_login(token_tmp)

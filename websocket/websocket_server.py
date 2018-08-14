@@ -15,8 +15,8 @@ connected_notify_callback=None
 closed_notify_callback=None
 recvdata_notify_callback=None
 
-def encode_webmessage(message):
-    data = struct.pack('B', 129)
+def encode_webmessage(type,message):
+    data = struct.pack('B', type)
 
     msg_len = len(message)
     if msg_len <= 125:
@@ -32,7 +32,7 @@ def encode_webmessage(message):
     return data
 
 def notify_all_client(msg):
-    data = encode_webmessage(msg)
+    data = encode_webmessage(0x80 | ws_type.WS_TEXT_FRAME,msg)
     if len(data) == 0:
         return
     global clients
@@ -46,7 +46,7 @@ def notify_one_client(identify,msg):
     if identify not in clients.keys():
         Logger().get_logger().warning('WebSocket can not find identify:{0} in the all client collection.'.format(identify))
         return
-    data = encode_webmessage(msg)
+    data = encode_webmessage(0x80 | ws_type.WS_TEXT_FRAME,msg)
     client_session = clients.get(identify)
     client_session.send(data)
 
@@ -67,7 +67,7 @@ def close_client_websocket(client_identify):
     if client_lock.acquire() == True:
         connection = clients.get(client_identify)
         if connection is not None:
-            connection.close()
+            connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_RAME,ws_type.WS_CLOSE_NORMAL))
         client_lock.release()
 
 #########################################################################################
@@ -96,17 +96,12 @@ class websocket_thread(threading.Thread):
             Logger().get_logger().warning('WebSocket get the message is null,then can not parse WebSocket data')
             return '',0
 
+        # print('recv data:',msg)
+
         opcode=msg[0] & 0x0f
         is_mask = (msg[1] & 0x80) >> 7
 
         print('opcode:',opcode)
-        #is it need to close the session?
-        if is_mask != 1 or opcode == ws_type.WS_CLOSEF_RAME:
-            return '',ws_type.WS_CLOSEF_RAME
-        elif opcode == ws_type.WS_PONG_FRAME:
-            return '',ws_type.WS_PONG_FRAME
-        elif opcode == ws_type.WS_ERROR_FRAME:
-            return '',ws_type.WS_ERROR_FRAME
         
         msg_len = msg[1] & 0x7F
         if msg_len == 0x7E:
@@ -121,6 +116,15 @@ class websocket_thread(threading.Thread):
         raw_str=''
         for i,d in enumerate(content):
             raw_str += chr(d^mask[i%4])
+
+        print('recv web:',raw_str)
+        if is_mask != 1 or opcode == ws_type.WS_CLOSEF_RAME:
+            return raw_str,ws_type.WS_CLOSEF_RAME
+        elif opcode == ws_type.WS_PONG_FRAME:
+            return '',ws_type.WS_PONG_FRAME
+        elif opcode == ws_type.WS_ERROR_FRAME:
+            return '',ws_type.WS_ERROR_FRAME
+
         return raw_str,0
 
     def generate_token(self,msg):
@@ -165,6 +169,7 @@ class websocket_thread(threading.Thread):
                 if closed_notify_callback is not None:
                     closed_notify_callback(self.__userid)
 
+                self.__connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_RAME,v_data))
                 Logger().get_logger().info('WebSocket get close the client session code,the username is:{0}'.format(self.__userid))
                 self.__connection.close()
                 if client_lock.acquire() == True:
