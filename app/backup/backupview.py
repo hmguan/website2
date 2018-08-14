@@ -145,11 +145,13 @@ class backupview(base_event):
                 log_list.append(log_item)
             return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,'log_list': log_list})
 
-        if 'download_log' == event:
+        if 'exists_log' == event:
             login_id=json_data['login_id']
-            if type(login_id) != int or login_id is None:
-                return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             log_name = json_data['log_name']
-            path = download_log(login_id, log_name)
-            return jsonify(
-                {'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal, 'path': path})
+            if type(login_id) != int or login_id is None or type(log_name)!=str or len(log_name)==0:
+                return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
+
+            ret = exists_log(login_id, log_name)
+            if ret!=0:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxNoDownlownFile, 'msg': errtypes.HttpResponseMsg_BlackboxNoDownlownFile})
+            return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})

@@ -85,28 +85,23 @@ class backup_manage():
                 return -2
             if self.user_task_data[user_id]['tar']==0 and self.user_task_data[user_id]['step']==100:
                 return -2
-        print('send_log_co00000')
         task_id = self.get_task_id()
         self.task_user_[task_id] = user_id
         zip_file = self.get_user_path(user_id) + name
         zip_file_tmp=self.get_user_tmp_path(user_id)+name
         hzip = tarfile.open(zip_file_tmp, "w:tar")
-        print('send_log_co002211')
 
         self.mutex.acquire()
-        print('send_log_co1111')
         self.user_task_data[user_id] = {'task': task_id, 'filepath': zip_file, 'name': name, 'handle': hzip, 'path': {},
                                    'step': 0, 'pull_list':[],'failed':[],'success':[],'wait':[],'shellback':[],'status':0,'tar':1,'delete':0}
         self.mutex.release()
         for id in robot_list:
-            print('send_log_co2221')
             shell_info = shell_manager().get_session_by_id(int(id))
             if shell_info is not None:
                 shell_info.register_notify_log_path(self.load_log_path)
                 if shell_info.get_log_data(task_id, start_time, end_time, types) >= 0:
                     self.user_task_data[user_id]['wait'].append(id)
                     self.user_task_data[user_id]['path'][id] = ''
-        print('send_log_co3333')
         if len(self.user_task_data[user_id]['wait'])==0:
             self.user_task_data[user_id]['handle'].close()
             self.delete_log(user_id, self.user_task_data[user_id]['name'])
@@ -443,15 +438,16 @@ class backup_manage():
         return tmp_path
 
     # 获取后台要下载文件的全路径
-    def download_log(self,user_id, log_name):
-        path = self.get_user_path(user_id)
-        list = os.listdir(path)
+    def exists_log(self,user_id, log_name):
+        user_name=user.query_name_by_id(user_id)
+        folder_path = config.ROOTDIR + user_name + config.BLACKBOXFOLDER
+        if os.path.exists(folder_path) == False:
+            return -1#没有文件夹
+        list = os.listdir(folder_path)
         for index in list:
-            if os.path.isfile(path + index) and os.path.splitext(index)[1] == ".tar" and os.path.join(
-                    path + log_name) == os.path.join(path + index):
-                filepath = os.path.join(path + log_name)
-                return filepath[1:len(filepath)]
-        return ''
+            if os.path.isfile(folder_path + index) and os.path.splitext(index)[1] == ".tar" and os.path.join(folder_path + log_name) == os.path.join(folder_path + index):
+                return 0
+        return -2#没有文件
 
 
 
@@ -465,8 +461,7 @@ class backup_manage():
             self.user_task_data[user]['tar'] = 0
             tmp_task=self.user_task_data[user]
             self.mutex.release()
-            if tmp_task['handle'] is not None:
-                handle = tmp_task['handle']
+            handle = tmp_task['handle']
             open_path = self.get_user_tmp_path(user)
             zip_file = self.get_user_path(user) + tmp_task['name']
             zip_file_tmp = open_path + tmp_task['name']
@@ -477,7 +472,7 @@ class backup_manage():
                     if os.path.isfile(filefullpath):
                         if os.path.isfile(zip_file_tmp):  # 防止文件被删除
                             handle.add(filefullpath, arcname=file_path)
-                            if tmp_task['delete'] == 1:
+                            if tmp_task['delete'] == 1:  #在压缩时如果已经在压缩，待压缩完删除文件和任务
                                 tmp_task['handle'].close()
                                 self.delete_tmp_file(user)
                                 self.delete_log(user, tmp_task['name'])
