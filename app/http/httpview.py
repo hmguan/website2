@@ -126,7 +126,7 @@ def download_file(url_fileinfo):
 
         if os.path.exists(file_path+'/'+filename) is False :
             Logger().get_logger().error('file  not exist path= {}'.format(file_path))
-            return 'file could not find',404
+            return make_response(jsonify({'code': errtypes.HttpResponseCode_FileNotExist, 'msg': errtypes.HttpResponseMsg_FileNotExist}),404)
 
         response = make_response(send_from_directory(file_path, filename, as_attachment=True))
         response.headers["Content-Disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
