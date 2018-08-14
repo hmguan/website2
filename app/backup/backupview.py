@@ -11,7 +11,7 @@ class backupview(base_event):
         super(backupview, self).__init__()
         self.regist_event('get_log_types', 'send_log_condition', 'cancel_get_log', 'event_bk_temps_insert',
                           'event_bk_temps_remove', 'event_bk_temps',
-                          'get_executing_log', 'delete_log', 'get_log_list')
+                          'get_executing_log', 'delete_log', 'get_log_list','exists_log')
         pass
 
     def flask_recvdata(self, json_data):
