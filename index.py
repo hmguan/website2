@@ -6,11 +6,11 @@ from pynsp.logger import *
 import traceback
 import sys
 from backup import start_black_box,register_blackbox_step_notify_function
-# import ptvsd
+import ptvsd
 from configuration import config
 from app.soketio.socketio_agent_center import *
 
-# ptvsd.settrace(None, ('0.0.0.0', 12345))
+ptvsd.settrace(None, ('0.0.0.0', 12345))
 # ptvsd.wait_for_attach()
 
 app=create_app('default')

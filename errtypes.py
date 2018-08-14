@@ -127,3 +127,4 @@ HttpResponseMsg_BlackboxWaitTar='a log file is being tar '
 
 #升级包管理
 HttpResponseCodeMsg_NOEXISTPackage='package is not existed'
+HttpResponseCodeMsg_FailedRemoveFile='failed tp remove file'
