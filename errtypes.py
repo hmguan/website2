@@ -45,6 +45,7 @@ HttpResponseCode_UserOffline=107
 HttpResponseCode_Loginout=108
 
 #文件管理错误状态码区间[200,300)
+HttpResponseCode_FileNotExist = 202
 HttpResponseCode_NoAuthority = 203
 HttpResponseCode_FileBusy = 204
 HttpResponseCode_DateBasePacketIdNotFound = 205

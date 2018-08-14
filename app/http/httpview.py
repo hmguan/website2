@@ -97,27 +97,26 @@ def download_file(url_fileinfo):
     data = extern_info.split(',',1)
     if len(data) <2:
         Logger().get_logger().error('Incorrectly formatting')
-        return '',404
+        return make_response(jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}),404)
     
     userinfo = data[0].split('=',1)
     type_info = data[1].split('=',1)
     if len(userinfo) < 2 or len(type_info) <2:
         Logger().get_logger().error('Incorrectly formatting {}:{}'.format(data[0],data[1]))
-        return '',404
+        return make_response(jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament}),404)
 
     json_data = get_user_id(userinfo[1])
     if json_data.get('code') != 0:
-        return jsonify({'code': json_data.get('code'),
-                        'msg': json_data.get('msg')})
+        Logger().get_logger().error('login_token {}:{}'.format(json_data.get('code'),json_data.get('msg')))
+        return make_response(jsonify({'code': json_data.get('code'), 'msg': json_data.get('msg')}),404)
 
     user_id = json_data.get('user_id')
     user_name = user.query_name_by_id(user_id)
     if user_name is None:
         Logger().get_logger().error('can not find user by user_id = {}'.format(int(userinfo[1])))
-        return '',404
+        return make_response(jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpResponseCodeMsg_UserNotExisted}),404)
 
     type_id = int(type_info[1])
-
     try:
         directory = get_config_path(user_name,type_id)
         if directory.startswith('./'):
