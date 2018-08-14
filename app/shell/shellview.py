@@ -12,11 +12,11 @@ class shellview(base_event):
                           'query_robots_configuration_info','event_modify_file_lock',
                           'event_update_ntp_server','event_query_progress_info','event_operate_system_process',
                           'event_query_robot_process_config_list','event_update_robot_process_config_list','event_query_file_state',
-                          'event_robot_upgrade','event_query_upgrade_file_read_permission','event_query_upgrade_file_write_permission')
+                          'event_robot_upgrade','event_query_upgrade_file_read_permission','event_query_upgrade_file_write_permission',
+                          'event_get_userid')
         pass
 
     def flask_recvdata(self,json_data):
-
         event = json_data['event']
 
         if 'get_online_robot_list' == event:
@@ -57,4 +57,6 @@ class shellview(base_event):
             return jsonify(query_upgrade_file_read_permission(json_data.get('login_id'),json_data.get('package_id')))
         elif 'event_query_upgrade_file_write_permission' == event:
             return jsonify(query_upgrade_file_write_permission(json_data.get('login_id'),json_data.get('package_id')))
+        elif 'event_get_userid' == event:
+            return jsonify(get_user_id(json_data.get('login_token')))
         pass

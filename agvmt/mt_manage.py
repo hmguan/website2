@@ -84,9 +84,13 @@ class mt_manage():
 
         pkt_id = session_link.get_nav_data()
         nav_data=view_data.navigation_t()
+        err_data=view_data.navigation_t()
+        err=0
         if wait_handler().wait_simulate(pkt_id,5000) >= 0:
-            nav_data = session_link.get_local_navigation_data()
+            nav_data,err = session_link.get_local_navigation_data()
             wait_handler().wait_destory(pkt_id)
+        if err!=0:
+            return err_data
         return nav_data
 
     def get_vehicle_data(self,id):
@@ -98,9 +102,13 @@ class mt_manage():
 
         pkt_id = session_link.get_veh_data()
         veh_data=view_data.vehicle_t()
+        err_data=view_data.vehicle_t()
+        err=0
         if wait_handler().wait_simulate(pkt_id,5000) >=0:
-            veh_data = session_link.get_local_vehicle_data()
+            veh_data,err = session_link.get_local_vehicle_data()
             wait_handler().wait_destory(pkt_id)
+        if err!=0:
+            return err_data
         return veh_data
 
     def get_operation_data(self,id):
@@ -113,9 +121,13 @@ class mt_manage():
 
         pkt_id=session_link.get_ope_data()
         oper_data=view_data.operation_t()
+        err_data=view_data.operation_t()
+        err=0
         if wait_handler().wait_simulate(pkt_id,5000) >=0:
-            oper_data = session_link.get_local_operation_data()
+            oper_data,err = session_link.get_local_operation_data()
             wait_handler().wait_destory(pkt_id)
+        if err!=0:
+            return err_data
         return oper_data
 
     def get_optpar_data(self,id):
@@ -127,9 +139,13 @@ class mt_manage():
 
         pkt_id=session_link.get_opt_data()
         opt_data=view_data.optpar_t()
+        err_data=view_data.optpar_t()
+        err=0
         if wait_handler().wait_simulate(pkt_id,5000)>=0:
-            opt_data=session_link.get_local_optpar_data()
+            opt_data,err=session_link.get_local_optpar_data()
             wait_handler().wait_destory(pkt_id)
+        if err!=0:
+            return err_data
         return opt_data
 
     def set_stop(self,robot_list):
@@ -194,12 +210,12 @@ class mt_manage():
         pkt_id=session_link.get_var_list()
         valid_list=list()
         if wait_handler().wait_simulate(pkt_id, 5000) >=0:
-            var_list=session_link.get_local_var_list()
+            var_list,err=session_link.get_local_var_list()
             wait_handler().wait_destory(pkt_id)
             valid_list = mt_var_info.get_valid_list(var_list)
         else :
             return {},-2
-        return valid_list,0
+        return valid_list,err
 
     def robots_status(self):
         status_list=dict()
@@ -221,11 +237,12 @@ class mt_manage():
         if pkt_id==-1:
             return {}
         var_data = []
+        err=0
         if wait_handler().wait_simulate(pkt_id, 5000) >= 0:
-            tmppp = session_link.get_local_var_data()
+            tmppp,err = session_link.get_local_var_data()
             wait_handler().wait_destory(pkt_id)
             var_data=mt_var_info.get_var_data(var_id,type_id,tmppp)
-        return var_data
+        return var_data,err
 
     def callback_error_status(self,notify_call=None):
         if notify_call is not None:

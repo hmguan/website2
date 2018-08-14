@@ -869,65 +869,65 @@ class file_manager():
             del (dict_file_info[robot_id])
         file_mutex.release()
         
-    
     def cancle_file_transform(self,user_id,task_id_list = []):
         #可能还在任务队列中
         remove_list = list()
-        try:
-            if len(task_id_list) <=0:
-                return remove_list
+        if len(task_id_list) <=0:
+            return remove_list
 
-            self.__transfer_queue_mutex.acquire()
-            transfer_queue = self.__map_user_transfer_queue.get(user_id)
-            Logger().get_logger().info('delete task user_id:{} robot_id:{} task_id:{}'.format(user_id,robot_id, task_id_list))
-            if transfer_queue :
-                #取消待传输文件任务
-                del_task = transfer_queue.del_task(len(task_id_list),lambda task:task.m_task_id in task_id_list )
-                for task_info in del_task:
-                    # self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
-                    task_id_list.remove(task_info.m_task_id)
-                    remove_list.append(task_info.m_task_id)
-
-                #取消正在传输的任务
-                if len(task_id_list) <= 0:
-                    return remove_list
-
-                file_mutex.acquire()
-                for robot_id in list(dict_file_info):
-                    map_file_info = dict_file_info[robot_id]
-                    for file_id in list(map_file_info):
-                        file_info = map_file_info[file_id]
-                        if file_info.m_task_id not in task_id_list or file_info.m_user_id != user_id:
-                            continue
-
-                        shell_info = self.__shell_manager.get_session_by_id(robot_id)
-                        if shell_info is None:
-                            print("session cannot find, robot_id:%d" % robot_id)
-                            # self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_ROBOT_CONNECT,-1,task.m_task_id,-1)
-                            # self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
-                            #断链中处理
-                            continue
-                        shell_info.file_complete(val.m_file_id,val.m_last_block_num,FILE_STATUS_CANCLE)
-                        if FILE_TYPE_A_UPGRADE == val.m_type:
-                            shell_info.set_upgrade(FILE_TYPE_NORMAL)         
-                        Logger().get_logger().info('cancle file transform:{0}'.format(val.m_path))
-                                  
-                        # self.notify(user_id,robot_id,val.m_path,val.m_type,0,ERRNO_FILE_CANCLE,-1,task.m_task_id,-1)
-                        self.task_finish(user_id,val.m_thread_uid,val.m_task_id,val.m_oper_type)
-                        remove_list.append(val.m_task_id)
-                        map_file_info.pop(key)
-                        val.m_hd.close()
-                        #取消任务，删除文件
-                        if val.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(val.m_name):
-                            os.remove(val.m_name)
-                    if len(map_file_info) <= 0:
-                        dict_file_info.pop(robot_id)
-                file_mutex.release()
+        Logger().get_logger().info('delete task user_id:{} task_id:{}'.format(user_id,task_id_list))
+        self.__transfer_queue_mutex.acquire()
+        transfer_queue = self.__map_user_transfer_queue.get(user_id)
+        if transfer_queue :
+            #取消待传输文件任务
+            del_task = transfer_queue.del_task(len(task_id_list),lambda task:task.m_task_id in task_id_list )
+            for task_info in del_task:
+                # self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
+                task_id_list.remove(task_info.m_task_id)
+                remove_list.append(task_info.m_task_id)
+        else:
             self.__transfer_queue_mutex.release()
             return remove_list
-        except Exception as e:
-            Logger().get_logger().error('cancle file transform error:{0}'.format(val.m_path))
+        self.__transfer_queue_mutex.release()
+            
+        #取消正在传输的任务
+        if len(task_id_list) <= 0:
             return remove_list
+
+        file_mutex.acquire()
+        try:
+            for robot_id in list(dict_file_info):
+                map_file_info = dict_file_info[robot_id]
+                for file_id in list(map_file_info):
+                    file_info = map_file_info[file_id]
+                    if file_info.m_task_id not in task_id_list or file_info.m_user_id != user_id:
+                        continue
+
+                    shell_info = self.__shell_manager.get_session_by_id(robot_id)
+                    if shell_info is None:
+                        print("session cannot find, robot_id:%d" % robot_id)
+                        #断链中处理
+                        continue
+                    shell_info.file_complete(file_info.m_file_id,file_info.m_last_block_num,FILE_STATUS_CANCLE)
+                    if FILE_TYPE_A_UPGRADE == file_info.m_type:
+                        shell_info.set_upgrade(FILE_TYPE_NORMAL)         
+                    Logger().get_logger().info('cancle file transform:{0}'.format(file_info.m_path))
+                                      
+                    self.task_finish(user_id,file_info.m_thread_uid,file_info.m_task_id,file_info.m_oper_type)
+                    remove_list.append(file_info.m_task_id)
+                    map_file_info.pop(file_id)
+                    file_info.m_hd.close()
+                    #取消任务，删除文件
+                    if file_info.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(file_info.m_name):
+                        os.remove(file_info.m_name)
+                if len(map_file_info) <= 0:
+                    dict_file_info.pop(robot_id)
+        except Exception as e:
+            file_mutex.release()
+            Logger().get_logger().error('cancle file transform error:{}'.format(str(e)))
+            return remove_list
+        file_mutex.release()
+        return remove_list
         
     '''
     file_manager interface begin
