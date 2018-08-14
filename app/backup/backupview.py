@@ -118,8 +118,10 @@ class backupview(base_event):
             # return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
 
             ret=file_manager.remove(file_id)
-            if ret!=0:
+            if ret==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxDeleteFailed, 'msg': errtypes.HttpResponseMsg_BlackboxDeleteFailed,'data': ret})
+            elif ret==-1:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxDbNoFile, 'msg': errtypes.HttpResponseMsg_BlackboxDbNoFile, 'data': ret})
             else:
                 return jsonify({'code': errtypes.HttpResponseCode_Normal,'msg': errtypes.HttpResponseMsg_Normal, 'data': ret})
 
