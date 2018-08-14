@@ -1,9 +1,8 @@
-
 #!/usr/bin/python3
 import shutil
 import os
 import xml.etree.ElementTree as ET
-import ptvsd
+#import ptvsd
 
 #ptvsd.settrace(None, ('0.0.0.0', 12345))
 #ptvsd.wait_for_attach()
@@ -32,7 +31,13 @@ def property_mode(index,element,proerty,value):
     
 
     root.set(proerty, value)
-    tree.write(element[0])
+
+    try:
+        tree.write(element[0])
+    except Exception as e:
+        print(str(e))
+    
+    return -1 
 
  # 修改元素
 def element_mode(index,element,value):
@@ -50,7 +55,13 @@ def element_mode(index,element,value):
             return -1
     
     root.text = value
-    tree.write(element[0])
+
+    try:
+        tree.write(element[0])
+    except Exception as e:
+        print(str(e))
+    
+    return -1 
 
 def restore_file(index,path):
     backup_path = path + '.backup'
@@ -92,11 +103,15 @@ def update_file(index,parms):
 
     
 def main():
-    if False==os.path.exists('update_xml.txt'):
+    
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file_path= dir_path+'/update_xml.txt'
+
+    if False==os.path.exists(file_path):
         print('update_xml config file is not exist')
         return
     
-    file_object = open('update_xml.txt','r')
+    file_object = open(file_path,'r')
     try:
         index=-1 
         for line in file_object:

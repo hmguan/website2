@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from pynsp.logger import*
 from configuration import config
-
+from datetime import datetime
 
 class file_manager():
     def __init__(self):
@@ -34,6 +34,16 @@ class file_manager():
     
     @staticmethod
     def file_list(user_id):
+        #默认月30天
+        if datetime.now().day < 15:
+            month = datetime.now().month-1
+            day = 30-(15-datetime.now().day)
+        else:
+            month = datetime.now().month
+            day = datetime.now().day
+        
+        file_manager.remove_by_day(datetime(datetime.now().year, month, day, datetime.now().hour, datetime.now().minute, datetime.now().second, 0))
+
         try:
             return session_obj.query(file_list).filter_by(user_id=user_id).order_by(desc(file_list.time)).all()
         except Exception as e:
@@ -64,3 +74,15 @@ class file_manager():
         except Exception as e:
             Logger().get_logger().warning(str(e))
             return -2
+
+
+    @staticmethod
+    def remove_by_day(to_day):
+        try:
+            session_obj.query(file_list).filter(file_list.time < to_day).delete()
+            return 0
+        except Exception as e:
+            Logger().get_logger().warning(str(e))
+            return -2
+
+        
