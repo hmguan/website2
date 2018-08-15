@@ -46,6 +46,7 @@ class userview(base_event):
             if 'login_id' not in json_data  or type(json_data['login_id']) !=int:
                 return {'code':errtypes.HttpResponseCode_InvaildParament,'msg':errtypes.HttpResponseMsg_InvaildParament}
             ret = users_center.users(json_data['login_id'])
+            
         
         if 'event_login'==event:
            

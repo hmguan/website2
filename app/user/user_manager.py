@@ -137,12 +137,12 @@ class user_manager():
         if ROOT_ID!=login_id:
             return {'code':errtypes.HttpResponseCode_PermissionDenied,'msg':errtypes.HttpResponseCodeMsg_PermissionDenied}
         
-        ret = user.users()
+        (ret,user_list) = user.users()
         if -1==ret:
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
         
         dict_users=[]
-        for index, value in enumerate(ret):
+        for index, value in enumerate(user_list):
             dict_user={}
             if 'root'==value.username:
                 continue
@@ -174,6 +174,12 @@ class user_manager():
             msg = "登录信息有误，请重新登录！"
             return (errtypes.HttpResponseCode_InvaildToken,-1)
         return (0,user_id)
+
+    def check_user_token(self,token)->tuple:
+        s = Serializer(config.SECRET_KEY)
+        
+        data = s.loads(token)
+        return data['id']
 
     def find_token_by_userid(self,user_id):
         self.login_mutex_.acquire()
@@ -236,11 +242,6 @@ class user_manager():
 
     #用户登录
     def user_login(self,user_name=None,pwd=None)->dict:
-        ret = user.query_userid_by_name(user_name)
-        if (-1==ret):
-            return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':errtypes.HttpResponseCodeMsg_UserNotExisted}
-        if (-2==ret):
-            return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
         
 
         #step 1: 验证登录有效性
@@ -314,7 +315,7 @@ class user_manager():
     ################################ 组别名##############################
     #查询别名
     def group_alias(self,login_id,group_name):
-        ret= user.group_alias(login_id,group_name)
+        (ret,alias)= user.group_alias(login_id,group_name)
         if -1==ret:
             return {'code':errtypes.HttpResponseCode_UserNotExisted,'msg':errtypes.HttpResponseCodeMsg_UserNotExisted}
         if -2==ret:
@@ -322,7 +323,7 @@ class user_manager():
         
         if None == ret:
             return {'code':0,'msg':'success','alias':''}
-        return {'code':0,'msg':'success','alias':ret}
+        return {'code':0,'msg':'success','alias':alias}
         
 
     #更新组名
