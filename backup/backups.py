@@ -37,7 +37,6 @@ class backup_manage():
 
     # 初始化注册进度回调
     def init_backups(self):
-        print('init black')
         register_notify_log_step(self.pull_log_step_notify)
 
     # 全局任务id
@@ -81,9 +80,9 @@ class backup_manage():
     def send_log_condition(self,robot_list, user_id, start_time, end_time, types, name):
         (ret,user_name) =user.query_name_by_id(user_id)
         if -1==ret:
-            return -1
+            return -3
         if -2==ret:
-            return -2
+            return -4
         
         self.__userid_to_name[user_id]=user_name
         if self.user_task_data.__contains__(user_id):
@@ -448,9 +447,9 @@ class backup_manage():
     def exists_log(self,user_id, log_name):
         (ret,user_name) =user.query_name_by_id(user_id)
         if -1==ret:
-            return -3
+            return -3 #用户不存在
         if -2==ret:
-            return -4
+            return -4 #数据错误
 
         folder_path = config.ROOTDIR + user_name + config.BLACKBOXFOLDER
         if os.path.exists(folder_path) == False:
@@ -466,7 +465,6 @@ class backup_manage():
 
     #文件pull完才开始tar文件
     def task_over_tar_log_file(self,user):
-
         global notify_step_function
         if self.user_task_data.__contains__(user):
             self.mutex.acquire()
