@@ -34,15 +34,8 @@ class file_manager():
     
     @staticmethod
     def file_list(user_id):
-        #默认月30天
-        if datetime.now().day < 15:
-            month = datetime.now().month-1
-            day = 30-(15-datetime.now().day)
-        else:
-            month = datetime.now().month
-            day = datetime.now().day
-        
-        file_manager.remove_by_day(datetime(datetime.now().year, month, day, datetime.now().hour, datetime.now().minute, datetime.now().second, 0))
+        now_t = datetime.date.today() - datetime.timedelta(days=15)
+        file_manager.remove_by_day(datetime(now_t.year, now_t.month, now_t.day, now_t.hour, now_t.minute, now_t.second, 0))
 
         try:
             return session_obj.query(file_list).filter_by(user_id=user_id).order_by(desc(file_list.time)).all()
