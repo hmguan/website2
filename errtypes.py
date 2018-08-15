@@ -43,6 +43,8 @@ HttpResponseCode_PermissionDenied=105
 HttpResponseCode_TimeoutToken=106
 HttpResponseCode_UserOffline=107
 HttpResponseCode_Loginout=108
+HttpResponseCode_UpdatePWD=109
+HttpResponseCode_RootOper=110
 
 #文件管理错误状态码区间[200,300)
 HttpResponseCode_FileNotExist = 202
