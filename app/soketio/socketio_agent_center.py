@@ -62,7 +62,7 @@ def client_msg(msg_data,client_identify):
                 Logger().get_logger().error("WebSocket can not get login_token is null")
             else:
                 from ..user.user_service_agant import users_center
-                (retval, user_id) = users_center.check_user_login(token_tmp)
+                user_id = users_center.check_user_token(token_tmp)
                 user_id_with_uuid[user_id]=uuid_tmp
 
             thread_lock.release()
