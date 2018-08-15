@@ -82,7 +82,10 @@ def close_client_websocket(client_identify):
     if client_lock.acquire() == True:
         connection = clients.get(client_identify)
         if connection is not None:
-            connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_RAME,ws_type.WS_CLOSE_NORMAL))
+            try:
+                connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_RAME,ws_type.WS_CLOSE_NORMAL))
+            except Exception as e:
+                Logger().get_logger().error('WebSocket get error while close client websocket:{0}'.format(str(e)))
         client_lock.release()
 
 #########################################################################################
@@ -174,6 +177,7 @@ class websocket_thread(threading.Thread):
                     if self.__userid in clients.keys():
                         clients.pop(self.__userid)
                     client_lock.release()
+                self.__connection.close()
                 break
             if len(data) == 0:
                 continue
@@ -184,7 +188,10 @@ class websocket_thread(threading.Thread):
                 if closed_notify_callback is not None:
                     closed_notify_callback(self.__userid)
 
-                self.__connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_RAME,v_data))
+                try:
+                    self.__connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_RAME,v_data))
+                except Exception as e:
+                    Logger().get_logger().error('WebSocket get error while send close frame:{0}'.format(str(e)))
                 Logger().get_logger().info('WebSocket get close the client session code,the username is:{0}'.format(self.__userid))
                 self.__connection.close()
                 if client_lock.acquire() == True:
