@@ -51,7 +51,7 @@ class user_manager():
         self.login_mutex_.release()
 
         msg = "删除成功"
-        logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+        #logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret,'msg':'success'}
 
 
@@ -72,7 +72,7 @@ class user_manager():
             del self.login_user_[login_id]
             msg = "更新密码成功，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'uuid':u_uuid},room_identify=u_uuid)
-            logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+            #logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
         
 
@@ -98,7 +98,7 @@ class user_manager():
             del self.login_user_[target_id]
             msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'uuid':u_uuid},room_identify=u_uuid)
-            logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+            #logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
 
         msg = "账号信息已被修改"
@@ -124,7 +124,7 @@ class user_manager():
             del self.login_user_[target_id]
             msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'msg':msg,'uuid':u_uuid},room_identify=u_uuid)
-            logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+            #logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
 
         msg = "修改权限成功"
@@ -230,7 +230,7 @@ class user_manager():
 
         self.login_mutex_.release()
 
-        logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg="登录成功token",u_uuid=user_uuid)
+        #logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg="登录成功token",u_uuid=user_uuid)
         return {'code':0,'msg':'success','data':{'login_token':token,'uuid':u_uuid}}
 
 
@@ -250,19 +250,19 @@ class user_manager():
         if -1==user_id:
             self.login_mutex_.release()
             msg = "密码错误"
-            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='123')
+            #logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='123')
             return {'code':errtypes.HttpResponseCode_InvaildUserOrPwd,'msg':errtypes.HttpResponseCodeMsg_InvaildUserOrPwd}
         if -2==user_id:
             self.login_mutex_.release()
             msg = "sql error"
-            logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='123')
+            #logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid='123')
             return {'code':errtypes.HttpResponseCode_Sqlerror,'msg':errtypes.HttpResponseCodeMsg_Sqlerror}
         #step 2: 检查踢人
         if user_id in self.login_user_.keys():
             tmp = self.login_user_[user_id].u_uuid
             msg = "该用户已在另一地点登录，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UserOffline,'uuid':tmp},room_identify=tmp)
-            logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=tmp)
+            #logger_manager.insert(user_id = user_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=tmp)
        
         #step 3：更新用户uuid
         new_uuid = uuid.uuid4().__str__()
@@ -276,7 +276,7 @@ class user_manager():
        
        
         msg = "登录成功"
-        logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid=new_uuid)
+        #logger_manager.insert(user_id = user_id,login_type='online',time =datetime.now(),msg=msg,u_uuid=new_uuid)
         return {'code':0,'msg':'success','data':{'uuid':new_uuid,'login_token':token.decode('utf-8')}}
 
 
@@ -297,7 +297,7 @@ class user_manager():
 
         msg = "注销登录，通知用户下线"
         socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_Loginout,'uuid':u_uuid},room_identify=u_uuid)
-        logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
+        #logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
 
         return {'code':0,'msg':'success'}
 
