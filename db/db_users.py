@@ -144,20 +144,22 @@ class user:
         try:
             ret = session_obj.query(user_info).filter_by(id=login_id).first()
             if not ret:
-                return (-1,None)
+                return (-1,'')
             
             ret = session_obj.query(group_alias_info).filter_by(user_id=login_id).filter_by(name=group_name).first()
             if ret is None:
                 alias_obj = group_alias_info(user_id = login_id,name=group_name)
                 session_obj.add(alias_obj)
                 session_obj.commit()
-                return (0,None)
+                return (0,'')
+            
+            if ret.alias is None:
+                return (0,'')
             return (0,ret.alias)
         
         except Exception as e:
             Logger().get_logger().error(str(e))
-            return (-2,None)
-        
+            return (-2,'')
 
 
     #更新查询组别名
