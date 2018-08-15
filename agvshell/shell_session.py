@@ -376,6 +376,7 @@ class shell_session(tcp.obtcp):
         return pkt_id
 
     def recv_log_type(self, pkt_id, data):
+        self.__log_type.log_type_vct.clear()
         self.__log_type.build(data, 0)
         wait_handler().wait_singal(pkt_id)
 
