@@ -79,7 +79,13 @@ class backup_manage():
 
     # 下发获取日志的筛选条件
     def send_log_condition(self,robot_list, user_id, start_time, end_time, types, name):
-        self.__userid_to_name[user_id]=user.query_name_by_id(user_id)
+        (ret,user_name) =user.query_name_by_id(user_id)
+        if -1==ret:
+            return -1
+        if -2==ret:
+            return -2
+        
+        self.__userid_to_name[user_id]=user_name
         if self.user_task_data.__contains__(user_id):
             if self.user_task_data[user_id]['step']!=100:#
                 return -2
@@ -440,7 +446,12 @@ class backup_manage():
 
     # 获取后台要下载文件的全路径
     def exists_log(self,user_id, log_name):
-        user_name=user.query_name_by_id(user_id)
+        (ret,user_name) =user.query_name_by_id(user_id)
+        if -1==ret:
+            return -3
+        if -2==ret:
+            return -4
+
         folder_path = config.ROOTDIR + user_name + config.BLACKBOXFOLDER
         if os.path.exists(folder_path) == False:
             return -1#没有文件夹
