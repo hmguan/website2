@@ -23,7 +23,7 @@ def get_online_robot_information(user_id):
         for keys,item in online_info.items():
             alias_name_dict = users_center.group_alias(user_id,keys)
             if alias_name_dict['code']!=0:
-                return {'code':alias_name_dict['code'],'msg':errtypes.HttpResponseMsg_InvaildParament,'data':''}
+                return {'code':alias_name_dict['code'],'msg':alias_name_dict['msg'],'data':''}
 
             if alias_name_dict['alias'] is '':
                 data_list.append({'process_group':keys,'process_group_alias':'','robot_list':item})

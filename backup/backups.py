@@ -223,6 +223,7 @@ class backup_manage():
                         return
                     self.mutex.release()
                 else:
+                    self.mutex.release()
                     return
 
         Logger().get_logger().info('shell back')
