@@ -43,6 +43,9 @@ class backupview(base_event):
             elif task_id==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxReTask, 'msg': errtypes.HttpResponseMsg_BlackboxReTask,
                                 'tasl_id': task_id})
+            elif task_id==-3 or task_id==4:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed,
+                                'tasl_id': task_id})
 
         if 'cancel_get_log' == event:
             task_id=json_data['task_id']
@@ -111,12 +114,6 @@ class backupview(base_event):
             file_id = json_data['file_id']
             if type(user_id) != int or user_id is None or type(file_id)!=int or file_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
-            # log_name = json_data['log_name']
-            # ret = delete_log(user_id, log_name)
-            # if ret < 0:
-            #     return jsonify({'code': errtypes.HttpResponseCode_Failed, 'msg': errtypes.HttpResponseMsg_Failed})
-            # return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
-
             ret=file_manager.remove(file_id)
             if ret==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxDeleteFailed, 'msg': errtypes.HttpResponseMsg_BlackboxDeleteFailed,'data': ret})
@@ -129,9 +126,6 @@ class backupview(base_event):
             user_id=json_data['login_id']
             if type(user_id) != int or user_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
-            # log_list = get_log_list(user_id)
-            # return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal,
-            #                 'log_list': log_list})
             ret_list=file_manager.file_list(user_id)
             log_list=list()
             for i in range(len(ret_list)):
@@ -152,6 +146,8 @@ class backupview(base_event):
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
 
             ret = exists_log(login_id, log_name)
-            if ret!=0:
+            if ret==-1 or ret==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxNoDownlownFile, 'msg': errtypes.HttpResponseMsg_BlackboxNoDownlownFile})
+            elif ret==-3 or ret==4:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed})
             return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
