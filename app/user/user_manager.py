@@ -176,9 +176,18 @@ class user_manager():
         return (0,user_id)
 
     def check_user_token(self,token):
+        if token is None:
+            return -1
+
         s = Serializer(config.SECRET_KEY)
-        
-        data = s.loads(token)
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            print("登录信息已过期，请重新登录！")
+            return -1
+        except BadSignature:
+            print("登录信息有误，请重新登录！")
+            return -1
         return data['id']
 
     def find_token_by_userid(self,user_id):

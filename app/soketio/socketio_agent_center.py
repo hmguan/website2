@@ -50,21 +50,21 @@ def client_msg(msg_data,client_identify):
             token_tmp = data.get('login_token')
 
         if token_tmp is None or uuid_tmp is None:
-            Logger().get_logger().error("WebSocket can not get login_token is null")
+            Logger().get_logger().error("WebSocket can not get login_token is null.")
+            close_websocket(client_identify)
+            return
+
+        from ..user.user_service_agant import users_center
+        user_id = users_center.check_user_token(token_tmp)
+        if user_id < 0:
+            Logger().get_logger().error("WebSocket get client token is invaild.")
             close_websocket(client_identify)
             return
 
         if thread_lock.acquire() == True:
             global uuid_with_user_id,user_id_with_uuid
             uuid_with_user_id[client_identify] = uuid_tmp
-
-            if token_tmp is None:
-                Logger().get_logger().error("WebSocket can not get login_token is null")
-            else:
-                from ..user.user_service_agant import users_center
-                user_id = users_center.check_user_token(token_tmp)
-                user_id_with_uuid[user_id]=uuid_tmp
-
+            user_id_with_uuid[user_id] = uuid_tmp
             thread_lock.release()
         print('WebSocket client message:',uuid_with_user_id)
 
