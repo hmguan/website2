@@ -36,10 +36,16 @@ def notify_all_client(msg):
     if len(data) == 0:
         return
     global clients
-    for keys,client_session in clients.items():
-        print('WebSocket send message to client:', keys)
-        result = client_session.send(data)
-        print('reuslt:',result)
+    key_item = list(clients.keys())
+    for item in key_item:
+        print('WebSocket send message to client:', item)
+        try:
+            if clients.get(item) is not None:
+                result = clients.get(item).send(data)
+        except Exception as e:
+            Logger().get_logger().error('WebSocket server get error while send to alll client:{0}'.format(str(e)))
+            clients.get(item).close()
+            clients.pop(item)
 
 def notify_one_client(identify,msg):
     global clients
@@ -48,10 +54,16 @@ def notify_one_client(identify,msg):
         return
     data = encode_webmessage(0x80 | ws_type.WS_TEXT_FRAME,msg)
     client_session = clients.get(identify)
-    if client_session is not None:
-        client_session.send(data)
-    else:
-        Logger().get_logger().error('WebSocket client session:{0} is null,then can not send message.'.format(identify))
+    try:
+        if client_session is not None:
+            client_session.send(data)
+        else:
+            Logger().get_logger().error('WebSocket client session:{0} is null,then can not send message.'.format(identify))
+    except Exception as e:
+        Logger().get_logger().error('WebSocket server get error:{0}'.format(str(e)))
+        client_session.close()
+        if identify in clients.keys():
+            clients.pop(identify)
 
 def regist_connect_callback(notify_callback):
     global connected_notify_callback

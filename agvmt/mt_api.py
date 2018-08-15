@@ -35,6 +35,8 @@ def dhcp_notify_change():
             mt_collection[key] = item
     global_mt_mutex.release()
     del agv_info
+
+    print('mt_api dhcp_notify_change function has been called over')
     global mt_thread_wait
     mt_thread_wait.sig()
 

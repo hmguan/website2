@@ -156,7 +156,7 @@ def skip_file(filename) ->bool:
 def agvinfo_notify_change():
     info = agvinfoserver_online_robot()
 
-    global global_mutex
+    global global_mutex,robot_c_mutex
     global_mutex.acquire()
     global global_robot_info,robot_collection
     global_robot_info.clear()
@@ -170,6 +170,7 @@ def agvinfo_notify_change():
 
     global_mutex.release()
     del info
+    print('shell_api agvinfo notify change function has been called over')
     global thread_wait
     thread_wait.sig()
 

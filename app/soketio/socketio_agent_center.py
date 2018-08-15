@@ -49,7 +49,7 @@ def client_msg(msg_data,client_identify):
             uuid_tmp = data.get('uuid')
             token_tmp = data.get('login_token')
 
-        if token_tmp is None:
+        if token_tmp is None or uuid_tmp is None:
             Logger().get_logger().error("WebSocket can not get login_token is null")
             close_websocket(client_identify)
             return
