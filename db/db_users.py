@@ -128,26 +128,14 @@ class user:
             Logger().get_logger().error(str(e))
             return (-2,'')
 
-    #通过name 查询用户id
-    @staticmethod
-    def query_userid_by_name(username)->tuple:
-        try:
-            ret = session_obj.query(user_info).filter_by(username=username).first()
-        except Exception as e:
-            Logger().get_logger().error(str(e))
-            return (-2,ret.id)
-        if not ret:
-            return (-1,ret.id)
-        return (0,ret.id)
-
     #查询用户
     @staticmethod
     def users():
         try:
-            return session_obj.query(user_info).all()
+            return (0,session_obj.query(user_info).all())
         except Exception as e:
             Logger().get_logger().error(str(e))
-            return -1
+            return (-1,[])
         
 
     #查询组别名
@@ -156,19 +144,19 @@ class user:
         try:
             ret = session_obj.query(user_info).filter_by(id=login_id).first()
             if not ret:
-                return -1
+                return (-1,'')
             
             ret = session_obj.query(group_alias_info).filter_by(user_id=login_id).filter_by(name=group_name).first()
             if ret is None:
                 alias_obj = group_alias_info(user_id = login_id,name=group_name)
                 session_obj.add(alias_obj)
                 session_obj.commit()
-                return ''
-            return ret.alias
+                return (0,'')
+            return (0,ret.alias)
         
         except Exception as e:
             Logger().get_logger().error(str(e))
-            return -2
+            return (-2,'')
 
 
     #更新查询组别名

@@ -162,7 +162,7 @@ class user_manager():
         try:
             data = s.loads(token)
             user_id = data['id']
-            ret_id  = user.is_exist_id(user_id)
+            ret_id  =  user.is_exist_id(user_id)
             if -1==ret_id:
                 return (errtypes.HttpResponseCode_UserNotExisted,-1)
             if -2==ret_id:
@@ -175,7 +175,7 @@ class user_manager():
             return (errtypes.HttpResponseCode_InvaildToken,-1)
         return (0,user_id)
 
-    def check_user_token(self,token)->tuple:
+    def check_user_token(self,token):
         s = Serializer(config.SECRET_KEY)
         
         data = s.loads(token)
