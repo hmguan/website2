@@ -22,7 +22,7 @@ class user:
                 return -1
             return 0
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
 
     #用户校验 
@@ -38,7 +38,7 @@ class user:
                 user_type = 1
             return tmp.id,user_type
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2,-2
 
     #添加用户
@@ -51,7 +51,7 @@ class user:
             session_obj.add(user_obj)
             session_obj.commit()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
         return 0
 
@@ -67,7 +67,7 @@ class user:
             tmp.pwd = new_pwd
             session_obj.commit()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -3
         return 0
 
@@ -81,7 +81,7 @@ class user:
             tmp.pwd = "e10adc3949ba59abbe56e057f20f883e"
             session_obj.commit()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
        
         return 0
@@ -95,7 +95,7 @@ class user:
             tmp.permission = permission
             session_obj.commit()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
         return 0
 
@@ -112,33 +112,33 @@ class user:
             session_obj.delete(tmp)
             session_obj.commit()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
         return 0
 
     #通过id 查询用户名
     @staticmethod
-    def query_name_by_id(user_id)->str:
+    def query_name_by_id(user_id)->tuple:
         try:
             ret = session_obj.query(user_info).filter_by(id=user_id).first()
             if not ret:
-                return None
-            return ret.username
+                return (-1,'')
+            return (0,ret.username)
         except Exception as e:
-            Logger().get_logger().warning(str(e))
-            return -2
+            Logger().get_logger().error(str(e))
+            return (-2,'')
 
     #通过name 查询用户id
     @staticmethod
-    def query_userid_by_name(username)->str:
+    def query_userid_by_name(username)->tuple:
         try:
             ret = session_obj.query(user_info).filter_by(username=username).first()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
-            return -2
+            Logger().get_logger().error(str(e))
+            return (-2,ret.id)
         if not ret:
-            return -1
-        return ret.id
+            return (-1,ret.id)
+        return (0,ret.id)
 
     #查询用户
     @staticmethod
@@ -146,7 +146,7 @@ class user:
         try:
             return session_obj.query(user_info).all()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -1
         
 
@@ -167,7 +167,7 @@ class user:
             return ret.alias
         
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
 
 
@@ -185,7 +185,7 @@ class user:
             ret.alias = alias
             session_obj.commit()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -3
         return 0
 

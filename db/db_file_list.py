@@ -27,19 +27,18 @@ class file_manager():
             session_obj.commit()
             return 0
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -3  
         
     
     @staticmethod
     def file_list(user_id):
-        now_t = datetime.date.today()- datetime.timedelta(days=15)
-        file_manager.remove_by_day(datetime.datetime(now_t.year, now_t.month, now_t.day, datetime.datetime.now().hour, datetime.datetime.now().minute, datetime.datetime.now().second, 0))
-
         try:
+            now_t = datetime.date.today()- datetime.timedelta(days=15)
+            file_manager.remove_by_day(datetime.datetime(now_t.year, now_t.month, now_t.day, datetime.datetime.now().hour, datetime.datetime.now().minute, datetime.datetime.now().second, 0))
             return session_obj.query(file_list).filter_by(user_id=user_id).order_by(desc(file_list.time)).all()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -1 
 
     @staticmethod
@@ -57,14 +56,14 @@ class file_manager():
                 try:
                     os.remove(file_path)
                 except Exception as e:
-                    Logger().get_logger().warning(str(e))
+                    Logger().get_logger().error(str(e))
                     return -2
 
             session_obj.delete(tmp)
             session_obj.commit()
             return 0
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
 
 
@@ -74,7 +73,7 @@ class file_manager():
             session_obj.query(file_list).filter(file_list.time < to_day).delete()
             return 0
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2
 
         

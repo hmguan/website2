@@ -5,6 +5,8 @@ from sqlalchemy import asc
 from sqlalchemy import desc
 import os
 from datetime import datetime
+from pynsp.logger import*
+
 
 class blackbox_manager():
     def __init__(self):
@@ -12,30 +14,42 @@ class blackbox_manager():
     
     @staticmethod
     def insert_temps(user_id,name,temps_types,others):
-        tmp = session_obj.query(user_info).filter_by(id=user_id).first()
-        if(tmp ==None):
-            return -1
-        
-        temps_obj = blackbox_temps(user_id = user_id,name=name,temps_types= temps_types,others=others,time=datetime.now())
-        session_obj.add(temps_obj)
-        session_obj.commit()
-        return temps_obj.id
+        try:
+            tmp = session_obj.query(user_info).filter_by(id=user_id).first()
+            if(tmp ==None):
+                return -1
+            
+            temps_obj = blackbox_temps(user_id = user_id,name=name,temps_types= temps_types,others=others,time=datetime.datetime.now())
+            session_obj.add(temps_obj)
+            session_obj.commit()
+            return temps_obj.id
+        except Exception as e:
+            Logger().get_logger().error(str(e))
+            return -2
 
 
     @staticmethod
     def temps(user_id):
-        return session_obj.query(blackbox_temps).filter_by(user_id=user_id).order_by(desc(blackbox_temps.time)).all()
+        try:
+            return session_obj.query(blackbox_temps).filter_by(user_id=user_id).order_by(desc(blackbox_temps.time)).all()
+        except Exception as e:
+            Logger().get_logger().error(str(e))
+            return -2
     
 
     @staticmethod
     def remove_temps(temps_id):
-        ret = session_obj.query(blackbox_temps).filter_by(id=temps_id).first()
-        if not ret:
-            return -1
+        try:
+            ret = session_obj.query(blackbox_temps).filter_by(id=temps_id).first()
+            if not ret:
+                return -1
 
-        tmp  = session_obj.query(blackbox_temps).get(ret.id)
+            tmp  = session_obj.query(blackbox_temps).get(ret.id)
 
-        session_obj.delete(tmp)
-        session_obj.commit()
-        return 0
+            session_obj.delete(tmp)
+            session_obj.commit()
+            return 0
+        except Exception as e:
+            Logger().get_logger().error(str(e))
+            return -2
     

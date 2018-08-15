@@ -58,7 +58,12 @@ def upload_file():
                                         'msg': json_data.get('msg')})
 
                     user_id = json_data.get('user_id')
-                    user_name = user.query_name_by_id(user_id)
+                    (ret,user_name) = user.query_name_by_id(user_id)
+                    if -1==ret:
+                        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
+                    if -2==ret:
+                        return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCodeMsg_Sqlerror})
+
                     if user_name is None:
                         Logger().get_logger().error('can not find user by user_id = {}'.format(user_id))
                         return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
@@ -111,7 +116,12 @@ def download_file(url_fileinfo):
         return make_response(jsonify({'code': json_data.get('code'), 'msg': json_data.get('msg')}),404)
 
     user_id = json_data.get('user_id')
-    user_name = user.query_name_by_id(user_id)
+    (ret,user_name) = user.query_name_by_id(user_id)
+    if -1==ret:
+        return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
+    if -2==ret:
+        return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCodeMsg_Sqlerror})
+    
     if user_name is None:
         Logger().get_logger().error('can not find user by user_id = {}'.format(int(userinfo[1])))
         return make_response(jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpResponseCodeMsg_UserNotExisted}),404)

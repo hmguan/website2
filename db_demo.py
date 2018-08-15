@@ -131,6 +131,7 @@ class HBaseApi(object):
 
 from db.db_file_list import file_manager
 from datetime import datetime
+from pynsp.logger import*
 def main():
     # ha = HBaseApi()
     # ha.put('0002','age','23')
@@ -148,12 +149,8 @@ def main():
     #                     datetime.now().minute, datetime.now().second, 0)))
     
 
-    file_manager.remove_by_day(datetime(datetime.now().year, 
-                                datetime.now().month, 
-                                datetime.now().day, 
-                                datetime.now().hour, 
-                                datetime.now().minute, 
-                                datetime.now().second, 0))
+    Logger().get_logger().error(str('dd'))
+
    
 
 if __name__ == "__main__":

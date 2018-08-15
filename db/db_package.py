@@ -30,7 +30,7 @@ class package_manager():
             session_obj.commit()
             return package_obj.id
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2 
 
     @staticmethod
@@ -43,7 +43,7 @@ class package_manager():
             session_obj.commit()
             return 0
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2 
 
     @staticmethod
@@ -51,7 +51,7 @@ class package_manager():
         try:
             return session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(desc(package_info.user_id),desc(package_info.time)).all()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -2 
         
     @staticmethod
@@ -72,14 +72,14 @@ class package_manager():
                 try:
                     os.remove(file_path)
                 except Exception as e:
-                    Logger().get_logger().warning(str(e))
+                    Logger().get_logger().error(str(e))
                     return -2
 
             session_obj.delete(tmp)
             session_obj.commit()
             return 0
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -3
         
     @staticmethod
@@ -87,7 +87,7 @@ class package_manager():
         try:
             return session_obj.query(package_info).filter_by(id=package_id).first()
         except Exception as e:
-            Logger().get_logger().warning(str(e))
+            Logger().get_logger().error(str(e))
             return -1
     
     
