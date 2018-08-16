@@ -23,6 +23,7 @@ class user_manager():
     def register_user(self,login_id,user_name,pwd,permission):
         if ROOT_ID!=login_id:
              return {'code':errtypes.HttpResponseCode_PermissionDenied,'msg':errtypes.HttpResponseCodeMsg_PermissionDenied}
+        
         ret = user.append(user_name,pwd,permission)
         if (-1==ret):
             return {'code':errtypes.HttpResponseCode_UserExisted,'msg':errtypes.HttpResponseCodeMsg_UserExisted}
