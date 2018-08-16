@@ -40,7 +40,7 @@ def notify_all_client(msg):
     global clients
     key_item = list(clients.keys())
     for item in key_item:
-        Logger().get_logger().info('WebSocket send message to client:', item)
+        Logger().get_logger().info('WebSocket send message to client:{0}'.format(item))
         try:
             if client_lock.acquire():
                 if clients.get(item) is not None:
