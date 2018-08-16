@@ -63,6 +63,7 @@ def notify_one_client(identify,msg):
     try:
         if client_session is not None:
             client_session.send(data)
+            Logger().get_logger().info('WebSocket send message to client:{0} successfully.'.format(identify))
         else:
             Logger().get_logger().error('WebSocket client session:{0} is null,then can not send message.'.format(identify))
     except Exception as e:
@@ -165,6 +166,9 @@ class websocket_thread(threading.Thread):
             'Upgrade:websocket\r\n'\
             'Connection:Upgrade\r\n'\
             'Sec-WebSocket-Accept:{0}\r\n\r\n'.format(str(token)[2:30])
+
+        global clients
+
         try:
             self.__connection.send(
                 response.encode('utf-8')
@@ -182,7 +186,6 @@ class websocket_thread(threading.Thread):
         if connected_notify_callback is not None:
             connected_notify_callback(self.__userid)
 
-        global clients
         while True:
             try:
                 data=self.__connection.recv(2048)

@@ -287,6 +287,12 @@ class file_info():
     def __del__(self):
         if self.m_hd is not None and -1 != self.m_hd:
             self.m_hd.close()
+            self.m_hd = None
+
+    def closefile(self):
+        if self.m_hd and -1 != self.m_hd:
+            self.m_hd.close()
+            self.m_hd = None
 
 class user_transfer_queue(object):
     """docstring for user_transfer_queue"""
@@ -721,7 +727,7 @@ class file_manager():
             #finish transform
             Logger().get_logger().info('file[{0}][{1}] data send finish'.format(t_file_info.m_name,t_file_info.m_file_id))
             shell_info.file_complete(t_file_info.m_file_id,block_num,FILE_STATUS_NORMAL)
-            t_file_info.m_hd.close()
+            t_file_info.closefile()
             if FILE_TYPE_A_UPGRADE == t_file_info.m_type:
                 shell_info.set_upgrade(FILE_TYPE_NORMAL)
             #call back step
@@ -789,7 +795,7 @@ class file_manager():
 
             shell_info.file_complete(t_file_info.m_file_id,block_num,FILE_STATUS_NORMAL)
             
-            t_file_info.m_hd.close()
+            t_file_info.closefile()
             self.remove_file_info(robot_id,file_id)
 
             self.__file_rw.set_file_attr(t_file_info.m_name,t_file_info.m_atime,t_file_info.m_ctime,t_file_info.m_mtime)
@@ -816,7 +822,7 @@ class file_manager():
             print("file_err file[%d] doesnot exist in list" % file_id)
             return -1
         #关闭句柄
-        t_file_info.m_hd.close()
+        t_file_info.closefile()
         #传输队列中删除
         self.task_finish(t_file_info.m_user_id,t_file_info.m_thread_uid,t_file_info.m_task_id,t_file_info.m_oper_type)
         
@@ -882,18 +888,17 @@ class file_manager():
             #取消待传输文件任务
             del_task = transfer_queue.del_task(len(task_id_list),lambda task:task.m_task_id in task_id_list )
             for task_info in del_task:
-                # self.notify(user_id,robot_id,task.m_file_path,task.m_file_type,0,ERRNO_FILE_CANCLE,1,task.m_task_id,-1)
                 task_id_list.remove(task_info.m_task_id)
                 remove_list.append(task_info.m_task_id)
         else:
             self.__transfer_queue_mutex.release()
             return remove_list
         self.__transfer_queue_mutex.release()
-            
-        #取消正在传输的任务
+        
         if len(task_id_list) <= 0:
             return remove_list
 
+        #取消正在传输的任务
         file_mutex.acquire()
         try:
             for robot_id in list(dict_file_info):
