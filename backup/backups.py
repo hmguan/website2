@@ -511,7 +511,7 @@ class backup_manage():
             else:#插数据库失败
                 if os.path.exists(zip_file):
                     os.remove(zip_file)
-                Logger().get_logger().info('inster sql failed',ret)
+                Logger().get_logger().info('inster sql failed,err:{1}',format(ret))
                 if notify_step_function is not None:
                     notify_step_function(user,{'msg_type': errtypes.TypeShell_Blackbox_None,'task_id': tmp_task['task']})
 
