@@ -123,7 +123,6 @@ def background_thead():
                     message = json.dumps(obj)
                 else:
                     message = obj
-                print('WebSocket message:',message)
                 web_emit_all_client(message)
                 print('WebSocket send message to all client session.')
 

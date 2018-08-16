@@ -37,7 +37,7 @@ def notify_all_client(msg):
         Logger().get_logger().warning('WebSocket can not send message to any client,beacuse the message is null')
         return
 
-    global clients
+    global clients,client_lock
     key_item = list(clients.keys())
     for item in key_item:
         Logger().get_logger().info('WebSocket send message to client:{0}'.format(item))
@@ -46,7 +46,7 @@ def notify_all_client(msg):
                 if clients.get(item) is not None:
                     result = clients.get(item).send(data)
                 client_lock.release()
-                Logger().get_logger().info('WebSocket send message to client:{0} successfully.'.format(item))
+                Logger().get_logger().info('WebSocket send message to client:{0} and msg:{1} successfully.'.format(item,msg))
         except Exception as e:
             Logger().get_logger().error('WebSocket server get error while send to client:{0}, and error message:{1}'.format(item ,str(e)))
             if client_lock.acquire():
@@ -55,7 +55,7 @@ def notify_all_client(msg):
                 client_lock.release()
 
 def notify_one_client(identify,msg):
-    global clients
+    global clients,client_lock
     if identify not in clients.keys():
         Logger().get_logger().warning('WebSocket can not find identify:{0} in the all client collection.'.format(identify))
         return
@@ -70,7 +70,7 @@ def notify_one_client(identify,msg):
         try:
             if client_session is not None:
                 client_session.send(data)
-                Logger().get_logger().info('WebSocket send message to one single client:{0} successfully.'.format(identify))
+                Logger().get_logger().info('WebSocket send message to one single client:{0} and msg:{1} successfully.'.format(identify,msg))
             else:
                 Logger().get_logger().error('WebSocket client session:{0} is null,then can not send message.'.format(identify))
         except Exception as e:
@@ -94,7 +94,7 @@ def regist_recvdata_callback(notify_callback):
     recvdata_notify_callback = notify_callback
 
 def close_client_websocket(client_identify):
-    global clients
+    global clients,client_lock
     if client_lock.acquire() == True:
         connection = clients.get(client_identify)
         if connection is not None:
@@ -163,6 +163,7 @@ class websocket_thread(threading.Thread):
         return base64.b64encode(ser_key)
 
     def socket_close(self):
+        global clients,client_lock
         self.__connection.close()
         if client_lock.acquire() == True:
             if self.__userid in clients.keys():
@@ -185,11 +186,15 @@ class websocket_thread(threading.Thread):
             'Connection:Upgrade\r\n'\
             'Sec-WebSocket-Accept:{0}\r\n\r\n'.format(str(token)[2:30])
 
-        global clients
         try:
-            self.__connection.send(
-                response.encode('utf-8')
-            )
+            if self.__connection._closed == False:
+                self.__connection.send(
+                    response.encode('utf-8')
+                )
+            else:
+                Logger().get_logger().warning('WebSocket can not send message to client')
+                self.socket_close()
+                return
         except Exception as e:
             Logger().get_logger().error('WebSocket get error while send websocket connetion protocol websocket:{0}'.format(str(e)))
             self.socket_close()
@@ -219,7 +224,12 @@ class websocket_thread(threading.Thread):
                 if closed_notify_callback is not None:
                     closed_notify_callback(self.__userid)
                 try:
-                    self.__connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_FRAME,v_data))
+                    if self.__connection._closed == False:
+                        self.__connection.send(encode_webmessage(0x80 | ws_type.WS_CLOSEF_FRAME,v_data))
+                    else:
+                        Logger().get_logger().warning('WebSocket can not send message to client')
+                        self.socket_close()
+                        break
                 except Exception as e:
                     Logger().get_logger().error('WebSocket get error while send close frame:{0}'.format(str(e)))
                 Logger().get_logger().info('WebSocket get close frame the client session code,the username is:{0}'.format(self.__userid))
@@ -231,7 +241,6 @@ class websocket_thread(threading.Thread):
             elif code == ws_type.WS_ERROR_FRAME:
                 Logger().get_logger().error('WebSocket get error frame message')
                 continue
-                
             if len(v_data) == 0:
                 Logger().get_logger().error('WebSocket get null message')
                 continue
@@ -253,17 +262,18 @@ class websocket_server(threading.Thread):
         sock.bind((self.__host,self.__port))
         sock.listen(5)
         Logger().get_logger().info('WebSocket server started')
+        global clients,client_lock
         while True:
             connection,address=sock.accept()
             try:
-                userid=str(address[1])
-                thread=websocket_thread(connection,userid)
-                thread.start()
+                userid = connection.fileno()
                 if client_lock.acquire() == True:
-                    global clients
                     clients[userid]=connection
                     Logger().get_logger().info('WebSocket server clients:{0}'.format(clients))
                     client_lock.release()
+                thread = websocket_thread(connection, userid)
+                thread.setDaemon(True)
+                thread.start()
             except socket.timeout:
                 Logger().get_logger().error('WebSocket connection timeout')
             except Exception as e:
