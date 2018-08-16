@@ -58,6 +58,8 @@ class user:
     @staticmethod
     def append(username,pwd,permission,identity_type='guest')->int:
         try:
+            if 'root'==username.lower():
+                return -1
             session_obj = Session()
             if user.is_exist(username)>=0:
                 return -1
