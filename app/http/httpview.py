@@ -85,6 +85,8 @@ def upload_file():
                     ret = package_manager.upload(user_id, filename, version, time, remark)
                     if ret == -1:
                         return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
+                    if ret == -2:
+                        return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
 
                     return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
             except Exception as e:
