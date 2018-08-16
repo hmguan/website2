@@ -20,7 +20,7 @@ class file_manager():
                 Session.remove()
                 return -1
             
-            tmp = session_obj.query(file_list).filter_by(file_name=file_name).first()
+            tmp = session_obj.query(file_list).filter_by(user_id=user_id).filter_by(file_name=file_name).first()
             if(tmp !=None):
                 Session.remove()
                 return -2
