@@ -13,6 +13,15 @@ from copy import deepcopy
 from time import sleep
 from db.db_file_list import *
 
+BlackboxFailed=-1
+BlackboxTarFailed=-5
+BlackboxShellCancel=-105
+BlackboxDisconnect=-102
+BlackboxPullFailed=-103
+BlackboxInsertSqlFaild=-104
+BlackboxSearchSqlFailed=-106
+BlackboxNoLog=-107
+
 notify_step_function=None
 thread_wait = waitable_handle(True)
 @slt.singleton
@@ -24,15 +33,15 @@ class backup_manage():
         self.tar_list=[]
         self.mutex = threading.RLock()
         self.tar_mutex=threading.RLock()
-        self.__check_timeout = threading.Thread(target=backup_manage.tar_threading_func, args=(self,))
-        self.__check_timeout.setDaemon(True)
-        self.__check_timeout.start()
+        # self.__check_timeout = threading.Thread(target=backup_manage.tar_threading_func, args=(self,))
+        # self.__check_timeout.setDaemon(True)
+        # self.__check_timeout.start()
         self.__userid_to_name=dict()
         pass
 
     def __del__(self):
         self.__is_exist_th = True
-        self.__check_timeout.join()
+        # self.__check_timeout.join()
         print('mt_manage __del__')
 
     # 初始化注册进度回调
@@ -98,7 +107,7 @@ class backup_manage():
 
         self.mutex.acquire()
         self.user_task_data[user_id] = {'task': task_id, 'filepath': zip_file, 'name': name, 'handle': hzip, 'path': {},
-                                   'step': 0, 'pull_list':[],'failed':[],'success':[],'wait':[],'shellback':[],'status':0,'tar':1,'delete':0}
+                                   'step': 0, 'pull_list':[],'failed':[],'success':[],'wait':[],'shellback':[],'status':0,'tar':1,'delete':0,'err':0}
         self.mutex.release()
         for id in robot_list:
             shell_info = shell_manager().get_session_by_id(int(id))
@@ -196,7 +205,7 @@ class backup_manage():
         return file_list
 
     # 收到车上shell压缩的文件，返回的车上路径
-    def load_log_path(self,id, stat, data):
+    def load_log_path(self,id, stat, data,pkt_err):
         print('back----', stat,id,data,self.user_task_data)
         global notify_step_function
         if stat == -1 and data == '':  # shell此时断连的话
@@ -223,6 +232,7 @@ class backup_manage():
                             self.user_task_data[user]['failed'].append(id)
                         if self.user_task_data[user]['success'].__contains__(id):
                             self.user_task_data[user]['success'].remove(id)
+                        self.user_task_data[user]['err']=BlackboxDisconnect
                         self.failed_get_log(user)
                         self.mutex.release()
                         return
@@ -230,8 +240,7 @@ class backup_manage():
                 else:
                     self.mutex.release()
                     return
-
-        Logger().get_logger().info('shell back')
+        Logger().get_logger().info("{0} shell back,error type is {1}".format(id,pkt_err))
         path = log.proto_logs_file_path()
         path.build(data, 0)
         if not self.task_user_.__contains__(int(path.task_id)):
@@ -239,9 +248,12 @@ class backup_manage():
         user = self.task_user_[int(path.task_id)]
         if self.user_task_data[user]['status']==1:return
         self.mutex.acquire()
+        self.user_task_data[user]['err'] = pkt_err
         if not self.user_task_data[user]['shellback'].__contains__(id):
             self.user_task_data[user]['shellback'].append(id)
         if len(path.vct_log_file_name) == 0:  # 没有文件返回
+            if pkt_err==0:
+                self.user_task_data[user]['err']=BlackboxNoLog
             Logger().get_logger().warning('not find any log files :by user {0} robot id:{1}'.format(user, id))
             self.user_task_data[user]['path'][id] = 'null'
             if self.task_user_.__contains__(self.user_task_data[user]['task']):
@@ -268,74 +280,75 @@ class backup_manage():
                 self.user_task_data[user]['pull_list'].append(task[0]['task_id'])
             else:
                 Logger().get_logger().info('file_rw task list is full')
+                self.user_task_data[user]['err'] = BlackboxPullFailed
                 self.fts_err_status(user,id)
         self.mutex.release()
 
     # 压缩文件
-    def tar_threading_func(self):
-        global notify_step_function,thread_wait
-        while True:
-            print('start wait')
-            thread_wait.wait(0xffffffff)
-            print('tar_list1:', self.tar_list)
-
-            while True:
-                self.tar_mutex.acquire()
-                if len(self.tar_list)<=0:
-                    self.tar_mutex.release()
-                    break
-                tar_tmp=deepcopy(self.tar_list[0])
-                del self.tar_list[0]
-                self.tar_mutex.release()
-                print('tar_list2:', tar_tmp)
-                user_id=tar_tmp['user']
-                file_path = tar_tmp['path']
-
-                open_path = self.get_user_tmp_path(user_id)
-                zip_file = self.get_user_path(user_id) + self.user_task_data[int(user_id)]['name']
-                zip_file_tmp = open_path + self.user_task_data[user_id]['name']
-                if self.user_task_data[int(user_id)]['handle'] is not None:
-                    handle = self.user_task_data[user_id]['handle']
-
-
-                if file_path=='last':
-                    handle.close()
-                    print('close task')
-                    shutil.move(zip_file_tmp, zip_file)
-                    if os.path.exists(open_path):
-                        shutil.rmtree(open_path)
-                else:
-                    print('write------', file_path, open_path, self.tar_list)
-                    Logger().get_logger().info('tar log')
-                    filefullpath = os.path.join(open_path, file_path)
-                    if os.path.isfile(filefullpath):
-                        if os.path.isfile(zip_file_tmp):#防止文件被删除
-                            handle.add(filefullpath, arcname=file_path)
-                            if self.user_task_data[user_id]['delete']==1:
-                                self.user_task_data[user_id]['handle'].close()
-                                self.delete_tmp_file(user_id)
-                                self.delete_log(user_id, self.user_task_data[user_id]['name'])
-                                del self.task_user_[self.user_task_data[user_id]['task']]
-                                del self.user_task_data[user_id]
-                            Logger().get_logger().info('tar log 1')
-
-                    task_curr=0
-                    self.tar_mutex.acquire()
-                    for item in self.tar_list:
-                        if item['user']==user_id:
-                            task_curr+=1
-                    self.tar_mutex.release()
-
-                    if self.user_task_data[int(user_id)]['step'] == 100 and task_curr==0:
-                        handle.close()
-                        print('close task')
-                        shutil.move(zip_file_tmp, zip_file)
-                        if os.path.exists(open_path):
-                            shutil.rmtree(open_path)
-                        if notify_step_function is not None:
-                            notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log,
-                                              'task_id': self.user_task_data[user_id]['task']})
-                    Logger().get_logger().info('tar log over')
+    # def tar_threading_func(self):
+    #     global notify_step_function,thread_wait
+    #     while True:
+    #         print('start wait')
+    #         thread_wait.wait(0xffffffff)
+    #         print('tar_list1:', self.tar_list)
+    #
+    #         while True:
+    #             self.tar_mutex.acquire()
+    #             if len(self.tar_list)<=0:
+    #                 self.tar_mutex.release()
+    #                 break
+    #             tar_tmp=deepcopy(self.tar_list[0])
+    #             del self.tar_list[0]
+    #             self.tar_mutex.release()
+    #             print('tar_list2:', tar_tmp)
+    #             user_id=tar_tmp['user']
+    #             file_path = tar_tmp['path']
+    #
+    #             open_path = self.get_user_tmp_path(user_id)
+    #             zip_file = self.get_user_path(user_id) + self.user_task_data[int(user_id)]['name']
+    #             zip_file_tmp = open_path + self.user_task_data[user_id]['name']
+    #             if self.user_task_data[int(user_id)]['handle'] is not None:
+    #                 handle = self.user_task_data[user_id]['handle']
+    #
+    #
+    #             if file_path=='last':
+    #                 handle.close()
+    #                 print('close task')
+    #                 shutil.move(zip_file_tmp, zip_file)
+    #                 if os.path.exists(open_path):
+    #                     shutil.rmtree(open_path)
+    #             else:
+    #                 print('write------', file_path, open_path, self.tar_list)
+    #                 Logger().get_logger().info('tar log')
+    #                 filefullpath = os.path.join(open_path, file_path)
+    #                 if os.path.isfile(filefullpath):
+    #                     if os.path.isfile(zip_file_tmp):#防止文件被删除
+    #                         handle.add(filefullpath, arcname=file_path)
+    #                         if self.user_task_data[user_id]['delete']==1:
+    #                             self.user_task_data[user_id]['handle'].close()
+    #                             self.delete_tmp_file(user_id)
+    #                             self.delete_log(user_id, self.user_task_data[user_id]['name'])
+    #                             del self.task_user_[self.user_task_data[user_id]['task']]
+    #                             del self.user_task_data[user_id]
+    #                         Logger().get_logger().info('tar log 1')
+    #
+    #                 task_curr=0
+    #                 self.tar_mutex.acquire()
+    #                 for item in self.tar_list:
+    #                     if item['user']==user_id:
+    #                         task_curr+=1
+    #                 self.tar_mutex.release()
+    #
+    #                 if self.user_task_data[int(user_id)]['step'] == 100 and task_curr==0:
+    #                     handle.close()
+    #                     print('close task')
+    #                     shutil.move(zip_file_tmp, zip_file)
+    #                     if os.path.exists(open_path):
+    #                         shutil.rmtree(open_path)
+    #                     if notify_step_function is not None:
+    #                         notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_BlackboxLog,
+    #                                           'task_id': self.user_task_data[user_id]['task']})
+    #                 Logger().get_logger().info('tar log over')
 
     # pull文件时，回调进度
     def pull_log_step_notify(self,user_id, robot_id, step, file_path, error_code,status):  # file_path需要改成保存后台的文件名,status状态表示file_rw推拉是否正常
@@ -347,7 +360,7 @@ class backup_manage():
             task_tar.setDaemon(True)
             task_tar.start()
 
-            #notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log, 'task_id': self.user_task_data[user_id]['task']})
+            #notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_BlackboxLog, 'task_id': self.user_task_data[user_id]['task']})
             return
         print('step', step, error_code, status)
         if step == 100 and status == 1:
@@ -369,6 +382,7 @@ class backup_manage():
 
         if error_code != 0:
             self.mutex.acquire()
+            self.user_task_data[user]['err'] = BlackboxPullFailed
             self.fts_err_status(user_id,robot_id)
             self.mutex.release()
 
@@ -384,7 +398,7 @@ class backup_manage():
                 self.mutex.acquire()
                 self.user_task_data[int(user_id)]['step'] = sch
                 self.mutex.release()
-                notify_step_function(user_id,{'step': sch, 'msg_type': errtypes.TypeShell_Blackbox_Log,
+                notify_step_function(user_id,{'step': sch, 'msg_type': errtypes.TypeShell_BlackboxLog,
                                           'task_id': self.user_task_data[user_id]['task']})
 
 
@@ -393,13 +407,27 @@ class backup_manage():
         self.user_task_data[user_id]['path'][robot_id] = 'ftpnull'
         if not self.user_task_data[user_id]['failed'].__contains__(robot_id):
             self.user_task_data[user_id]['failed'].append(robot_id)
+        if len(self.user_task_data[user_id]['failed']) == len(self.user_task_data[user_id]['wait']):
+            if len(self.user_task_data[user_id]['wait'])==1 and self.user_task_data[user]['err']==BlackboxPullFailed:
+                if notify_step_function is not None:
+                    notify_step_function(user, {'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': self.user_task_data[user]['task'],'err_type':BlackboxPullFailed})
+            else:
+                if notify_step_function is not None:
+                    notify_step_function(user,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id':self.user_task_data[user]['task'],'err_type':BlackboxFailed})
+            self.delete_tmp_file(user)
+            self.delete_log(user, self.user_task_data[user]['name'])
+            del self.task_user_[self.user_task_data[user]['task']]
+            self.mutex.acquire()
+            del self.user_task_data[user]
+            self.mutex.release()
+
         if len(self.user_task_data[user_id]['success']) + len(self.user_task_data[user_id]['failed']) == len(self.user_task_data[user_id]['wait']) and \
                 len(self.user_task_data[user_id]['failed']) != len(self.user_task_data[user_id]['wait']):
             self.user_task_data[int(user_id)]['step'] = 100
             task_tar = threading.Thread(target=backup_manage.task_over_tar_log_file, args=(self, user_id))
             task_tar.setDaemon(True)
             task_tar.start()
-            #notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log,'task_id': self.user_task_data[user_id]['task']})
+            #notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_BlackboxLog,'task_id': self.user_task_data[user_id]['task']})
 
 
     def register_blackbox_step_notify(self,log_notify=None):
@@ -412,8 +440,19 @@ class backup_manage():
         global notify_step_function
         self.mutex.acquire()
         if len(self.user_task_data[user]['failed'])==len(self.user_task_data[user]['wait']):
-            if notify_step_function is not None:
-                notify_step_function(user,{'msg_type': errtypes.TypeShell_Blackbox_None,'task_id':self.user_task_data[user]['task']})
+            if len(self.user_task_data[user]['failed'])==1:
+                err_type=0
+                if self.user_task_data[user]['err']==BlackboxNoLog :
+                    err_type=BlackboxNoLog
+                elif self.user_task_data[user]['err']==BlackboxTarFailed:
+                    err_type = BlackboxTarFailed
+                elif self.user_task_data[user]['err']==BlackboxDisconnect:
+                    err_type = BlackboxDisconnect
+                if notify_step_function is not None:
+                    notify_step_function(user, {'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': self.user_task_data[user]['task'],'err_type':err_type})
+            else:
+                if notify_step_function is not None:
+                    notify_step_function(user,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id':self.user_task_data[user]['task'],'err_type':-1})
             self.user_task_data[user]['handle'].close()
             self.delete_log(user, self.user_task_data[user]['name'])
             self.delete_tmp_file(user)
@@ -479,7 +518,7 @@ class backup_manage():
                 if tmp_task['path'].__contains__(index):
                     file_path=tmp_task['path'][index]
                     filefullpath = os.path.join(open_path, file_path)
-                    if os.path.isfile(filefullpath):
+                    if os.path.exists(filefullpath):
                         if os.path.isfile(zip_file_tmp):  # 防止文件被删除
                             handle.add(filefullpath, arcname=file_path)
                             if tmp_task['delete'] == 1:  #在压缩时如果已经在压缩，待压缩完删除文件和任务
@@ -506,14 +545,18 @@ class backup_manage():
                 shutil.rmtree(open_path)
             if ret == 0:
                 if notify_step_function is not None:
-                    notify_step_function(user,{'step': 100, 'msg_type': errtypes.TypeShell_Blackbox_Log,'task_id': tmp_task['task']})
+                    notify_step_function(user,{'step': 100, 'msg_type': errtypes.TypeShell_BlackboxLog,'task_id': tmp_task['task']})
                 Logger().get_logger().info('tar log over')
             else:#插数据库失败
-                if os.path.exists(zip_file):
-                    os.remove(zip_file)
-                Logger().get_logger().info('inster sql failed,err:{1}',format(ret))
+                self.delete_tmp_file(user)
+                self.delete_log(user, tmp_task['name'])
+                del self.task_user_[tmp_task['task']]
+                self.mutex.acquire()
+                del self.user_task_data[user]
+                self.mutex.release()
+                Logger().get_logger().info('inster sql failed ,err:{0}',format(ret))
                 if notify_step_function is not None:
-                    notify_step_function(user,{'msg_type': errtypes.TypeShell_Blackbox_None,'task_id': tmp_task['task']})
+                    notify_step_function(user,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': tmp_task['task'],'err_type':BlackboxInsertSqlFaild})
 
 
 
