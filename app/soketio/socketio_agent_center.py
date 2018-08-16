@@ -66,7 +66,7 @@ def client_msg(msg_data,client_identify):
             user_id_with_uuid[user_id] = uuid_tmp
             thread_lock.release()
 
-        Logger().get_logger().info('WebSocket server current client collection:',uuid_with_user_id)
+        Logger().get_logger().info('WebSocket server current client collection:{0}'.format(uuid_with_user_id))
 
 def send_msg_to_client(uuid_value,msg):
     msg_dict = dict()
@@ -147,7 +147,7 @@ def background_thead():
                             message = item
 
                         for user_id in client_items.keys():
-                            Logger().get_logger().info('WebSocket send message to one single client:', user_id)
+                            Logger().get_logger().info('WebSocket send message to one single client:{0}'.format(user_id))
                             web_emit_one_client(user_id,message)
 
 
