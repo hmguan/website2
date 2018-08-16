@@ -399,16 +399,22 @@ class user_transfer_queue(object):
         if self.__task_thread_pool_pull:
             task_pull_num = self.__task_thread_pool_pull.get_queue_size()
 
-        return task_pull_num + task_push_num
+        return task_pull_num + task_push_num 
 
-    def del_task(self,count, callback):
-        del_push_task = list()
-        del_pull_task = list()
-        if self.__task_thread_pool_push:
-            del_push_task = self.__task_thread_pool_push.del_task(count,callback)
-        if self.__task_thread_pool_pull and count > len(del_push_task):
-            del_pull_task = self.__task_thread_pool_pull.del_task(count - len(del_push_task),callback)
-        return list(set(del_push_task).union(set(del_pull_task)))
+
+    def del_task(self,count, callback,transfer_type = None):
+        if transfer_type == FILE_OPER_TYPE_PULL:
+            return self.__task_thread_pool_pull.del_task(count,callback)
+        elif transfer_type == FILE_OPER_TYPE_PUSH:
+            return self.__task_thread_pool_push.del_task(count,callback)
+        else:   
+            del_push_task = list()
+            del_pull_task = list()
+            if self.__task_thread_pool_push:
+                del_push_task = self.__task_thread_pool_push.del_task(count,callback)
+            if self.__task_thread_pool_pull and count > len(del_push_task):
+                del_pull_task = self.__task_thread_pool_pull.del_task(count - len(del_push_task),callback)
+            return list(set(del_push_task).union(set(del_pull_task)))
 
 @slt.singleton
 class file_manager():
@@ -452,7 +458,6 @@ class file_manager():
         from configuration import config
         try:
             return int(config.TRANSMIT_BLOCK_SIZE)
-            pass
         except Exception as e:
             return int(self.__block_size)
 
@@ -466,6 +471,58 @@ class file_manager():
         else:
             map_file_info[t_file_info.m_file_id] = t_file_info
         # file_mutex.release()
+
+    def remove_task_by_user(self,transfer_type,userid):
+        remove_list = list()
+
+        Logger().get_logger().info('remove_task_by_user:userid{} transfer_type:{}'.format(userid,transfer_type))
+        self.__transfer_queue_mutex.acquire()
+        transfer_queue = self.__map_user_transfer_queue.get(user_id)
+        if transfer_queue :
+            #取消待传输文件任务
+            del_task = transfer_queue.del_task(MAX_QUEUE_NUM+1,lambda task:task.m_user_id == userid , transfer_type)
+            for task_info in del_task:
+                remove_list.append(task_info.m_task_id)
+        else:
+            self.__transfer_queue_mutex.release()
+            return remove_list
+        self.__transfer_queue_mutex.release()
+        
+        #取消正在传输的任务
+        file_mutex.acquire()
+        try:
+            for robot_id in list(dict_file_info):
+                map_file_info = dict_file_info[robot_id]
+                for file_id in list(map_file_info):
+                    file_info = map_file_info[file_id]
+                    if file_info.m_user_id != user_id or file_info.m_oper_type != transfer_type:
+                        continue
+
+                    shell_info = self.__shell_manager.get_session_by_id(robot_id)
+                    if shell_info is None:
+                        print("session cannot find, robot_id:%d" % robot_id)
+                        #断链中处理
+                        continue
+                    shell_info.file_complete(file_info.m_file_id,file_info.m_last_block_num,FILE_STATUS_CANCLE)
+                    if FILE_TYPE_A_UPGRADE == file_info.m_type:
+                        shell_info.set_upgrade(FILE_TYPE_NORMAL)         
+                    Logger().get_logger().info('cancle file transform:{0}'.format(file_info.m_path))
+                                      
+                    self.task_finish(user_id,file_info.m_thread_uid,file_info.m_task_id,file_info.m_oper_type)
+                    remove_list.append(file_info.m_task_id)
+                    map_file_info.pop(file_id)
+                    file_info.closefile()
+                    #取消任务，删除文件
+                    if file_info.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(file_info.m_name):
+                        os.remove(file_info.m_name)
+                if len(map_file_info) <= 0:
+                    dict_file_info.pop(robot_id)
+        except Exception as e:
+            file_mutex.release()
+            Logger().get_logger().error('cancle file transform error:{}'.format(str(e)))
+            return remove_list
+        file_mutex.release()
+        return remove_list
 
     def remove_file_info(self,robot_id,file_id):
         # file_mutex.acquire()
@@ -864,7 +921,7 @@ class file_manager():
         if map_file_info is not None:
             for k in list(map_file_info):
                 val = map_file_info[k]
-                val.m_hd.close()
+                val.closefile()
                 #删除失败文件
                 if val.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(val.m_name):
                     os.remove(val.m_name)
@@ -921,7 +978,7 @@ class file_manager():
                     self.task_finish(user_id,file_info.m_thread_uid,file_info.m_task_id,file_info.m_oper_type)
                     remove_list.append(file_info.m_task_id)
                     map_file_info.pop(file_id)
-                    file_info.m_hd.close()
+                    file_info.closefile()
                     #取消任务，删除文件
                     if file_info.m_oper_type == FILE_OPER_TYPE_PULL and os.path.exists(file_info.m_name):
                         os.remove(file_info.m_name)
@@ -1012,7 +1069,7 @@ class file_manager():
                     if diff_time > CHECK_FILE_TRANSFORM_OUT:
                         Logger().get_logger().info('file name[{0}] transform timeout:{1}.'.format(v1[k2].m_name, diff_time))
                         if v1[k2].m_hd is not None and -1 != v1[k2].m_hd:
-                            v1[k2].m_hd.close()
+                            v1[k2].closefile()
                         if FILE_OPER_TYPE_PULL == v1[k2].m_oper_type and os.path.exists(v1[k2].m_name):
                             t_size,t_ctime,t_atime,t_mtime = self.__file_rw.get_file_attr(v1[k2].m_name)
                             if t_size != v1[k2].m_size:
