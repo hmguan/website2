@@ -32,6 +32,7 @@ class file_manager():
 
             return 0
         except Exception as e:
+            session_obj.rollback()
             Logger().get_logger().error(str(e))
             return -3  
         
@@ -42,10 +43,11 @@ class file_manager():
             session_obj = Session()
             now_t = datetime.date.today()- datetime.timedelta(days=15)
             file_manager.remove_by_day(datetime.datetime(now_t.year, now_t.month, now_t.day, datetime.datetime.now().hour, datetime.datetime.now().minute, datetime.datetime.now().second, 0))
-            ret  = session_obj.query(file_list).filter_by(user_id=user_id).order_by(desc(file_list.time)).all()
+            ret  = session_obj.query(file_list).options(subqueryload(package_info.user)).filter_by(user_id=user_id).order_by(desc(file_list.time)).all()
             Session.remove()
             return ret
         except Exception as e:
+            session_obj.rollback() 
             Logger().get_logger().error(str(e))
             return -1 
 
@@ -68,6 +70,7 @@ class file_manager():
                 except Exception as e:
                     Session.remove()
                     Logger().get_logger().error(str(e))
+                    session_obj.rollback() 
                     return -2
 
             session_obj.delete(tmp)
@@ -76,6 +79,7 @@ class file_manager():
             return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2
 
 
@@ -88,6 +92,7 @@ class file_manager():
             return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2
 
         

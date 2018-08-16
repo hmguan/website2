@@ -50,8 +50,6 @@ class user_manager():
             logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
 
-        msg = "删除成功"
-        #logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         return {'code':ret,'msg':'success'}
 
 
@@ -70,9 +68,7 @@ class user_manager():
         if login_id in self.login_user_.keys():
             u_uuid = copy.deepcopy(self.login_user_[login_id].u_uuid)
             del self.login_user_[login_id]
-            msg = "更新密码成功，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_UpdatePWD,'uuid':u_uuid},room_identify=u_uuid)
-            #logger_manager.insert(user_id = login_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
         
 
@@ -98,7 +94,6 @@ class user_manager():
             del self.login_user_[target_id]
             msg = "该账号信息已被修改，请重新登录！"
             socketio_agent_center.post_msg_to_room({'code':errtypes.HttpResponseCode_RootOper,'uuid':u_uuid},room_identify=u_uuid)
-            #logger_manager.insert(user_id = target_id,login_type='offline',time =datetime.now(),msg=msg,u_uuid=u_uuid)
         self.login_mutex_.release()
 
         msg = "账号信息已被修改"
