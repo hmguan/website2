@@ -29,9 +29,14 @@ class backupview(base_event):
             robot_id = json_data['robot_id']
             user_id = json_data['login_id']
             time_type=json_data['time_select_type']
-            if type(robot_id) != list or len(robot_id)==0 or type(user_id) != int or user_id is None or type(time_type)!=int or time_type is None:
+            name=json_data['name']
+            if type(robot_id) != list or len(robot_id)==0 or type(user_id) != int or user_id is None or type(time_type)!=int or time_type is None or len(name)==0:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
 
+            ret_list = file_manager.file_list(user_id)
+            for i in range(len(ret_list)):
+                if ret_list[i].file_name==name:
+                    return jsonify({'code': errtypes.HttpResponseCode_BlackboxReName, 'msg': errtypes.HttpResponseMsg_BlackboxReName})
             task_id = send_log_condition(robot_id, int(user_id), json_data.get('start_time'),
                                          json_data.get('end_time'),json_data.get('is_latest_time'),
                                          json_data.get('time_select_type'), json_data.get('type_list'),

@@ -4,7 +4,6 @@ from pynsp.wait import *
 import errtypes
 import json
 
-
 thread = None
 thread_lock = RLock()
 #线程等待消息队列
@@ -21,13 +20,13 @@ uuid_with_user_id = {}
 user_id_with_uuid = {}
 
 def client_conneted(client_identify):
-    print('WebSocket get a new client browser connected:{0},uuid_with_user_id:{1}'.format(client_identify,uuid_with_user_id))
+    Logger().get_logger().info('WebSocket get a new client browser connected:{0},uuid_with_user_id:{1}'.format(client_identify,uuid_with_user_id))
 
 
 def client_closed(client_identify):
     if thread_lock.acquire() == True:
         global uuid_with_user_id
-        print('WebSocket end-close-uuid with user id:', uuid_with_user_id , ' and client identify:',client_identify)
+        Logger().get_logger().info('WebSocket end-close-uuid with user id:{0} ,and will delete client identify:{1}'.format(uuid_with_user_id , client_identify))
         if client_identify in uuid_with_user_id.keys():
             uuid_with_user_id.pop(client_identify)
         thread_lock.release()
@@ -66,7 +65,8 @@ def client_msg(msg_data,client_identify):
             uuid_with_user_id[client_identify] = uuid_tmp
             user_id_with_uuid[user_id] = uuid_tmp
             thread_lock.release()
-        print('WebSocket client message:',uuid_with_user_id)
+
+        Logger().get_logger().info('WebSocket server current client collection:',uuid_with_user_id)
 
 def send_msg_to_client(uuid_value,msg):
     msg_dict = dict()
@@ -136,16 +136,20 @@ def background_thead():
                     if thread_lock.acquire():
                         client_items = {id_key:uuid_value for id_key,uuid_value in uuid_with_user_id.items() if uuid_value == key}
                         thread_lock.release()
+                        if not client_items:
+                            Logger().get_logger().info('Websocket client:{0} not exists,need send msg is:{1}'.format(key,item))
+                            continue
+
                         message = ''
                         if type(item) == dict:
                             message = json.dumps(item)
                         else:
                             message = item
 
-                        print('**********************WebSocket client items:',client_items)
                         for user_id in client_items.keys():
+                            Logger().get_logger().info('WebSocket send message to one single client:', user_id)
                             web_emit_one_client(user_id,message)
-                            print('WebSocket send message to client:',user_id)
+
 
 
 def init_websocket(host,port):

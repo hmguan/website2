@@ -12,11 +12,16 @@ TypeShell_Offline = 0x00000102
 TypeShell_UpdateSoftware=0x00000103
 TypeShell_ConnectException=0x00000104
 TypeShell_ModifyFileMutex =0x00000105
-TypeShell_Blackbox_Log=0x00000106
-TypeShell_Blackbox_None=0x00000107
+TypeShell_BlackboxLog=0x00000106
+TypeShell_BlackboxFailed=0x00000107
 TypeShell_UpdateNtpServer=0x00000108
 TypeShell_UpdateProcessStatus = 0x00000109
 TypeShell_UpdateProcessList = 0x0000010a
+# TypeShell_BlackboxNoLog=0x0000010b
+# TypeShell_BlackboxTarFailed=0x0000010c
+# TypeShell_BlackboxDisconnect=0x0000010d
+# TypeShell_BlackboxPullFailed=0x0000010e
+# TypeShell_BlackboxInsertSqlFaild=0x00000110
 
 #mt与前端交互类型定义
 TypeMT_Error=0x00000601
@@ -73,6 +78,8 @@ HttpResponseCode_BlackboxDbNoFile=386
 HttpResponseCode_BlackboxNoDownlownFile=387
 HttpResponseCode_BlackboxQueryDbFailed=388
 HttpResponseCode_BlackboxNoRecord=389
+HttpResponseCode_BlackboxReName=390
+
 #不在线
 
 HttpResponseCode_NotFound=404
@@ -136,6 +143,7 @@ HttpResponseMsg_BlackboxDbNoFile='the file cannot be found in the database'
 HttpResponseMsg_BlackboxNoDownlownFile='the downlown file cannot be found'
 HttpResponseMsg_BlackboxQueryDbFailed='query datebase failed'
 HttpResponseMsg_BlackboxNoRecord ="no sql record"
+HttpResponseMsg_BlackboxReName='the name is exist'
 #升级包管理
 HttpResponseCodeMsg_NOEXISTPackage='package is not existed'
 HttpResponseCodeMsg_FailedRemoveFile='failed tp remove file'
