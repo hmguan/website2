@@ -65,8 +65,10 @@ class backupview(base_event):
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             ret = blackbox_manager.insert_temps(login_id, json_data['name'], json_data.get('temps_types'),
                                                 json_data.get('others'))
-            if ret < 0:
-                return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '添加失败'})
+            if -2==ret:
+                return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCodeMsg_Sqlerror})
+            if -1==ret:
+                return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpResponseCodeMsg_UserNotExisted})
 
             return jsonify({'code': 0, 'msg': '添加成功'})
 
@@ -75,9 +77,10 @@ class backupview(base_event):
             if type(temps_id) != int or temps_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             ret = blackbox_manager.remove_temps(temps_id)
-            if ret < 0:
-                return jsonify({'code': errtypes.HttpResponseCode_ServerError, 'msg': '删除失败'})
-
+            if -2==ret:
+                return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCodeMsg_Sqlerror})
+            if -1==ret:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxNoRecord, 'msg': errtypes.HttpResponseMsg_BlackboxNoRecord})
             return jsonify({'code': 0, 'msg': '删除成功'})
 
         if 'event_bk_temps' == event:
@@ -86,6 +89,11 @@ class backupview(base_event):
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             ret = blackbox_manager.temps(login_id)
 
+            if -2==ret:
+                return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCodeMsg_Sqlerror})
+            if -1==ret:
+                return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpResponseCodeMsg_UserNotExisted})
+            
             list_temps = []
             for index, value in enumerate(ret):
                 tmp = {}
@@ -95,6 +103,7 @@ class backupview(base_event):
                 tmp['others'] = value.others
                 tmp['time'] = value.time.strftime("%Y/%m/%d %H:%M:%S")
                 list_temps.append(tmp)
+
             ret = {'code': 0, 'msg': '查询成功', 'data': {'temps': list_temps}}
             return jsonify(ret)
 

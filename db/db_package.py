@@ -1,5 +1,5 @@
 
-from db import session_obj,user_info,package_info
+from db import Session,user_info,package_info
 from sqlalchemy import or_
 from sqlalchemy import asc
 from sqlalchemy import desc
@@ -15,8 +15,10 @@ class package_manager():
     @staticmethod
     def upload(user_id,package_name,version,time,remark):
         try:
+            session_obj = Session()
             tmp = session_obj.query(user_info).filter_by(id=user_id).first()
             if(tmp ==None):
+                Session.remove()
                 return -1
 
             tmp = session_obj.query(package_info).filter_by(package_name= package_name).filter_by(user_id = user_id).first()
@@ -24,10 +26,13 @@ class package_manager():
                 tmp  = session_obj.query(package_info).get(tmp.id)
                 session_obj.delete(tmp)
                 session_obj.commit()
+                
             
             package_obj = package_info(user_id = user_id,package_name= package_name,version=version,time=time,remarks=remark)
             session_obj.add(package_obj)
             session_obj.commit()
+            Session.remove()
+
             return package_obj.id
         except Exception as e:
             Logger().get_logger().error(str(e))
@@ -36,11 +41,14 @@ class package_manager():
     @staticmethod
     def update(package_id,remark):
         try:
+            session_obj = Session()
             tmp = session_obj.query(package_info).filter_by(id=package_id).first()
             if tmp ==None:
+                Session.remove()
                 return -1
             tmp.remarks = remark
             session_obj.commit()
+            Session.remove()
             return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
@@ -49,7 +57,10 @@ class package_manager():
     @staticmethod
     def packages(user_id):
         try:
-            return session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(desc(package_info.user_id),desc(package_info.time)).all()
+            session_obj = Session()
+            ret = session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(desc(package_info.user_id),desc(package_info.time)).all()
+            Session.remove()
+            return ret
         except Exception as e:
             Logger().get_logger().error(str(e))
             return -2 
@@ -57,8 +68,10 @@ class package_manager():
     @staticmethod
     def remove(package_id):
         try:
+            session_obj = Session()
             ret = session_obj.query(package_info).filter_by(id=package_id).first()
             if not ret:
+                Session.remove()
                 return -1
 
             tmp  = session_obj.query(package_info).get(ret.id)
@@ -67,16 +80,19 @@ class package_manager():
             file_path = os.path.join(folder_path,tmp.package_name)
 
             if is_file_open(file_path) or is_package_in_task(package_id):
+                Session.remove()
                 return -4
             if os.path.exists(file_path):
                 try:
                     os.remove(file_path)
                 except Exception as e:
                     Logger().get_logger().error(str(e))
+                    Session.remove()
                     return -2
 
             session_obj.delete(tmp)
             session_obj.commit()
+            Session.remove()
             return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
@@ -85,7 +101,10 @@ class package_manager():
     @staticmethod
     def query_packages(package_id):
         try:
-            return session_obj.query(package_info).filter_by(id=package_id).first()
+            session_obj = Session()
+            ret = session_obj.query(package_info).filter_by(id=package_id).first()
+            Session.remove()
+            return ret
         except Exception as e:
             Logger().get_logger().error(str(e))
             return -1

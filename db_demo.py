@@ -150,7 +150,6 @@ def main():
     
 
     Logger().get_logger().error(str('dd'))
-
    
 
 if __name__ == "__main__":

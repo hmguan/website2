@@ -4,7 +4,7 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy import String,Integer,Column,Table,MetaData,ForeignKey,Enum,DateTime
-from sqlalchemy.orm import mapper,sessionmaker
+from sqlalchemy.orm import mapper,sessionmaker,scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -76,15 +76,18 @@ class file_list(Base):
 
 Base.metadata.create_all(engine) 
 session_cls =sessionmaker(bind=engine)
-session_obj = session_cls()
 
+Session = scoped_session(session_cls)
 #初始化数据库root
+
+session_obj = Session()
 ret = session_obj.query(user_info).filter_by(username='root').first()
 if(ret ==None):
     user_obj = user_info(username='root',pwd='e10adc3949ba59abbe56e057f20f883e',identity_type='admin',user_path='/',permission = 'wr')
     session_obj.add(user_obj)
     session_obj.commit()
 
+Session.remove()
 
 
 
