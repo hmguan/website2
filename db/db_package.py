@@ -22,7 +22,7 @@ class package_manager():
                 Session.remove()
                 return -1
 
-            tmp = session_obj.query(package_info).filter_by(package_name= package_name).filter_by(user_id = user_id).first()
+            tmp = session_obj.query(package_info).options(subqueryload(package_info.user)).filter_by(package_name= package_name).filter_by(user_id = user_id).first()
             if tmp is not None:
                 tmp  = session_obj.query(package_info).get(tmp.id)
                 session_obj.delete(tmp)
@@ -34,7 +34,7 @@ class package_manager():
             session_obj.commit()
             Session.remove()
 
-            return package_obj.id
+            return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
             session_obj.rollback() 

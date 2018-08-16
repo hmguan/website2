@@ -12,6 +12,8 @@ from pynsp.logger import *
 import os
 import httpRequestCode
 from .httpreq import *
+import ptvsd
+ptvsd.settrace(None, ('0.0.0.0', 1234))
 
 def is_file_open(file_path):
     is_opened = is_open(file_path)
@@ -51,27 +53,26 @@ def upload_file():
             try:
                 if file:
                     login_token = request.form['login_token']
-
+                    
                     json_data = get_user_id(login_token)
                     if json_data.get('code') != 0:
                         return jsonify({'code': json_data.get('code'),
                                         'msg': json_data.get('msg')})
-
+                    
                     user_id = json_data.get('user_id')
                     (ret,user_name) = user.query_name_by_id(user_id)
                     if -1==ret:
                         return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
                     if -2==ret:
                         return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCodeMsg_Sqlerror})
-
+                    
                     if user_name is None:
                         Logger().get_logger().error('can not find user by user_id = {}'.format(user_id))
                         return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
-
+                    
                     version = request.form['version']
                     remark =request.form['remark']
                     folder_path = get_config_path(user_name,httpRequestCode.HttpRequestFileType_Patch)
-
                     if os.path.exists(folder_path) == False:
                         os.makedirs(folder_path)
                     file_path = os.path.join(folder_path, filename)
@@ -79,7 +80,6 @@ def upload_file():
                     #The judgment is open only when the file exists
                     if os.path.exists(file_path) and is_file_open(file_path):
                         return jsonify({'code': errtypes.HttpResponseCode_FileBusy, 'msg': errtypes.HttpResponseMsg_FileBusy})
-                    
                     file.save(file_path)
                     time = datetime.datetime.now()
                     ret = package_manager.upload(user_id, filename, version, time, remark)
@@ -87,7 +87,6 @@ def upload_file():
                         return jsonify({'code': errtypes.HttpResponseCode_UserNotExisted, 'msg': errtypes.HttpRequestMsg_UserNotExisted})
                     if ret == -2:
                         return jsonify({'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
-
                     return jsonify({'code': errtypes.HttpResponseCode_Normal, 'msg': errtypes.HttpResponseMsg_Normal})
             except Exception as e:
                 return jsonify({'code': errtypes.HttpResponseCode_UPLOADEXCEPTIONERROR, 'msg': str(e)})
