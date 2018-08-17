@@ -34,6 +34,8 @@ class backupview(base_event):
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
 
             ret_list = file_manager.file_list(user_id)
+            if ret_list==-1:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed})
             for i in range(len(ret_list)):
                 if ret_list[i].file_name==name:
                     return jsonify({'code': errtypes.HttpResponseCode_BlackboxReName, 'msg': errtypes.HttpResponseMsg_BlackboxReName})
@@ -48,7 +50,7 @@ class backupview(base_event):
             elif task_id==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxReTask, 'msg': errtypes.HttpResponseMsg_BlackboxReTask,
                                 'tasl_id': task_id})
-            elif task_id==-3 or task_id==4:
+            elif task_id==-3 or task_id==-4:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed,
                                 'tasl_id': task_id})
 
@@ -141,6 +143,8 @@ class backupview(base_event):
             if type(user_id) != int or user_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             ret_list=file_manager.file_list(user_id)
+            if ret_list==-1:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed})
             log_list=list()
             for i in range(len(ret_list)):
                 log_item = dict()
