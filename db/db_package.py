@@ -108,7 +108,7 @@ class package_manager():
     def query_packages(package_id):
         try:
             session_obj = Session()
-            ret = session_obj.query(package_info).filter_by(id=package_id).first()
+            ret = session_obj.query(package_info).options(subqueryload(package_info.user)).filter_by(id=package_id).first()
             Session.remove()
             return ret
         except Exception as e:
