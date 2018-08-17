@@ -122,27 +122,27 @@ class backup_manage():
         ret=-1
         if not self.task_user_.__contains__(task_id):
             return ret
-        user=deepcopy(self.task_user_[task_id])
-        if self.user_task_data.__contains__(user):
+        user_id=deepcopy(self.task_user_[task_id])
+        if self.user_task_data.__contains__(user_id):
             ret = 0
             self.mutex.acquire()
-            self.user_task_data[user]['status']=1
-            for id in self.user_task_data[user]['path'].keys():
-                print('curr_task',self.user_task_data[user])
+            self.user_task_data[user_id]['status']=1
+            for id in self.user_task_data[user_id]['path'].keys():
+                print('curr_task',self.user_task_data[user_id])
                 shell_info = shell_manager().get_session_by_id(int(id))
                 if shell_info is not None:
-                    Logger().get_logger().info('cancel pull task:{0}'.format(self.user_task_data[user]['pull_list']))
-                    if not self.user_task_data[user]['shellback'].__contains__(id):
+                    Logger().get_logger().info('cancel pull task:{0}'.format(self.user_task_data[user_id]['pull_list']))
+                    if not self.user_task_data[user_id]['shellback'].__contains__(id):
                         shell_info.cancle_log_data(task_id)
-            remove_list=cancle_file_transform(user, self.user_task_data[user]['pull_list'])
-            if self.user_task_data[user]['tar']==0:#正在压缩
-                self.user_task_data[user]['delete'] = 1
+            remove_list=cancle_file_transform(user_id, self.user_task_data[user_id]['pull_list'])
+            if self.user_task_data[user_id]['tar']==0:#正在压缩
+                self.user_task_data[user_id]['delete'] = 1
                 ret = 1  # 等待压缩
             else:
-                self.user_task_data[user]['handle'].close()
-                self.delete_tmp_file(user)
-                self.delete_log(user,self.user_task_data[user]['name'])
-                del self.user_task_data[user]
+                self.user_task_data[user_id]['handle'].close()
+                self.delete_tmp_file(user_id)
+                self.delete_log(user_id,self.user_task_data[user_id]['name'])
+                del self.user_task_data[user_id]
                 del self.task_user_[task_id]
 
             self.mutex.release()
@@ -169,8 +169,8 @@ class backup_manage():
         return -1
 
     #删除零时文件夹
-    def delete_tmp_file(self,user):
-        file = self.get_user_tmp_path(user)
+    def delete_tmp_file(self,user_id):
+        file = self.get_user_tmp_path(user_id)
         if os.path.exists(file):
             try:
                 shutil.rmtree(file)
@@ -201,79 +201,81 @@ class backup_manage():
         print('back----', stat,id,data,self.user_task_data)
         global notify_step_function
         if stat == -1 and data == '':  # shell此时断连的话
-            for user in self.user_task_data.keys():
-                if self.user_task_data[user]['step']==100 or not self.user_task_data[user]['wait'].__contains__(id):#断开的车不是此任务包含的车
+            for user_id in self.user_task_data.keys():
+                if self.user_task_data[user_id]['step']==100 or not self.user_task_data[user_id]['wait'].__contains__(id):#断开的车不是此任务包含的车
                     continue
                 self.mutex.acquire()
-                if not self.user_task_data[user]['shellback'].__contains__(id):
-                    self.user_task_data[user]['shellback'].append(id)
-                if self.user_task_data[user]['path'].__contains__(id) :#==''表示车上没有压完文件，就断开了
-                    if self.task_user_.__contains__(self.user_task_data[user]['task']):
-                        if self.user_task_data[user]['path'][id] == 'null':     #该车已经返回无数据，已经处理
+                if not self.user_task_data[user_id]['shellback'].__contains__(id):
+                    self.user_task_data[user_id]['shellback'].append(id)
+                if self.user_task_data[user_id]['path'].__contains__(id) :#==''表示车上没有压完文件，就断开了
+                    if self.task_user_.__contains__(self.user_task_data[user_id]['task']):
+                        if self.user_task_data[user_id]['path'][id] == 'null':     #该车已经返回无数据，已经处理
                             self.mutex.release()
                             continue
-                        elif self.user_task_data[user]['path'][id]=='ftpnull':#已经pull文件失败，已经处理
+                        elif self.user_task_data[user_id]['path'][id]=='ftpnull':#已经pull文件失败，已经处理
                             self.mutex.release()
                             continue
-                        elif self.user_task_data[user]['path'][id] == '':       #该车之前没有任何处理
+                        elif self.user_task_data[user_id]['path'][id] == '':       #该车之前没有任何处理
                             pass
                         else:                                                     #该车已经正常返回文件名，若还没拉取，后面会处理
                             self.mutex.release()
                             continue
-                        if not self.user_task_data[user]['failed'].__contains__(id):
-                            self.user_task_data[user]['failed'].append(id)
-                        if self.user_task_data[user]['success'].__contains__(id):
-                            self.user_task_data[user]['success'].remove(id)
-                        self.user_task_data[user]['err']=BlackboxDisconnect
-                        self.failed_get_log(user)
+                        if not self.user_task_data[user_id]['failed'].__contains__(id):
+                            self.user_task_data[user_id]['failed'].append(id)
+                        if self.user_task_data[user_id]['success'].__contains__(id):
+                            self.user_task_data[user_id]['success'].remove(id)
+                        self.user_task_data[user_id]['err']=BlackboxDisconnect
+                        self.failed_get_log(user_id)
                         self.mutex.release()
                         continue
                     self.mutex.release()
                 else:
                     self.mutex.release()
                     continue
+            return
+
         Logger().get_logger().info("{0} shell back,error type is {1}".format(id,pkt_err))
         path = log.proto_logs_file_path()
         path.build(data, 0)
         if not self.task_user_.__contains__(int(path.task_id)):
             return
-        user = self.task_user_[int(path.task_id)]
-        if self.user_task_data[user]['status']==1:return
+        user_id = self.task_user_[int(path.task_id)]
+        if self.user_task_data[user_id]['status']==1:return
         self.mutex.acquire()
-        self.user_task_data[user]['err'] = pkt_err
-        if not self.user_task_data[user]['shellback'].__contains__(id):
-            self.user_task_data[user]['shellback'].append(id)
+        self.user_task_data[user_id]['err'] = pkt_err
+        if not self.user_task_data[user_id]['shellback'].__contains__(id):
+            self.user_task_data[user_id]['shellback'].append(id)
         if len(path.vct_log_file_name) == 0:  # 没有文件返回
             if pkt_err==0:
-                self.user_task_data[user]['err']=BlackboxNoLog
-            Logger().get_logger().warning('not find any log files :by user {0} robot id:{1}'.format(user, id))
-            self.user_task_data[user]['path'][id] = 'null'
-            if self.task_user_.__contains__(self.user_task_data[user]['task']):
-                if not self.user_task_data[user]['failed'].__contains__(id):
-                    self.user_task_data[user]['failed'].append(id)
-                if self.user_task_data[user]['success'].__contains__(id):
-                    self.user_task_data[user]['success'].remove(id)
-                self.failed_get_log(user)
+                self.user_task_data[user_id]['err']=BlackboxNoLog
+            Logger().get_logger().warning('not find any log files :by user {0} robot id:{1}'.format(user_id, id))
+            self.user_task_data[user_id]['path'][id] = 'null'
+            if self.task_user_.__contains__(self.user_task_data[user_id]['task']):
+                if not self.user_task_data[user_id]['failed'].__contains__(id):
+                    self.user_task_data[user_id]['failed'].append(id)
+                if self.user_task_data[user_id]['success'].__contains__(id):
+                    self.user_task_data[user_id]['success'].remove(id)
+                self.failed_get_log(user_id)
                 self.mutex.release()
                 return
         self.mutex.release()
         self.mutex.acquire()
-        if len(path.vct_log_file_name) != 0 and path.task_id==self.user_task_data[user]['task']:
+        if len(path.vct_log_file_name) != 0 and path.task_id==self.user_task_data[user_id]['task']:
             print('id_log_path', id, path.vct_log_file_name[0])
             # fts去取压缩好的文件
             strpath = path.vct_log_file_name[0].value
-            local_path = str(id) + '_' + strpath[strpath.rfind('/') + 1:]#self.get_user_tmp_path(user) +
-            self.user_task_data[user]['path'][id] = local_path
+            local_path = str(id) + '_' + strpath[strpath.rfind('/') + 1:]#self.get_user_tmp_path(user_id) +
+            self.user_task_data[user_id]['path'][id] = local_path
             print('local_tmp_path', local_path)
-            route_path_list = [{'robot_id': id, 'file_path': path.vct_log_file_name[0].value, 'local_path': self.get_user_tmp_path(user) +local_path}]
-            err,task = pull_file_from_remote(user, FILE_TYPE_BLACKBOX_PULL_FILES, route_path_list)
+            route_path_list = [{'robot_id': id, 'file_path': path.vct_log_file_name[0].value, 'local_path': self.get_user_tmp_path(user_id) +local_path}]
+            err,task = pull_file_from_remote(user_id, FILE_TYPE_BLACKBOX_PULL_FILES, route_path_list)
             if len(task) > 0:
                 print('pull file err 0')
-                self.user_task_data[user]['pull_list'].append(task[0]['task_id'])
+                self.user_task_data[user_id]['pull_list'].append(task[0]['task_id'])
             else:
                 Logger().get_logger().info('file_rw task list is full')
-                self.user_task_data[user]['err'] = BlackboxPullFailed
-                self.fts_err_status(user,id)
+                self.user_task_data[user_id]['err'] = BlackboxPullFailed
+                self.fts_err_status(user_id,id)
         self.mutex.release()
 
     # 压缩文件
@@ -374,9 +376,12 @@ class backup_manage():
 
         if error_code != 0:
             self.mutex.acquire()
-            self.user_task_data[user]['err'] = BlackboxPullFailed
+            self.user_task_data[user_id]['err'] = BlackboxPullFailed
             self.fts_err_status(user_id,robot_id)
             self.mutex.release()
+            if not self.user_task_data.__contains__(user_id):
+                return
+
 
         print('len-',len(self.user_task_data[user_id]['success']),len(self.user_task_data[user_id]['failed']),len(self.user_task_data[user_id]['wait']))
         if len(self.user_task_data[user_id]['success'])+len(self.user_task_data[user_id]['failed'])==len(self.user_task_data[user_id]['wait']):
@@ -399,19 +404,22 @@ class backup_manage():
         self.user_task_data[user_id]['path'][robot_id] = 'ftpnull'
         if not self.user_task_data[user_id]['failed'].__contains__(robot_id):
             self.user_task_data[user_id]['failed'].append(robot_id)
+        print('data:',self.user_task_data[user_id])
         if len(self.user_task_data[user_id]['failed']) == len(self.user_task_data[user_id]['wait']):
-            if len(self.user_task_data[user_id]['wait'])==1 and self.user_task_data[user]['err']==BlackboxPullFailed:
+            if len(self.user_task_data[user_id]['wait'])==1 and self.user_task_data[user_id]['err']==BlackboxPullFailed:
                 if notify_step_function is not None:
-                    notify_step_function(user, {'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': self.user_task_data[user]['task'],'err_type':BlackboxPullFailed})
+                    notify_step_function(user_id, {'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': self.user_task_data[user_id]['task'],'err_type':BlackboxPullFailed})
             else:
                 if notify_step_function is not None:
-                    notify_step_function(user,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id':self.user_task_data[user]['task'],'err_type':BlackboxFailed})
-            self.delete_tmp_file(user)
-            self.delete_log(user, self.user_task_data[user]['name'])
-            del self.task_user_[self.user_task_data[user]['task']]
+                    notify_step_function(user_id,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id':self.user_task_data[user_id]['task'],'err_type':BlackboxFailed})
+            self.delete_tmp_file(user_id)
+            self.delete_log(user_id, self.user_task_data[user_id]['name'])
+            del self.task_user_[self.user_task_data[user_id]['task']]
             self.mutex.acquire()
-            del self.user_task_data[user]
+            del self.user_task_data[user_id]
             self.mutex.release()
+            print('over-103',self.user_task_data)
+            return
 
         if len(self.user_task_data[user_id]['success']) + len(self.user_task_data[user_id]['failed']) == len(self.user_task_data[user_id]['wait']) and \
                 len(self.user_task_data[user_id]['failed']) != len(self.user_task_data[user_id]['wait']):
@@ -427,33 +435,33 @@ class backup_manage():
         notify_step_function = log_notify
 
     #获取失败or断连
-    def failed_get_log(self,user):
-        print('count-',len(self.user_task_data[user]['success']),len(self.user_task_data[user]['wait']),len(self.user_task_data[user]['failed']))
+    def failed_get_log(self,user_id):
+        print('count-',len(self.user_task_data[user_id]['success']),len(self.user_task_data[user_id]['wait']),len(self.user_task_data[user_id]['failed']))
         global notify_step_function
         self.mutex.acquire()
-        if len(self.user_task_data[user]['failed'])==len(self.user_task_data[user]['wait']):
-            if len(self.user_task_data[user]['failed'])==1:
+        if len(self.user_task_data[user_id]['failed'])==len(self.user_task_data[user_id]['wait']):
+            if len(self.user_task_data[user_id]['failed'])==1:
                 err_type=0
-                if self.user_task_data[user]['err']==BlackboxNoLog :
+                if self.user_task_data[user_id]['err']==BlackboxNoLog :
                     err_type=BlackboxNoLog
-                elif self.user_task_data[user]['err']==BlackboxTarFailed:
+                elif self.user_task_data[user_id]['err']==BlackboxTarFailed:
                     err_type = BlackboxTarFailed
-                elif self.user_task_data[user]['err']==BlackboxDisconnect:
+                elif self.user_task_data[user_id]['err']==BlackboxDisconnect:
                     err_type = BlackboxDisconnect
                 if notify_step_function is not None:
-                    notify_step_function(user, {'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': self.user_task_data[user]['task'],'err_type':err_type})
+                    notify_step_function(user_id, {'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': self.user_task_data[user_id]['task'],'err_type':err_type})
             else:
                 if notify_step_function is not None:
-                    notify_step_function(user,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id':self.user_task_data[user]['task'],'err_type':-1})
-            self.user_task_data[user]['handle'].close()
-            self.delete_log(user, self.user_task_data[user]['name'])
-            self.delete_tmp_file(user)
-            del self.task_user_[self.user_task_data[user]['task']]
-            del self.user_task_data[user]
+                    notify_step_function(user_id,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id':self.user_task_data[user_id]['task'],'err_type':-1})
+            self.user_task_data[user_id]['handle'].close()
+            self.delete_log(user_id, self.user_task_data[user_id]['name'])
+            self.delete_tmp_file(user_id)
+            del self.task_user_[self.user_task_data[user_id]['task']]
+            del self.user_task_data[user_id]
             self.mutex.release()
             return -1
-        elif len(self.user_task_data[user]['success'])+len(self.user_task_data[user]['failed'])==len(self.user_task_data[user]['wait']) and len(self.user_task_data[user]['failed'])!=len(self.user_task_data[user]['wait']):
-            self.pull_log_step_notify(user, id, 100, '', 0, 1)  # 最后一个断线或失败 且 不是全部断线失败有，成功的
+        elif len(self.user_task_data[user_id]['success'])+len(self.user_task_data[user_id]['failed'])==len(self.user_task_data[user_id]['wait']) and len(self.user_task_data[user_id]['failed'])!=len(self.user_task_data[user_id]['wait']):
+            self.pull_log_step_notify(user_id, id, 100, '', 0, 1)  # 最后一个断线或失败 且 不是全部断线失败有，成功的
             self.mutex.release()
             return 0
         self.mutex.release()
@@ -495,16 +503,16 @@ class backup_manage():
 
 
     #文件pull完才开始tar文件
-    def task_over_tar_log_file(self,user):
+    def task_over_tar_log_file(self,user_id):
         global notify_step_function
-        if self.user_task_data.__contains__(user):
+        if self.user_task_data.__contains__(user_id):
             self.mutex.acquire()
-            self.user_task_data[user]['tar'] = 0
-            tmp_task=self.user_task_data[user]
+            self.user_task_data[user_id]['tar'] = 0
+            tmp_task=self.user_task_data[user_id]
             self.mutex.release()
             handle = tmp_task['handle']
-            open_path = self.get_user_tmp_path(user)
-            zip_file = self.get_user_path(user) + tmp_task['name']
+            open_path = self.get_user_tmp_path(user_id)
+            zip_file = self.get_user_path(user_id) + tmp_task['name']
             zip_file_tmp = open_path + tmp_task['name']
             for index in tmp_task['success']:
                 if tmp_task['path'].__contains__(index):
@@ -515,21 +523,21 @@ class backup_manage():
                             handle.add(filefullpath, arcname=file_path)
                             if tmp_task['delete'] == 1:  #在压缩时如果已经在压缩，待压缩完删除文件和任务
                                 tmp_task['handle'].close()
-                                self.delete_tmp_file(user)
-                                self.delete_log(user, tmp_task['name'])
+                                self.delete_tmp_file(user_id)
+                                self.delete_log(user_id, tmp_task['name'])
                                 del self.task_user_[tmp_task['task']]
                                 self.mutex.acquire()
-                                del self.user_task_data[user]
+                                del self.user_task_data[user_id]
                                 self.mutex.release()
                                 return
                             Logger().get_logger().info('tar log 1')
             handle.close()
             print('close task')
             self.mutex.acquire()
-            self.user_task_data[user]['tar'] = 1
+            self.user_task_data[user_id]['tar'] = 1
             self.mutex.release()
             file_size = os.path.getsize(zip_file_tmp)
-            ret=file_manager.insert(user,tmp_task['name'],file_size)
+            ret=file_manager.insert(user_id,tmp_task['name'],file_size)
 
             shutil.move(zip_file_tmp, zip_file)
             print('path--',zip_file_tmp, zip_file)
@@ -537,18 +545,18 @@ class backup_manage():
                 shutil.rmtree(open_path)
             if ret == 0:
                 if notify_step_function is not None:
-                    notify_step_function(user,{'step': 100, 'msg_type': errtypes.TypeShell_BlackboxLog,'task_id': tmp_task['task']})
+                    notify_step_function(user_id,{'step': 100, 'msg_type': errtypes.TypeShell_BlackboxLog,'task_id': tmp_task['task']})
                 Logger().get_logger().info('tar log over')
             else:#插数据库失败
-                self.delete_tmp_file(user)
-                self.delete_log(user, tmp_task['name'])
+                self.delete_tmp_file(user_id)
+                self.delete_log(user_id, tmp_task['name'])
                 del self.task_user_[tmp_task['task']]
                 self.mutex.acquire()
-                del self.user_task_data[user]
+                del self.user_task_data[user_id]
                 self.mutex.release()
                 Logger().get_logger().info('inster sql failed ,err:{0}',format(ret))
                 if notify_step_function is not None:
-                    notify_step_function(user,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': tmp_task['task'],'err_type':BlackboxInsertSqlFaild})
+                    notify_step_function(user_id,{'msg_type': errtypes.TypeShell_BlackboxFailed,'task_id': tmp_task['task'],'err_type':BlackboxInsertSqlFaild})
 
 
 
