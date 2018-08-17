@@ -25,7 +25,7 @@ class blackbox_manager():
             session_obj.add(temps_obj)
             session_obj.commit()
             Session.remove()
-            return temps_obj.id
+            return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
             session_obj.rollback() 
