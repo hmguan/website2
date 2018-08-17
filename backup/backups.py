@@ -68,14 +68,6 @@ class backup_manage():
                 if wait_handler().wait_simulate(pkt_id, 3000) >= 0:
                     wait_handler().wait_destory(pkt_id)
                     type_list = shell_info.get_log_types()
-                    # for i in range(cb):
-                    #     print(data[i], end=' ')
-                    # type_list = log.proto_log_type_vct()
-                    # try:
-                    #     type_list.build(data, 0)
-                    # except:
-                    #     print('get log type error exception')
-                    #     continue
                     for index in type_list.log_type_vct:
                         log_type[index.log_type.value] = 0  # 取并集
                         print('log_type:', index.log_type.value)
@@ -211,7 +203,7 @@ class backup_manage():
         if stat == -1 and data == '':  # shell此时断连的话
             for user in self.user_task_data.keys():
                 if self.user_task_data[user]['step']==100 or not self.user_task_data[user]['wait'].__contains__(id):#断开的车不是此任务包含的车
-                    return
+                    continue
                 self.mutex.acquire()
                 if not self.user_task_data[user]['shellback'].__contains__(id):
                     self.user_task_data[user]['shellback'].append(id)
@@ -219,15 +211,15 @@ class backup_manage():
                     if self.task_user_.__contains__(self.user_task_data[user]['task']):
                         if self.user_task_data[user]['path'][id] == 'null':     #该车已经返回无数据，已经处理
                             self.mutex.release()
-                            return
+                            continue
                         elif self.user_task_data[user]['path'][id]=='ftpnull':#已经pull文件失败，已经处理
                             self.mutex.release()
-                            return
+                            continue
                         elif self.user_task_data[user]['path'][id] == '':       #该车之前没有任何处理
                             pass
                         else:                                                     #该车已经正常返回文件名，若还没拉取，后面会处理
                             self.mutex.release()
-                            return
+                            continue
                         if not self.user_task_data[user]['failed'].__contains__(id):
                             self.user_task_data[user]['failed'].append(id)
                         if self.user_task_data[user]['success'].__contains__(id):
@@ -235,11 +227,11 @@ class backup_manage():
                         self.user_task_data[user]['err']=BlackboxDisconnect
                         self.failed_get_log(user)
                         self.mutex.release()
-                        return
+                        continue
                     self.mutex.release()
                 else:
                     self.mutex.release()
-                    return
+                    continue
         Logger().get_logger().info("{0} shell back,error type is {1}".format(id,pkt_err))
         path = log.proto_logs_file_path()
         path.build(data, 0)
