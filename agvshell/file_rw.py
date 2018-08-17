@@ -296,17 +296,10 @@ class file_info():
 
 class user_transfer_queue(object):
     """docstring for user_transfer_queue"""
-    def __init__(self,assign_task_cb):
+    def __init__(self):
         super(user_transfer_queue, self).__init__()
         self.__task_thread_pool_push = None
         self.__task_thread_pool_pull = None
-        self.__task_id = 0
-        self.__assign_task_cb = assign_task_cb
-
-
-    def assign_task_id(self):
-        self.__task_id = self.__task_id+1
-        return self.__task_id
 
     def __del__(self):
         pass
@@ -340,11 +333,7 @@ class user_transfer_queue(object):
         for item in robot_list:
             robot_id = int(item)
 
-            if self.__assign_task_cb:
-                task_id = self.__assign_task_cb()
-            else:
-                task_id = self.assign_task_id()
-            
+            task_id = file_manager().assign_task_id()
             task = file_task(user_id,robot_id,file_path,file_type,FILE_OPER_TYPE_PUSH,task_id,"",packet_id)
             if self.__task_thread_pool_push is None:
                 self.__task_thread_pool_push = task_thread_pool()
@@ -368,10 +357,7 @@ class user_transfer_queue(object):
 
         for item in route_path_list:
 
-            if self.__assign_task_cb:
-                task_id = self.__assign_task_cb()
-            else:
-                task_id = self.assign_task_id()
+            task_id = file_manager().assign_task_id()
 
             if self.__task_thread_pool_pull is None:
                 self.__task_thread_pool_pull = task_thread_pool()
@@ -1005,7 +991,7 @@ class file_manager():
         if transform_queue is not None:
             error_code,task_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
         else:
-            transform_queue = user_transfer_queue(self.assign_task_id)
+            transform_queue = user_transfer_queue()
             error_code,task_list = transform_queue.push_file_task(user_id,robot_list,file_path,file_type,package_id)
             self.__map_user_transfer_queue[user_id] = transform_queue
         self.__transfer_queue_mutex.release()
@@ -1024,7 +1010,7 @@ class file_manager():
         if transform_queue is not None:
             error_code,task_list = transform_queue.pull_file_task(user_id,file_type,route_path_list)
         else:
-            transform_queue = user_transfer_queue(self.assign_task_id)
+            transform_queue = user_transfer_queue()
             error_code,task_list = transform_queue.pull_file_task(user_id,file_type,route_path_list)
             self.__map_user_transfer_queue[user_id] = transform_queue
         self.__transfer_queue_mutex.release()
