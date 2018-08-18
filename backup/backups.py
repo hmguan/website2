@@ -105,8 +105,8 @@ class backup_manage():
             if shell_info is not None:
                 shell_info.register_notify_log_path(self.load_log_path)
                 if shell_info.get_log_data(task_id, start_time, end_time, types) >= 0:
-                    self.user_task_data[user_id]['wait'].append(id)
-                    self.user_task_data[user_id]['path'][id] = ''
+                    self.user_task_data[user_id]['wait'].append(int(id))
+                    self.user_task_data[user_id]['path'][int(id)] = ''
         if len(self.user_task_data[user_id]['wait'])==0:
             self.user_task_data[user_id]['handle'].close()
             self.delete_log(user_id, self.user_task_data[user_id]['name'])
