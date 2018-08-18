@@ -458,6 +458,16 @@ class file_manager():
             map_file_info[t_file_info.m_file_id] = t_file_info
         # file_mutex.release()
 
+    def remove_file_info(self,robot_id,file_id):
+        # file_mutex.acquire()
+        map_file_info = dict_file_info.get(robot_id)
+        if map_file_info is not None:
+            if file_id in map_file_info:
+                del map_file_info[file_id]
+            if len(map_file_info) == 0:
+                del dict_file_info[robot_id]
+        # file_mutex.release()
+
     def remove_task_by_user(self,transfer_type,userid):
         remove_list = list()
 
@@ -510,16 +520,6 @@ class file_manager():
         file_mutex.release()
         return remove_list
 
-    def remove_file_info(self,robot_id,file_id):
-        # file_mutex.acquire()
-        map_file_info = dict_file_info.get(robot_id)
-        if map_file_info is not None:
-            if file_id in map_file_info:
-                del map_file_info[file_id]
-            if len(map_file_info) == 0:
-                del dict_file_info[robot_id]
-        # file_mutex.release()
-
     def task_finish(self,user_id,thread_id,task_id,transfer_type):
         self.__transfer_queue_mutex.acquire()
         user_transfer_queue = self.__map_user_transfer_queue.get(user_id)
@@ -561,6 +561,7 @@ class file_manager():
         # return file_path_set
 
     def is_open(self,file_path) ->bool:
+        #linux 系统
         if file_path.startswith('./'):
             file_path = os.path.abspath(file_path)
         all_pid = [_i for _i in os.listdir('/proc') if _i.isdigit()]
@@ -1070,7 +1071,7 @@ class file_manager():
                                 if FILE_TYPE_A_UPGRADE == v1[k2].m_type:
                                     shell_info.set_upgrade(FILE_TYPE_NORMAL)
 
-                        self.notify(v1[k2].m_user_id,[k1],v1[k2].m_path,v1[k2].m_type,0,ERRNO_FILE_TIMEOUT,v1[k2].m_task_id,-1)
+                        self.notify(v1[k2].m_user_id,k1,v1[k2].m_path,v1[k2].m_type,0,ERRNO_FILE_TIMEOUT,v1[k2].m_task_id,-1)
                         self.task_finish(v1[k2].m_user_id,v1[k2].m_thread_uid,v1[k2].m_task_id,v1[k2].m_oper_type)
                         v1.pop(k2)
                 if len(dict_file_info[k1]) <= 0:
