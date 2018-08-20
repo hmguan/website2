@@ -57,7 +57,7 @@ class package_view(base_event):
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament, 'msg': errtypes.HttpResponseMsg_InvaildParament})
 
             retval = package_manager.packages(json_data['login_id'])
-            if -1==retval:
+            if -2==retval:
                 return jsonify( {'code': errtypes.HttpResponseCode_Sqlerror, 'msg': errtypes.HttpResponseCode_Sqlerror})
 
             list_package=[]

@@ -9,12 +9,17 @@ class user:
     
     @staticmethod
     def is_exist(username)->int:
-        session_obj = Session()
-        ret = session_obj.query(user_info).filter_by(username=username).first()
-        if(ret ==None):
-            return -1
-        Session.remove()
-        return 0
+        try:
+            session_obj = Session()
+            ret = session_obj.query(user_info).filter_by(username=username).first()
+            Session.remove()
+            if(ret ==None):
+                return -1
+            return 0
+        except Exception as e:
+            Logger().get_logger().error(str(e))
+            session_obj.rollback() 
+            return -2
         
     @staticmethod
     def is_exist_id(user_id)->int:
@@ -27,6 +32,7 @@ class user:
             return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2
 
     #用户校验 
@@ -45,12 +51,15 @@ class user:
             return tmp.id,user_type
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2,-2
 
     #添加用户
     @staticmethod
     def append(username,pwd,permission,identity_type='guest')->int:
         try:
+            if 'root'==username.lower():
+                return -1
             session_obj = Session()
             if user.is_exist(username)>=0:
                 return -1
@@ -60,6 +69,7 @@ class user:
             Session.remove()
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2
         return 0
 
@@ -78,6 +88,7 @@ class user:
             Session.remove()
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -3
         return 0
 
@@ -95,6 +106,7 @@ class user:
             Session.remove()
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2
        
         return 0
@@ -112,6 +124,7 @@ class user:
             Session.remove()
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2
         return 0
 
@@ -132,6 +145,7 @@ class user:
             Session.remove()
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2
         return 0
 
@@ -148,6 +162,7 @@ class user:
             return (0,ret.username)
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return (-2,'')
 
     #查询用户
@@ -160,6 +175,7 @@ class user:
             return (0,ret)
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return (-1,[])
         
 
@@ -189,6 +205,7 @@ class user:
         
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return (-2,'')
 
 
@@ -211,6 +228,7 @@ class user:
             Session.remove()
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -3
         return 0
 

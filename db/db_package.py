@@ -3,6 +3,7 @@ from db import Session,user_info,package_info
 from sqlalchemy import or_
 from sqlalchemy import asc
 from sqlalchemy import desc
+from sqlalchemy.orm import subqueryload
 from configuration import config
 import os
 from pynsp.logger import*
@@ -21,7 +22,7 @@ class package_manager():
                 Session.remove()
                 return -1
 
-            tmp = session_obj.query(package_info).filter_by(package_name= package_name).filter_by(user_id = user_id).first()
+            tmp = session_obj.query(package_info).options(subqueryload(package_info.user)).filter_by(package_name= package_name).filter_by(user_id = user_id).first()
             if tmp is not None:
                 tmp  = session_obj.query(package_info).get(tmp.id)
                 session_obj.delete(tmp)
@@ -33,9 +34,10 @@ class package_manager():
             session_obj.commit()
             Session.remove()
 
-            return package_obj.id
+            return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2 
 
     @staticmethod
@@ -52,17 +54,19 @@ class package_manager():
             return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2 
 
     @staticmethod
     def packages(user_id):
         try:
             session_obj = Session()
-            ret = session_obj.query(package_info).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(desc(package_info.user_id),desc(package_info.time)).all()
+            ret = session_obj.query(package_info).options(subqueryload(package_info.user)).filter(or_(package_info.user_id==user_id,package_info.user_id==1)).order_by(desc(package_info.user_id),desc(package_info.time)).all()
             Session.remove()
             return ret
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -2 
         
     @staticmethod
@@ -87,6 +91,7 @@ class package_manager():
                     os.remove(file_path)
                 except Exception as e:
                     Logger().get_logger().error(str(e))
+                    session_obj.rollback() 
                     Session.remove()
                     return -2
 
@@ -96,17 +101,19 @@ class package_manager():
             return 0
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -3
         
     @staticmethod
     def query_packages(package_id):
         try:
             session_obj = Session()
-            ret = session_obj.query(package_info).filter_by(id=package_id).first()
+            ret = session_obj.query(package_info).options(subqueryload(package_info.user)).filter_by(id=package_id).first()
             Session.remove()
             return ret
         except Exception as e:
             Logger().get_logger().error(str(e))
+            session_obj.rollback() 
             return -1
     
     

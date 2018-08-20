@@ -67,6 +67,7 @@ class shell_session(tcp.obtcp):
         phead.build(data, 0)
         # print('recv packet,type=0x%x'%phead.type)
         pkt_id = phead.id.value
+        pkt_err=phead.err.value
 
         self.__mutex.acquire()
         self.__timestamp = int(round(time.time() * 1000))
@@ -100,7 +101,7 @@ class shell_session(tcp.obtcp):
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_TYPE_ACK == phead.type:
             self.recv_log_type(pkt_id, data)
         elif typedef.PKTTYPE_AGV_SHELL_GET_LOG_FILE_NAME_ACK == phead.type:
-            self.recv_log_name(data)
+            self.recv_log_name(data,pkt_err)
         elif typedef.PKTTYPE_AGV_SHELL_FILE_MUTEX_STATUS_ACK == phead.type:
             pass
         elif typedef.PKTTYPE_AGV_SHELL_MODIFY_FILE_MUTEX_ACK == phead.type:
@@ -130,7 +131,7 @@ class shell_session(tcp.obtcp):
                 self.__notify_closed(self.__robot_id)
             global path_notify_callback
             if path_notify_callback is not None:
-                path_notify_callback(self.__robot_id, -1, '')
+                path_notify_callback(self.__robot_id, -1, '',0)
         pass
 
     def on_connected(self):
@@ -403,11 +404,10 @@ class shell_session(tcp.obtcp):
             global path_notify_callback
             path_notify_callback = notify_callback
 
-    def recv_log_name(self, data):
+    def recv_log_name(self, data,pkt_err):
         global path_notify_callback
         if path_notify_callback is not None:
-            path_notify_callback(self.__robot_id,0, data)
-        # load_log_path(self.__robot_id,data)
+            path_notify_callback(self.__robot_id,0, data,pkt_err)
         pass
 
     def cancle_log_data(self,task_id):

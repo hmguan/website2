@@ -29,9 +29,16 @@ class backupview(base_event):
             robot_id = json_data['robot_id']
             user_id = json_data['login_id']
             time_type=json_data['time_select_type']
-            if type(robot_id) != list or len(robot_id)==0 or type(user_id) != int or user_id is None or type(time_type)!=int or time_type is None:
+            name=json_data['name']
+            if type(robot_id) != list or len(robot_id)==0 or type(user_id) != int or user_id is None or type(time_type)!=int or time_type is None or len(name)==0:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
 
+            ret_list = file_manager.file_list(user_id)
+            if ret_list==-1:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed})
+            for i in range(len(ret_list)):
+                if ret_list[i].file_name==name:
+                    return jsonify({'code': errtypes.HttpResponseCode_BlackboxReName, 'msg': errtypes.HttpResponseMsg_BlackboxReName})
             task_id = send_log_condition(robot_id, int(user_id), json_data.get('start_time'),
                                          json_data.get('end_time'),json_data.get('is_latest_time'),
                                          json_data.get('time_select_type'), json_data.get('type_list'),
@@ -43,7 +50,7 @@ class backupview(base_event):
             elif task_id==-2:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxReTask, 'msg': errtypes.HttpResponseMsg_BlackboxReTask,
                                 'tasl_id': task_id})
-            elif task_id==-3 or task_id==4:
+            elif task_id==-3 or task_id==-4:
                 return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed,
                                 'tasl_id': task_id})
 
@@ -136,6 +143,8 @@ class backupview(base_event):
             if type(user_id) != int or user_id is None:
                 return jsonify({'code': errtypes.HttpResponseCode_InvaildParament,'msg': errtypes.HttpResponseMsg_InvaildParament, 'data': ''})
             ret_list=file_manager.file_list(user_id)
+            if ret_list==-1:
+                return jsonify({'code': errtypes.HttpResponseCode_BlackboxQueryDbFailed, 'msg': errtypes.HttpResponseMsg_BlackboxQueryDbFailed})
             log_list=list()
             for i in range(len(ret_list)):
                 log_item = dict()
