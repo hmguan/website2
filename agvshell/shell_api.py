@@ -449,3 +449,6 @@ def is_package_in_task(package_id) ->bool:
 
 def is_file_open(file_path)->bool:
     return file_manager().is_open(file_path)
+
+def get_session_by_id(id):
+    return shell_manager().get_session_by_id(id)

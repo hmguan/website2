@@ -7,8 +7,8 @@
 	<agv id="1" ip="192.168.1.12" layout_id="1" mac_addr="aa.bb.cc.dd.ee" port="10001" pos_angle="-1.57" pos_x="58.6508" pos_y="26.0824" shell_port="4410" simulation="1" type="0" />
         <agv fts_port="0" id="2" ip="127.0.0.1" layout_id="1" mac_addr="08:00:27:76:ba:fd" port="0" pos_angle="-1.57" pos_x="60.9368" pos_y="26.0824" shell_port="4410" simulation="1" status="0" type="0" />
         <agv fts_port="0" id="3" ip="192.168.5.229" layout_id="1" mac_addr="08:00:27:8d:40:77" port="0" pos_angle="-1.57" pos_x="63.2228" pos_y="26.0824" shell_port="4410" simulation="1" status="0" type="0" />
-        <agv fts_port="0" id="4" ip="127.0.0.1" layout_id="1" mac_addr="" port="0" pos_angle="-1.57" pos_x="65.5088" pos_y="26.0824" shell_port="4410" simulation="1" status="0" type="0" />
-        <agv id="5" ip="10.10.100.184" layout_id="1" port="10005" pos_angle="-1.57" pos_x="67.7948" pos_y="26.0824" shell_port="4445" simulation="1" type="0" />
+        <agv fts_port="0" id="4" ip="192.168.0.209" layout_id="1" mac_addr="08:00:27:89:ae:cf" port="0" pos_angle="-1.57" pos_x="65.5088" pos_y="26.0824" shell_port="6410" simulation="1" status="0" type="0" />
+        <agv fts_port="0" id="5" ip="192.168.0.29" layout_id="1" mac_addr="68:f7:28:98:5d:74" port="0" pos_angle="-1.57" pos_x="67.7948" pos_y="26.0824" shell_port="4410" simulation="1" status="0" type="0" />
 	<agv id="6" ip="192.168.1.11" layout_id="1" mac_addr="aa.bb.cc.dd.ee" port="10001" pos_angle="-1.57" pos_x="58.6508" pos_y="26.0824" shell_port="4410" simulation="1" type="0" />
 	<agv id="7" ip="192.168.1.10" layout_id="1" mac_addr="aa.bb.cc.dd.ee" port="10001" pos_angle="-1.57" pos_x="58.6508" pos_y="26.0824" shell_port="4410" simulation="1" type="0" />
 	<agv id="8" ip="192.168.1.13" layout_id="1" mac_addr="aa.bb.cc.dd.ee" port="10001" pos_angle="-1.57" pos_x="58.6508" pos_y="26.0824" shell_port="4410" simulation="1" type="0" />

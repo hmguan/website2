@@ -3,6 +3,7 @@ import datetime
 
 def init_black_box():
     backup_manage().init_backups()
+    # notify UI
     backup_manage().register_blackbox_step_notify(blackbox_step_notify)
 
 # 获取日志类型
@@ -52,9 +53,8 @@ def exists_log(user_id, log_name):
 
 def blackbox_step_notify(user_id,dict):
     if notify_step_function is not None:
-            notify_step_function(user_id,dict)
+        notify_step_function(user_id,dict)
 
 def register_blackbox_step_notify(log_notify=None):
     global notify_step_function
     notify_step_function = log_notify
-
